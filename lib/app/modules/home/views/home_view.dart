@@ -1,50 +1,76 @@
+import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
-import '../../../core/values/app_colors.dart';
+import '../../booking/views/booking_view.dart';
+import '../../messages/views/messages_view.dart';
+import '../../profile/views/profile_view.dart';
+import 'tabs/home_tab_view.dart';
 
 class HomeView extends GetView<HomeController> {
-  const HomeView({super.key});
+  HomeView({super.key});
+
+  final List<Widget> _pages = [
+    const HomeTabView(),
+    const BookingView(),
+    const MessagesView(),
+    const ProfileView(),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Awnnea App'),
+        title: Obx(() => Text(_getTitle(controller.currentIndex.value))),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/images/app_logo.png',
-              height: 120,
+      body: Obx(() => _pages[controller.currentIndex.value]),
+      bottomNavigationBar: Obx(
+        () => BottomNavigationBar(
+          currentIndex: controller.currentIndex.value,
+          onTap: controller.changeIndex,
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: Colors.grey,
+          showUnselectedLabels: true,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: 'Home',
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Efficiently Structured',
-              style: Theme.of(context).textTheme.headlineMedium,
+            BottomNavigationBarItem(
+              icon: Icon(Icons.calendar_today_outlined),
+              activeIcon: Icon(Icons.calendar_today),
+              label: 'Booking',
             ),
-            const SizedBox(height: 12),
-            Text(
-              'GetX MVC Architecture',
-              style: Theme.of(context).textTheme.bodyMedium,
+            BottomNavigationBarItem(
+              icon: Icon(Icons.message_outlined),
+              activeIcon: Icon(Icons.message),
+              label: 'Messages',
             ),
-            const SizedBox(height: 40),
-            Obx(
-              () => Text(
-                'Count: ${controller.count}',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: controller.increment,
-              child: const Text('Increment'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              activeIcon: Icon(Icons.person),
+              label: 'Profile',
             ),
           ],
         ),
       ),
     );
+  }
+
+  String _getTitle(int index) {
+    switch (index) {
+      case 0:
+        return 'Home';
+      case 1:
+        return 'Booking';
+      case 2:
+        return 'Messages';
+      case 3:
+        return 'Profile';
+      default:
+        return 'Home';
+    }
   }
 }
