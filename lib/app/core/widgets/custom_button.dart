@@ -31,10 +31,14 @@ class CustomButton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (icon != null) ...[icon!, const SizedBox(width: 8)],
+              if (icon != null) ...[
+                SizedBox(width: 24, height: 24, child: icon!),
+                const SizedBox(width: 8),
+              ],
               Text(
                 text,
                 style: AppStyles.buttonText.copyWith(color: AppColors.primary),
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -53,8 +57,17 @@ class CustomButton extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (icon != null) ...[icon!, const SizedBox(width: 8)],
-            Text(text, style: AppStyles.buttonText),
+            if (icon != null) ...[
+              SizedBox(width: 24, height: 24, child: icon!),
+              const SizedBox(width: 8),
+            ],
+            Flexible(
+              child: Text(
+                text,
+                style: AppStyles.buttonText,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
       ),

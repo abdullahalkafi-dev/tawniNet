@@ -125,7 +125,7 @@ class LoginView extends GetView<LoginController> {
       onPressed: controller.loginWithGoogle,
       isOutlined: true,
       icon: Image.network(
-        'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png',
+        'https://cdn1.iconfinder.com/data/icons/google_jfk_icons_by_verexis/128/google.png',
         height: 24,
       ),
     );

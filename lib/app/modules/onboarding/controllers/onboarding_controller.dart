@@ -18,11 +18,11 @@ class OnboardingController extends GetxController {
         curve: Curves.easeIn,
       );
     } else {
-      Get.offAllNamed(Routes.home); // For now, navigate to home. Later to Auth.
+      Get.offAllNamed(Routes.roleSelection);
     }
   }
 
   void skip() {
-    Get.offAllNamed(Routes.home);
+    Get.offAllNamed(Routes.roleSelection);
   }
 }
