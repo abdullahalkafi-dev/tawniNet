@@ -1,10 +1,10 @@
+import 'package:awnneaapp/app/core/values/app_colors.dart';
+import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/data/models/home_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
-import '../../../../data/models/home_models.dart';
-import '../../../../core/values/app_colors.dart';
-import '../../../../core/values/app_styles.dart';
 
 class PopularServicesView extends GetView<HomeController> {
   const PopularServicesView({super.key});
@@ -69,20 +69,29 @@ class PopularServicesView extends GetView<HomeController> {
             ),
             const SizedBox(height: 20),
             Obx(() {
-              final filteredServices = controller.popularServices.where((service) {
+              final filteredServices = controller.popularServices.where((
+                service,
+              ) {
                 // Filter by Category
                 bool matchesCategory = true;
                 if (selectedFilter.value != 'All') {
-                  matchesCategory = service.category.toLowerCase().contains(selectedFilter.value.toLowerCase());
+                  matchesCategory = service.category.toLowerCase().contains(
+                    selectedFilter.value.toLowerCase(),
+                  );
                 }
-                
+
                 // Filter by Search Query
                 bool matchesSearch = true;
                 if (searchQuery.value.isNotEmpty) {
-                  matchesSearch = service.name.toLowerCase().contains(searchQuery.value.toLowerCase()) ||
-                                  service.category.toLowerCase().contains(searchQuery.value.toLowerCase());
+                  matchesSearch =
+                      service.name.toLowerCase().contains(
+                        searchQuery.value.toLowerCase(),
+                      ) ||
+                      service.category.toLowerCase().contains(
+                        searchQuery.value.toLowerCase(),
+                      );
                 }
-                
+
                 return matchesCategory && matchesSearch;
               }).toList();
 
@@ -102,7 +111,8 @@ class PopularServicesView extends GetView<HomeController> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: filteredServices.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 16),
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 16),
                 itemBuilder: (context, index) {
                   return _buildServiceCard(filteredServices[index]);
                 },
@@ -126,7 +136,9 @@ class PopularServicesView extends GetView<HomeController> {
           color: isSelected ? AppColors.primary : Colors.white,
           borderRadius: BorderRadius.circular(30),
           border: Border.all(
-            color: isSelected ? AppColors.primary : const Color(0xFF5AB9A7).withOpacity(0.5),
+            color: isSelected
+                ? AppColors.primary
+                : const Color(0xFF5AB9A7).withOpacity(0.5),
             width: 1.2,
           ),
         ),
@@ -176,7 +188,10 @@ class PopularServicesView extends GetView<HomeController> {
                       padding: const EdgeInsets.all(12),
                       child: SvgPicture.asset(
                         'assets/svgs/profile_icon.svg',
-                        colorFilter: const ColorFilter.mode(Color(0xFF9CA3AF), BlendMode.srcIn),
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF9CA3AF),
+                          BlendMode.srcIn,
+                        ),
                       ),
                     );
                   },
