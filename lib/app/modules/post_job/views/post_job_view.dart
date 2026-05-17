@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:flutter/material.dart';
@@ -41,6 +42,8 @@ class PostJobView extends GetView<PostJobController> {
               controller.dateController,
               'mm/dd/yyyy',
               icon: Icons.calendar_today,
+              readOnly: true,
+              onTap: () => controller.pickDate(context),
             ),
             const SizedBox(height: 16),
             Row(
@@ -54,6 +57,8 @@ class PostJobView extends GetView<PostJobController> {
                         controller.startTimeController,
                         '10:00 AM',
                         icon: Icons.unfold_more,
+                        readOnly: true,
+                        onTap: () => controller.pickTime(context, controller.startTimeController),
                       ),
                     ],
                   ),
@@ -68,6 +73,8 @@ class PostJobView extends GetView<PostJobController> {
                         controller.endTimeController,
                         '11:00 AM',
                         icon: Icons.unfold_more,
+                        readOnly: true,
+                        onTap: () => controller.pickTime(context, controller.endTimeController),
                       ),
                     ],
                   ),
@@ -158,6 +165,8 @@ class PostJobView extends GetView<PostJobController> {
     IconData? icon,
     int maxLines = 1,
     String? prefix,
+    bool readOnly = false,
+    VoidCallback? onTap,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -168,6 +177,8 @@ class PostJobView extends GetView<PostJobController> {
       child: TextField(
         controller: controller,
         maxLines: maxLines,
+        readOnly: readOnly,
+        onTap: onTap,
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: AppStyles.bodyMedium.copyWith(color: Colors.grey[400]),
@@ -224,32 +235,46 @@ class PostJobView extends GetView<PostJobController> {
   }
 
   Widget _buildPhotoPicker() {
-    return Row(
-      children: [
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF9FAFB),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Colors.grey[200]!,
-              style: BorderStyle.solid,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: controller.pickImage,
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.grey[200]!,
+                  style: BorderStyle.solid,
+                ),
+              ),
+              child: Icon(Icons.add_a_photo_outlined, color: Colors.grey[400]),
             ),
           ),
-          child: Icon(Icons.add_a_photo_outlined, color: Colors.grey[400]),
-        ),
-        const SizedBox(width: 12),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Image.network(
-            'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=200',
-            width: 80,
-            height: 80,
-            fit: BoxFit.cover,
+          Obx(
+            () => Row(
+              children: controller.selectedImages.map((path) {
+                return Padding(
+                  padding: const EdgeInsets.only(left: 12),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.file(
+                      File(path),
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

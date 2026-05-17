@@ -72,4 +72,17 @@ class MessagesController extends GetxController {
       unreadCount: 0,
     ),
   ].obs;
+
+  final searchQuery = ''.obs;
+  final isSearching = false.obs;
+
+  List<ChatSummary> get filteredChats {
+    if (searchQuery.value.isEmpty) {
+      return chats;
+    }
+    return chats
+        .where((chat) => chat.name.toLowerCase().contains(searchQuery.value.toLowerCase()) ||
+            chat.lastMessage.toLowerCase().contains(searchQuery.value.toLowerCase()))
+        .toList();
+  }
 }

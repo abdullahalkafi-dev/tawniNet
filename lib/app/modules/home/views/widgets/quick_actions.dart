@@ -18,8 +18,10 @@ class QuickActions extends GetView<HomeController> {
               title: 'Find Helper',
               subtitle: 'Browse Services',
               icon: Icons.search,
-              color: const Color(0xFFE0F7F6),
-              iconColor: AppColors.primary,
+              color: const Color(0xFFE5F7F5),
+              iconBgColor: AppColors.primary,
+              iconColorOverride: Colors.white,
+              titleColor: const Color(0xFF5AB9A7),
             ),
           ),
         ),
@@ -30,9 +32,11 @@ class QuickActions extends GetView<HomeController> {
             child: _buildActionCard(
               title: 'Post a job',
               subtitle: '',
-              icon: Icons.post_add,
+              icon: Icons.track_changes,
               color: Colors.white,
-              iconColor: AppColors.secondary,
+              iconBgColor: const Color(0xFFF3F4F6),
+              iconColorOverride: const Color(0xFF4B5563),
+              titleColor: const Color(0xFF1F2937),
               hasBorder: true,
             ),
           ),
@@ -46,37 +50,63 @@ class QuickActions extends GetView<HomeController> {
     required String subtitle,
     required IconData icon,
     required Color color,
-    required Color iconColor,
+    required Color iconBgColor,
+    required Color iconColorOverride,
+    required Color titleColor,
     bool hasBorder = false,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      height: 110,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(16),
         border: hasBorder ? Border.all(color: Colors.grey[200]!) : null,
+        boxShadow: hasBorder
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.01),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(6),
             decoration: BoxDecoration(
-              color: iconColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              color: iconBgColor,
+              shape: BoxShape.circle,
             ),
-            child: Icon(icon, color: iconColor, size: 20),
+            child: Icon(icon, color: iconColorOverride, size: 16),
           ),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: AppStyles.bodyLarge.copyWith(
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: AppStyles.bodyLarge.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  color: titleColor,
+                ),
+              ),
+              if (subtitle.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: AppStyles.bodyMedium.copyWith(
+                    fontSize: 11,
+                    color: const Color(0xFF9CA3AF),
+                  ),
+                ),
+              ],
+            ],
           ),
-          if (subtitle.isNotEmpty)
-            Text(subtitle, style: AppStyles.bodyMedium.copyWith(fontSize: 12)),
         ],
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 
 class PostJobController extends GetxController {
   final titleController = TextEditingController();
@@ -12,12 +13,71 @@ class PostJobController extends GetxController {
   final budgetController = TextEditingController();
 
   final isHourly = true.obs;
+  final isOnlinePayment = true.obs;
+
+  final selectedImages = <String>[].obs;
+  final ImagePicker _picker = ImagePicker();
 
   void toggleBudget(bool hourly) {
     isHourly.value = hourly;
   }
 
-  final isOnlinePayment = true.obs;
+  Future<void> pickDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      dateController.text = '${picked.month.toString().padLeft(2, '0')}/${picked.day.toString().padLeft(2, '0')}/${picked.year}';
+    }
+  }
+
+  Future<void> pickTime(
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      // ignore: use_build_context_synchronously
+      controller.text = picked.format(context);
+    }
+  }
+
+  Future<void> pickImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      selectedImages.add(image.path);
+    }
+  }
 
   void postJob() {
     Get.dialog(

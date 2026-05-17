@@ -5,6 +5,7 @@ import '../../../../core/values/app_colors.dart';
 import '../../../../core/values/app_styles.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class SignupView extends GetView<SignupController> {
   const SignupView({super.key});
@@ -58,15 +59,13 @@ class SignupView extends GetView<SignupController> {
                   hint: 'Confirm Password',
                   isPassword: true,
                   isVisible: controller.isConfirmPasswordVisible.value,
-                  onToggleVisibility: controller.toggleConfirmPasswordVisibility,
+                  onToggleVisibility:
+                      controller.toggleConfirmPasswordVisibility,
                   controller: controller.confirmPasswordController,
                 ),
               ),
               const SizedBox(height: 30),
-              CustomButton(
-                text: 'Sign Up',
-                onPressed: controller.signup,
-              ),
+              CustomButton(text: 'Sign Up', onPressed: controller.signup),
               const SizedBox(height: 30),
               _buildDivider(),
               const SizedBox(height: 30),
@@ -75,7 +74,10 @@ class SignupView extends GetView<SignupController> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text("Already have an account? ", style: AppStyles.bodyMedium),
+                  Text(
+                    "Already have an account? ",
+                    style: AppStyles.bodyMedium,
+                  ),
                   GestureDetector(
                     onTap: controller.goToLogin,
                     child: Text(
@@ -102,7 +104,10 @@ class SignupView extends GetView<SignupController> {
         const Expanded(child: Divider()),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text('OR', style: AppStyles.bodyMedium.copyWith(color: Colors.grey)),
+          child: Text(
+            'OR',
+            style: AppStyles.bodyMedium.copyWith(color: Colors.grey),
+          ),
         ),
         const Expanded(child: Divider()),
       ],
@@ -114,10 +119,7 @@ class SignupView extends GetView<SignupController> {
       text: 'Continue with Google',
       onPressed: controller.signupWithGoogle,
       isOutlined: true,
-      icon: Image.network(
-        'https://cdn1.iconfinder.com/data/icons/google_jfk_icons_by_verexis/128/google.png',
-        height: 24,
-      ),
+      icon: SvgPicture.asset('assets/svgs/google.svg', height: 24),
     );
   }
 }

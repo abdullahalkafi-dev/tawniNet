@@ -1,6 +1,7 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import '../../home/controllers/home_controller.dart';
 
@@ -88,6 +89,18 @@ class CategoryDetailsView extends StatelessWidget {
                   height: 60,
                   width: 60,
                   fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      width: 60,
+                      height: 60,
+                      color: const Color(0xFFF3F4F6),
+                      padding: const EdgeInsets.all(12),
+                      child: SvgPicture.asset(
+                        'assets/svgs/profile_icon.svg',
+                        colorFilter: const ColorFilter.mode(Color(0xFF9CA3AF), BlendMode.srcIn),
+                      ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(width: 12),

@@ -1,56 +1,113 @@
-import 'package:awnneaapp/app/modules/home/controllers/home_controller.dart';
+import 'package:awnneaapp/app/core/values/app_colors.dart';
+import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/data/models/home_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-import '../../../../data/models/home_models.dart';
-import '../../../../core/values/app_colors.dart';
-import '../../../../core/values/app_styles.dart';
-import '../nearby_helpers_view.dart';
+import '../controllers/home_controller.dart';
 
-class NearbyHelpers extends GetView<HomeController> {
-  const NearbyHelpers({super.key});
+class NearbyHelpersView extends GetView<HomeController> {
+  const NearbyHelpersView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final selectedFilter = 'All'.obs;
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Get.back(),
+        ),
+        title: Text(
+          'Nearby Helpers',
+          style: AppStyles.h2.copyWith(color: Colors.black, fontSize: 18),
+        ),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Nearby Helpers',
-              style: AppStyles.h2.copyWith(
-                fontSize: 18,
-                color: const Color(0xFF1F2937),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey[200]!),
               ),
-            ),
-            TextButton(
-              onPressed: () => Get.to(() => const NearbyHelpersView()),
-              child: Text(
-                'View All',
-                style: AppStyles.bodyMedium.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
+              child: TextField(
+                decoration: InputDecoration(
+                  icon: const Icon(Icons.search, color: Colors.grey),
+                  hintText: 'Search for nearby helper.....',
+                  hintStyle: AppStyles.bodyMedium.copyWith(color: Colors.grey),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 ),
               ),
             ),
+            const SizedBox(height: 20),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Obx(
+                () => Row(
+                  children: [
+                    _buildFilterChip('All', selectedFilter),
+                    _buildFilterChip('Cleaning', selectedFilter),
+                    _buildFilterChip('Repairing', selectedFilter),
+                    _buildFilterChip('Painting', selectedFilter),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Obx(
+              () => ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: controller.nearbyJobs.length,
+                separatorBuilder: (context, index) => const SizedBox(height: 16),
+                itemBuilder: (context, index) {
+                  return _buildHelperCard(controller.nearbyJobs[index]);
+                },
+              ),
+            ),
+            const SizedBox(height: 30),
           ],
         ),
-        const SizedBox(height: 8),
-        Obx(
-          () => ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: controller.nearbyJobs.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 16),
-            itemBuilder: (context, index) {
-              return _buildHelperCard(controller.nearbyJobs[index]);
-            },
+      ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, RxString selectedFilter) {
+    bool isSelected = selectedFilter.value == label;
+    return GestureDetector(
+      onTap: () => selectedFilter.value = label,
+      child: Container(
+        margin: const EdgeInsets.only(right: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : const Color(0xFF5AB9A7).withOpacity(0.5),
+            width: 1.2,
           ),
         ),
-      ],
+        child: Text(
+          label,
+          style: AppStyles.bodyMedium.copyWith(
+            color: isSelected ? Colors.white : const Color(0xFF5AB9A7),
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+          ),
+        ),
+      ),
     );
   }
 

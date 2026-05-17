@@ -2,6 +2,7 @@ import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import '../controllers/booking_controller.dart';
 import '../../../data/models/booking_model.dart';
@@ -94,9 +95,26 @@ class BookingView extends GetView<BookingController> {
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  radius: 40,
-                  backgroundImage: NetworkImage(booking.workerImage),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(40),
+                  child: Image.network(
+                    booking.workerImage,
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 80,
+                        height: 80,
+                        color: const Color(0xFFF3F4F6),
+                        padding: const EdgeInsets.all(18),
+                        child: SvgPicture.asset(
+                          'assets/svgs/profile_icon.svg',
+                          colorFilter: const ColorFilter.mode(Color(0xFF9CA3AF), BlendMode.srcIn),
+                        ),
+                      );
+                    },
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -121,7 +139,7 @@ class BookingView extends GetView<BookingController> {
                         children: [
                           _buildStatusBadge(booking.status),
                           const Spacer(),
-                          _buildChatButton(),
+                          _buildChatButton(booking),
                         ],
                       ),
                     ],
@@ -169,19 +187,22 @@ class BookingView extends GetView<BookingController> {
     );
   }
 
-  Widget _buildChatButton() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: const Text(
-        'Chat',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
+  Widget _buildChatButton(Booking booking) {
+    return GestureDetector(
+      onTap: () => controller.onChatWithWorker(booking),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Text(
+          'Chat',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
     );

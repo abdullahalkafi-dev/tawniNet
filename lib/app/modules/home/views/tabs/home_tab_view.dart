@@ -3,6 +3,7 @@ import 'package:awnneaapp/app/modules/home/views/widgets/home_header.dart';
 import 'package:awnneaapp/app/modules/home/views/widgets/nearby_helpers.dart';
 import 'package:awnneaapp/app/modules/home/views/widgets/popular_services_section.dart';
 import 'package:awnneaapp/app/modules/home/views/widgets/quick_actions.dart';
+import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/home_controller.dart';
@@ -58,28 +59,33 @@ class HomeTabView extends GetView<HomeController> {
   }
 
   Widget _buildSearchBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return GestureDetector(
+      onTap: () => Get.toNamed(Routes.search),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey[200]!),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: IgnorePointer(
+          child: TextField(
+            readOnly: true,
+            decoration: InputDecoration(
+              icon: const Icon(Icons.search, color: Colors.grey),
+              hintText: 'Search for a service...',
+              hintStyle: AppStyles.bodyMedium.copyWith(color: Colors.grey),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 16),
+            ),
           ),
-        ],
-      ),
-      child: TextField(
-        onSubmitted: controller.onSearch,
-        decoration: InputDecoration(
-          icon: const Icon(Icons.search, color: Colors.grey),
-          hintText: 'Search for a service...',
-          hintStyle: AppStyles.bodyMedium.copyWith(color: Colors.grey),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 16),
         ),
       ),
     );

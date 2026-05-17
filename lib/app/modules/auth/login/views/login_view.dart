@@ -5,6 +5,7 @@ import '../../../../core/values/app_colors.dart';
 import '../../../../core/values/app_styles.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class LoginView extends GetView<LoginController> {
   const LoginView({super.key});
@@ -19,10 +20,7 @@ class LoginView extends GetView<LoginController> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 60),
-              Text(
-                'Login',
-                style: AppStyles.h1.copyWith(fontSize: 36),
-              ),
+              Text('Login', style: AppStyles.h1.copyWith(fontSize: 36)),
               const SizedBox(height: 8),
               Text(
                 'Sign in to my account',
@@ -54,7 +52,8 @@ class LoginView extends GetView<LoginController> {
                       Obx(
                         () => Checkbox(
                           value: controller.rememberMe.value,
-                          onChanged: (val) => controller.rememberMe.value = val ?? false,
+                          onChanged: (val) =>
+                              controller.rememberMe.value = val ?? false,
                           activeColor: AppColors.primary,
                         ),
                       ),
@@ -73,10 +72,7 @@ class LoginView extends GetView<LoginController> {
                 ],
               ),
               const SizedBox(height: 30),
-              CustomButton(
-                text: 'Login',
-                onPressed: controller.login,
-              ),
+              CustomButton(text: 'Login', onPressed: controller.login),
               const SizedBox(height: 30),
               _buildDivider(),
               const SizedBox(height: 30),
@@ -112,7 +108,10 @@ class LoginView extends GetView<LoginController> {
         const Expanded(child: Divider()),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text('OR', style: AppStyles.bodyMedium.copyWith(color: Colors.grey)),
+          child: Text(
+            'OR',
+            style: AppStyles.bodyMedium.copyWith(color: Colors.grey),
+          ),
         ),
         const Expanded(child: Divider()),
       ],
@@ -124,10 +123,7 @@ class LoginView extends GetView<LoginController> {
       text: 'Continue with Google',
       onPressed: controller.loginWithGoogle,
       isOutlined: true,
-      icon: Image.network(
-        'https://cdn1.iconfinder.com/data/icons/google_jfk_icons_by_verexis/128/google.png',
-        height: 24,
-      ),
+      icon: SvgPicture.asset('assets/svgs/google.svg', height: 24),
     );
   }
 }

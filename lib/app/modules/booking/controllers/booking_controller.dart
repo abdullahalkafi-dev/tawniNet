@@ -1,7 +1,23 @@
+import 'package:awnneaapp/app/routes/app_routes.dart';
+import 'package:awnneaapp/app/modules/messages/controllers/messages_controller.dart';
 import 'package:get/get.dart';
 import '../../../data/models/booking_model.dart';
 
 class BookingController extends GetxController {
+  void onChatWithWorker(Booking booking) {
+    Get.toNamed(
+      Routes.chatDetail,
+      arguments: ChatSummary(
+        id: booking.id,
+        name: booking.workerName,
+        image: booking.workerImage,
+        lastMessage: 'Let\'s talk about the booking.',
+        time: 'Now',
+        unreadCount: 0,
+        isOnline: true,
+      ),
+    );
+  }
   final activeBookings = <Booking>[
     Booking(
       id: '1',

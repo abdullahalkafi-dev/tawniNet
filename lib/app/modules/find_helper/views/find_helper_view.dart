@@ -1,12 +1,36 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart' show AppStyles;
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import '../controllers/find_helper_controller.dart';
 import '../../home/controllers/home_controller.dart';
 
 class FindHelperView extends GetView<FindHelperController> {
   const FindHelperView({super.key});
+
+  String _getCategorySvg(String id) {
+    switch (id) {
+      case '1':
+        return 'assets/svgs/carrying_icon.svg';
+      case '2':
+        return 'assets/svgs/cleaning_icon.svg';
+      case '3':
+        return 'assets/svgs/electrician_icon.svg';
+      case '4':
+        return 'assets/svgs/barber_icon.svg';
+      case '5':
+        return 'assets/svgs/floor_icon.svg';
+      case '6':
+        return 'assets/svgs/shifting2_icon.svg';
+      case '7':
+        return 'assets/svgs/garden_icon.svg';
+      case '8':
+        return 'assets/svgs/shifting_icon.svg';
+      default:
+        return 'assets/svgs/cleaning_icon.svg';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,57 +94,76 @@ class FindHelperView extends GetView<FindHelperController> {
   }
 
   Widget _buildCategoryGrid(HomeController homeController) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 16,
-        childAspectRatio: 0.8,
-      ),
-      itemCount: homeController.categories.length,
-      itemBuilder: (context, index) {
-        final cat = homeController.categories[index];
-        return Obx(() {
-          bool isSelected = controller.selectedCategoryIndex.value == index;
-          return GestureDetector(
-            onTap: () => controller.selectCategory(index),
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.primary.withOpacity(0.1)
-                        : Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isSelected ? AppColors.primary : Colors.grey[100]!,
-                      width: isSelected ? 2 : 1,
-                    ),
-                  ),
-                  child: Icon(
-                    cat.icon,
-                    color: isSelected ? AppColors.primary : cat.color,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double gap = 12.0;
+        final double itemWidth = (constraints.maxWidth - (gap * 3)) / 4;
+        
+        return Obx(
+          () => Wrap(
+            spacing: gap,
+            runSpacing: 20.0,
+            children: homeController.categories.map((cat) {
+              final index = homeController.categories.indexOf(cat);
+              bool isSelected = controller.selectedCategoryIndex.value == index;
+              return GestureDetector(
+                onTap: () => controller.selectCategory(index),
+                child: SizedBox(
+                  width: itemWidth,
+                  child: Column(
+                    children: [
+                      Container(
+                        height: itemWidth,
+                        decoration: BoxDecoration(
+                          color: isSelected ? const Color(0xFFF0FDF8) : Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isSelected ? AppColors.primary : const Color(0xFFE5E7EB),
+                            width: isSelected ? 1.5 : 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.01),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        alignment: Alignment.center,
+                        child: Container(
+                          width: itemWidth * 0.65,
+                          height: itemWidth * 0.65,
+                          decoration: BoxDecoration(
+                            color: isSelected ? Colors.white : const Color(0xFFF0FDF8),
+                            shape: BoxShape.circle,
+                          ),
+                          alignment: Alignment.center,
+                          child: SvgPicture.asset(
+                            _getCategorySvg(cat.id),
+                            width: 24,
+                            height: 24,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        cat.name,
+                        style: AppStyles.bodyMedium.copyWith(
+                          fontSize: 13,
+                          color: isSelected ? AppColors.primary : const Color(0xFF1F2937),
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  cat.name,
-                  style: AppStyles.bodyMedium.copyWith(
-                    fontSize: 11,
-                    color: isSelected ? AppColors.primary : Colors.black87,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          );
-        });
+              );
+            }).toList(),
+          ),
+        );
       },
     );
   }

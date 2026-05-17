@@ -20,10 +20,10 @@ class HomeView extends GetView<HomeController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Obx(() => Text(_getTitle(controller.currentIndex.value))),
-      ),
-      body: Obx(() => _pages[controller.currentIndex.value]),
+      // appBar: AppBar(
+      //   title: Obx(() => Text(_getTitle(controller.currentIndex.value))),
+      // ),
+      body: SafeArea(child: Obx(() => _pages[controller.currentIndex.value])),
       bottomNavigationBar: Obx(
         () => BottomNavigationBar(
           currentIndex: controller.currentIndex.value,

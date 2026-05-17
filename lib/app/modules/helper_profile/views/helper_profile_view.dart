@@ -1,6 +1,7 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import '../controllers/helper_profile_controller.dart';
 
@@ -59,10 +60,25 @@ class HelperProfileView extends GetView<HelperProfileController> {
               color: Colors.amber,
               shape: BoxShape.circle,
             ),
-            child: const CircleAvatar(
-              radius: 50,
-              backgroundImage: NetworkImage(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(50),
+              child: Image.network(
                 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
+                width: 100,
+                height: 100,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 100,
+                    height: 100,
+                    color: const Color(0xFFF3F4F6),
+                    padding: const EdgeInsets.all(20),
+                    child: SvgPicture.asset(
+                      'assets/svgs/profile_icon.svg',
+                      colorFilter: const ColorFilter.mode(Color(0xFF9CA3AF), BlendMode.srcIn),
+                    ),
+                  );
+                },
               ),
             ),
           ),
@@ -142,30 +158,42 @@ class HelperProfileView extends GetView<HelperProfileController> {
   }
 
   Widget _buildAboutMe() {
+    const fullText =
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.';
+    const truncatedText =
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam. ';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('About me', style: AppStyles.h2.copyWith(fontSize: 20)),
         const SizedBox(height: 12),
-        RichText(
-          text: TextSpan(
-            style: AppStyles.bodyMedium.copyWith(
-              height: 1.5,
-              color: Colors.grey[600],
-            ),
-            children: [
-              const TextSpan(
-                text:
-                    'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam. ',
+        Obx(
+          () => RichText(
+            text: TextSpan(
+              style: AppStyles.bodyMedium.copyWith(
+                height: 1.5,
+                color: Colors.grey[600],
               ),
-              TextSpan(
-                text: 'Read more...',
-                style: AppStyles.bodyMedium.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
+              children: [
+                TextSpan(
+                  text: controller.isAboutMeExpanded.value ? fullText : truncatedText,
                 ),
-              ),
-            ],
+                WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
+                  child: GestureDetector(
+                    onTap: controller.toggleAboutMeExpanded,
+                    child: Text(
+                      controller.isAboutMeExpanded.value ? ' Read less' : 'Read more...',
+                      style: AppStyles.bodyMedium.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -196,9 +224,24 @@ class HelperProfileView extends GetView<HelperProfileController> {
           ),
           itemCount: images.length,
           itemBuilder: (context, index) {
+            final fallbackImages = [
+              'assets/images/onboarding_1.png',
+              'assets/images/onboarding_2.png',
+              'assets/images/onboarding_3.png',
+              'assets/images/select_role.png',
+            ];
             return ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: Image.network(images[index], fit: BoxFit.cover),
+              child: Image.network(
+                images[index],
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Image.asset(
+                    fallbackImages[index % fallbackImages.length],
+                    fit: BoxFit.cover,
+                  );
+                },
+              ),
             );
           },
         ),

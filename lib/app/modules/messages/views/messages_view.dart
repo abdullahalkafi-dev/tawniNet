@@ -1,6 +1,7 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import '../controllers/messages_controller.dart';
 
@@ -14,29 +15,60 @@ class MessagesView extends GetView<MessagesController> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: Text(
-          'Messages',
-          style: AppStyles.h1.copyWith(
-            fontSize: 24,
-            color: const Color(0xFF1F2A37),
-          ),
-        ),
+        title: Obx(() {
+          if (controller.isSearching.value) {
+            return TextField(
+              autofocus: true,
+              style: const TextStyle(color: Colors.black, fontSize: 16),
+              decoration: const InputDecoration(
+                hintText: 'Search chats...',
+                hintStyle: TextStyle(color: Colors.grey),
+                border: InputBorder.none,
+              ),
+              onChanged: (value) => controller.searchQuery.value = value,
+            );
+          }
+          return Text(
+            'Messages',
+            style: AppStyles.h1.copyWith(
+              fontSize: 24,
+              color: const Color(0xFF1F2A37),
+            ),
+          );
+        }),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.black),
-            onPressed: () {},
-          ),
+          Obx(() {
+            if (controller.isSearching.value) {
+              return IconButton(
+                icon: const Icon(Icons.close, color: Colors.black),
+                onPressed: () {
+                  controller.isSearching.value = false;
+                  controller.searchQuery.value = '';
+                },
+              );
+            }
+            return IconButton(
+              icon: const Icon(Icons.search, color: Colors.black),
+              onPressed: () {
+                controller.isSearching.value = true;
+              },
+            );
+          }),
           const SizedBox(width: 8),
         ],
       ),
       body: Obx(() {
+        final list = controller.filteredChats;
+        if (list.isEmpty) {
+          return const Center(child: Text('No messages found'));
+        }
         return ListView.separated(
           padding: const EdgeInsets.symmetric(vertical: 10),
-          itemCount: controller.chats.length,
+          itemCount: list.length,
           separatorBuilder: (context, index) =>
               const Divider(height: 1, indent: 80),
           itemBuilder: (context, index) {
-            return _buildChatItem(controller.chats[index]);
+            return _buildChatItem(list[index]);
           },
         );
       }),
@@ -49,7 +81,27 @@ class MessagesView extends GetView<MessagesController> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       leading: Stack(
         children: [
-          CircleAvatar(radius: 28, backgroundImage: NetworkImage(chat.image)),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: Image.network(
+              chat.image,
+              width: 56,
+              height: 56,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  width: 56,
+                  height: 56,
+                  color: const Color(0xFFF3F4F6),
+                  padding: const EdgeInsets.all(12),
+                  child: SvgPicture.asset(
+                    'assets/svgs/profile_icon.svg',
+                    colorFilter: const ColorFilter.mode(Color(0xFF9CA3AF), BlendMode.srcIn),
+                  ),
+                );
+              },
+            ),
+          ),
           if (chat.isOnline)
             Positioned(
               right: 2,
