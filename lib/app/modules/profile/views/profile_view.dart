@@ -29,13 +29,49 @@ class ProfileView extends GetView<ProfileController> {
           children: [
             _buildProfileHeader(),
             const SizedBox(height: 40),
-            _buildProfileOption(context, Icons.person_outline, 'Edit Profile', onTap: () => Get.toNamed(Routes.editProfile)),
-            _buildProfileOption(context, Icons.notifications_none, 'Notification', onTap: () => Get.toNamed(Routes.notificationSettings)),
-            _buildProfileOption(context, Icons.payment, 'Payment', onTap: () => _showPaymentBottomSheet(context)),
-            _buildProfileOption(context, Icons.lock_outline, 'Privacy Policy', onTap: () => _showPrivacyPolicyBottomSheet(context)),
-            _buildProfileOption(context, Icons.help_outline, 'About US', onTap: () => _showAboutUsBottomSheet(context)),
-            _buildProfileOption(context, Icons.headset_mic_outlined, 'Help & Support', onTap: () => _showHelpSupportBottomSheet(context)),
-            _buildProfileOption(context, Icons.logout, 'Logout', isLogout: true, onTap: () => Get.offAllNamed(Routes.login)),
+            _buildProfileOption(
+              context,
+              Icons.person_outline,
+              'Edit Profile',
+              onTap: () => Get.toNamed(Routes.editProfile),
+            ),
+            _buildProfileOption(
+              context,
+              Icons.notifications_none,
+              'Notification',
+              onTap: () => Get.toNamed(Routes.notificationSettings),
+            ),
+            _buildProfileOption(
+              context,
+              Icons.payment,
+              'Payment',
+              onTap: () => _showPaymentBottomSheet(context),
+            ),
+            _buildProfileOption(
+              context,
+              Icons.lock_outline,
+              'Privacy Policy',
+              onTap: () => _showPrivacyPolicyBottomSheet(context),
+            ),
+            _buildProfileOption(
+              context,
+              Icons.help_outline,
+              'About US',
+              onTap: () => _showAboutUsBottomSheet(context),
+            ),
+            _buildProfileOption(
+              context,
+              Icons.headset_mic_outlined,
+              'Help & Support',
+              onTap: () => _showHelpSupportBottomSheet(context),
+            ),
+            _buildProfileOption(
+              context,
+              Icons.logout,
+              'Logout',
+              isLogout: true,
+              onTap: () => Get.offAllNamed(Routes.login),
+            ),
             const SizedBox(height: 40),
           ],
         ),
@@ -75,7 +111,10 @@ class ProfileView extends GetView<ProfileController> {
                           padding: const EdgeInsets.all(32),
                           child: SvgPicture.asset(
                             'assets/svgs/profile_icon.svg',
-                            colorFilter: const ColorFilter.mode(Color(0xFF9CA3AF), BlendMode.srcIn),
+                            colorFilter: const ColorFilter.mode(
+                              Color(0xFF9CA3AF),
+                              BlendMode.srcIn,
+                            ),
                           ),
                         );
                       },
@@ -91,7 +130,11 @@ class ProfileView extends GetView<ProfileController> {
                       color: Color(0xFF5AB9A7),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.edit, color: Colors.white, size: 18),
+                    child: const Icon(
+                      Icons.edit,
+                      color: Colors.white,
+                      size: 18,
+                    ),
                   ),
                 ),
               ],
@@ -169,12 +212,25 @@ class ProfileView extends GetView<ProfileController> {
             const SizedBox(height: 20),
             Text(
               'Payment Methods',
-              style: AppStyles.h2.copyWith(fontSize: 20, color: const Color(0xFF1F2937)),
+              style: AppStyles.h2.copyWith(
+                fontSize: 20,
+                color: const Color(0xFF1F2937),
+              ),
             ),
             const SizedBox(height: 20),
-            _buildPaymentCardTile('Visa ending in 4242', 'Expires 12/28', Icons.credit_card, true),
-            _buildPaymentCardTile('Mastercard ending in 9876', 'Expires 05/27', Icons.credit_card, false),
-            _buildPaymentCardTile('Apple Pay', 'Connected', Icons.apple_global, false),
+            _buildPaymentCardTile(
+              'Visa ending in 4242',
+              'Expires 12/28',
+              Icons.credit_card,
+              true,
+            ),
+            _buildPaymentCardTile(
+              'Mastercard ending in 9876',
+              'Expires 05/27',
+              Icons.credit_card,
+              false,
+            ),
+            _buildPaymentCardTile('Apple Pay', 'Connected', Icons.apple, false),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
@@ -182,11 +238,16 @@ class ProfileView extends GetView<ProfileController> {
               child: ElevatedButton.icon(
                 onPressed: () {},
                 icon: const Icon(Icons.add, size: 20),
-                label: const Text('Add New Card', style: TextStyle(fontWeight: FontWeight.bold)),
+                label: const Text(
+                  'Add New Card',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF5AB9A7),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   elevation: 0,
                 ),
               ),
@@ -197,7 +258,12 @@ class ProfileView extends GetView<ProfileController> {
     );
   }
 
-  Widget _buildPaymentCardTile(String name, String details, IconData icon, bool isDefault) {
+  Widget _buildPaymentCardTile(
+    String name,
+    String details,
+    IconData icon,
+    bool isDefault,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -214,8 +280,17 @@ class ProfileView extends GetView<ProfileController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                Text(details, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                Text(
+                  details,
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
               ],
             ),
           ),
@@ -226,7 +301,14 @@ class ProfileView extends GetView<ProfileController> {
                 color: const Color(0xFFE5F7F5),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Text('Default', style: TextStyle(color: Color(0xFF5AB9A7), fontSize: 10, fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Default',
+                style: TextStyle(
+                  color: Color(0xFF5AB9A7),
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
         ],
       ),
@@ -258,7 +340,10 @@ class ProfileView extends GetView<ProfileController> {
             const SizedBox(height: 20),
             Text(
               'Privacy Policy',
-              style: AppStyles.h2.copyWith(fontSize: 20, color: const Color(0xFF1F2937)),
+              style: AppStyles.h2.copyWith(
+                fontSize: 20,
+                color: const Color(0xFF1F2937),
+              ),
             ),
             const SizedBox(height: 16),
             Expanded(
@@ -273,32 +358,53 @@ class ProfileView extends GetView<ProfileController> {
                     const SizedBox(height: 16),
                     const Text(
                       '1. Information We Collect',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1F2937)),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Color(0xFF1F2937),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'We collect information you provide directly to us when creating or modifying your account, requesting on-demand services, contacting support, or otherwise communicating with us. This info includes name, email, phone number, profile photo, payment method, and details of services requested.',
-                      style: AppStyles.bodyMedium.copyWith(color: const Color(0xFF4B5563), height: 1.5),
+                      style: AppStyles.bodyMedium.copyWith(
+                        color: const Color(0xFF4B5563),
+                        height: 1.5,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     const Text(
                       '2. How We Use the Information',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1F2937)),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Color(0xFF1F2937),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'We use the information we collect to provide, maintain, and improve our Services, including facilitating payments, sending receipts, providing products and services you request, and enabling communications between you and helpers.',
-                      style: AppStyles.bodyMedium.copyWith(color: const Color(0xFF4B5563), height: 1.5),
+                      style: AppStyles.bodyMedium.copyWith(
+                        color: const Color(0xFF4B5563),
+                        height: 1.5,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     const Text(
                       '3. Data Sharing & Security',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1F2937)),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: Color(0xFF1F2937),
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'We do not sell your personal data. We share details with workers to facilitate service delivery. We utilize standard industry firewalls and SSL encryption to safeguard data privacy.',
-                      style: AppStyles.bodyMedium.copyWith(color: const Color(0xFF4B5563), height: 1.5),
+                      style: AppStyles.bodyMedium.copyWith(
+                        color: const Color(0xFF4B5563),
+                        height: 1.5,
+                      ),
                     ),
                   ],
                 ),
@@ -313,10 +419,15 @@ class ProfileView extends GetView<ProfileController> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF5AB9A7),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   elevation: 0,
                 ),
-                child: const Text('Accept & Close', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: const Text(
+                  'Accept & Close',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ],
@@ -346,11 +457,18 @@ class ProfileView extends GetView<ProfileController> {
               ),
             ),
             const SizedBox(height: 20),
-            const Icon(Icons.home_repair_service, size: 50, color: Color(0xFF5AB9A7)),
+            const Icon(
+              Icons.home_repair_service,
+              size: 50,
+              color: Color(0xFF5AB9A7),
+            ),
             const SizedBox(height: 12),
             Text(
               'About Awnnea',
-              style: AppStyles.h2.copyWith(fontSize: 20, color: const Color(0xFF1F2937)),
+              style: AppStyles.h2.copyWith(
+                fontSize: 20,
+                color: const Color(0xFF1F2937),
+              ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -363,7 +481,10 @@ class ProfileView extends GetView<ProfileController> {
               child: Text(
                 'Awnnea is the #1 on-demand household helper platform. We connect verified professionals with users seeking high-quality repairs, cleaning, shifting, and shifting services. Founded on trust, reliability, and modern efficiency.',
                 textAlign: TextAlign.center,
-                style: AppStyles.bodyMedium.copyWith(color: const Color(0xFF4B5563), height: 1.5),
+                style: AppStyles.bodyMedium.copyWith(
+                  color: const Color(0xFF4B5563),
+                  height: 1.5,
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -403,30 +524,48 @@ class ProfileView extends GetView<ProfileController> {
             const SizedBox(height: 20),
             Text(
               'Help & Support',
-              style: AppStyles.h2.copyWith(fontSize: 20, color: const Color(0xFF1F2937)),
+              style: AppStyles.h2.copyWith(
+                fontSize: 20,
+                color: const Color(0xFF1F2937),
+              ),
             ),
             const SizedBox(height: 20),
-            _buildSupportTile('Contact via Live Chat', 'Typical reply under 5 mins', Icons.chat_bubble_outline, () {
-              Get.back();
-              Get.toNamed(
-                Routes.chatDetail,
-                arguments: ChatSummary(
-                  id: 'support_agent',
-                  name: 'Awnnea Support Agent',
-                  image: 'https://i.pravatar.cc/150?u=support',
-                  lastMessage: 'How can I assist you today?',
-                  time: 'Now',
-                  unreadCount: 0,
-                  isOnline: true,
-                ),
-              );
-            }),
-            _buildSupportTile('Email Support', 'support@awnnea.com', Icons.email_outlined, () {
-              print('Email support clicked');
-            }),
-            _buildSupportTile('Call Hotline', '+1 (800) 555-0199', Icons.phone_outlined, () {
-              print('Phone support clicked');
-            }),
+            _buildSupportTile(
+              'Contact via Live Chat',
+              'Typical reply under 5 mins',
+              Icons.chat_bubble_outline,
+              () {
+                Get.back();
+                Get.toNamed(
+                  Routes.chatDetail,
+                  arguments: ChatSummary(
+                    id: 'support_agent',
+                    name: 'Awnnea Support Agent',
+                    image: 'https://i.pravatar.cc/150?u=support',
+                    lastMessage: 'How can I assist you today?',
+                    time: 'Now',
+                    unreadCount: 0,
+                    isOnline: true,
+                  ),
+                );
+              },
+            ),
+            _buildSupportTile(
+              'Email Support',
+              'support@awnnea.com',
+              Icons.email_outlined,
+              () {
+                print('Email support clicked');
+              },
+            ),
+            _buildSupportTile(
+              'Call Hotline',
+              '+1 (800) 555-0199',
+              Icons.phone_outlined,
+              () {
+                print('Phone support clicked');
+              },
+            ),
             const SizedBox(height: 10),
           ],
         ),
@@ -434,7 +573,12 @@ class ProfileView extends GetView<ProfileController> {
     );
   }
 
-  Widget _buildSupportTile(String title, String subtitle, IconData icon, VoidCallback onTap) {
+  Widget _buildSupportTile(
+    String title,
+    String subtitle,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -445,9 +589,19 @@ class ProfileView extends GetView<ProfileController> {
       child: ListTile(
         onTap: onTap,
         leading: Icon(icon, color: const Color(0xFF5AB9A7)),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        subtitle: Text(subtitle, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(color: Colors.grey, fontSize: 12),
+        ),
+        trailing: const Icon(
+          Icons.arrow_forward_ios,
+          size: 14,
+          color: Colors.grey,
+        ),
       ),
     );
   }
