@@ -43,3 +43,59 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE and Editor related
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+.idea/
+*.code-workspace
+*.sublime-workspace
+*.sublime-project
+
+# OS specific
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Build and generated files
+*.apk
+*.app
+*.ipa
+*.aar
+*.jar
+*.aab
+app.*.map.json
+app.*.symbols
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# Database files (if using local SQLite)
+*.db
+*.sqlite
+*.sqlite3
+
+# Log files
+*.log
+logs/
+npm-debug.log*
+
+# Node modules (if using any frontend tools)
+node_modules/
+
+# Dependencies
+.packages
+pubspec.lock
+
+# Misc
+.DS_Store
+local.properties

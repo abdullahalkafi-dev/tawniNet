@@ -11,13 +11,19 @@ class SignupController extends GetxController {
   final isPasswordVisible = false.obs;
   final isConfirmPasswordVisible = false.obs;
 
+  String get _role => Get.arguments?['role'] ?? 'user';
+
   void togglePasswordVisibility() =>
       isPasswordVisible.value = !isPasswordVisible.value;
   void toggleConfirmPasswordVisibility() =>
       isConfirmPasswordVisible.value = !isConfirmPasswordVisible.value;
 
   void signup() {
-    Get.offAllNamed(Routes.home);
+    if (_role == 'helper') {
+      Get.toNamed(Routes.applyAsHelper);
+    } else {
+      Get.offAllNamed(Routes.home);
+    }
   }
 
   void signupWithGoogle() {

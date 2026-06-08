@@ -35,6 +35,42 @@ import '../modules/booking/views/cancel_details_view.dart';
 import '../modules/messages/views/chat_detail_view.dart';
 import '../modules/profile/views/edit_profile_view.dart';
 import '../modules/profile/views/notification_settings_view.dart';
+
+// Helper module imports
+import '../modules/helper/location/bindings/location_binding.dart';
+import '../modules/helper/location/views/location_allow_view.dart';
+import '../modules/helper/location/views/manual_location_view.dart';
+import '../modules/helper/apply/bindings/apply_helper_binding.dart';
+import '../modules/helper/apply/views/apply_helper_view.dart';
+import '../modules/helper/apply/views/application_pending_view.dart';
+import '../modules/helper/apply/views/application_rejected_view.dart';
+import '../modules/helper/helper_home/bindings/helper_home_binding.dart';
+import '../modules/helper/helper_home/views/helper_home_view.dart';
+import '../modules/helper/helper_home/views/helper_job_details_view.dart';
+import '../modules/helper/helper_jobs/bindings/helper_jobs_binding.dart';
+import '../modules/helper/helper_jobs/views/active_job_details_view.dart';
+import '../modules/helper/helper_jobs/views/completed_job_details_view.dart';
+import '../modules/helper/helper_jobs/views/cancel_details_view.dart' as helper_cancel;
+import '../modules/helper/helper_jobs/views/rate_client_view.dart';
+import '../modules/helper/profile/bindings/helper_profile_binding.dart' as helper_profile;
+import '../modules/helper/profile/views/helper_edit_profile_view.dart';
+import '../modules/helper/profile/views/helper_public_profile_view.dart';
+import '../modules/helper/profile/views/earning_view.dart';
+import '../modules/helper/profile/views/earning_summary_view.dart';
+import '../modules/helper/profile/views/add_card_view.dart';
+import '../modules/helper/profile/views/connects_view.dart';
+import '../modules/helper/profile/views/buy_connects_view.dart';
+import '../modules/helper/profile/views/connects_history_view.dart';
+import '../modules/helper/settings/bindings/helper_settings_binding.dart';
+import '../modules/helper/settings/views/helper_notification_view.dart';
+import '../modules/helper/settings/views/helper_notification_settings_view.dart';
+import '../modules/helper/settings/views/help_center_view.dart';
+import '../modules/helper/settings/views/privacy_policy_view.dart';
+import '../modules/helper/settings/views/about_us_view.dart';
+import '../modules/helper/settings/views/customer_service_view.dart';
+import '../modules/helper/helper_messages/bindings/helper_messages_binding.dart';
+import '../modules/helper/helper_messages/views/helper_chat_detail_view.dart';
+
 import 'app_routes.dart';
 
 class AppPages {
@@ -164,6 +200,164 @@ class AppPages {
       name: Routes.notificationSettings,
       page: () => const NotificationSettingsView(),
       binding: HomeBinding(),
+      transition: Transition.rightToLeft,
+    ),
+
+    // Helper routes
+    GetPage(
+      name: Routes.locationAllow,
+      page: () => const LocationAllowView(),
+      binding: LocationBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.manualLocation,
+      page: () => const ManualLocationView(),
+      binding: LocationBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.applyAsHelper,
+      page: () => const ApplyHelperView(),
+      binding: ApplyHelperBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.applicationPending,
+      page: () => const ApplicationPendingView(),
+      binding: ApplyHelperBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.applicationRejected,
+      page: () => const ApplicationRejectedView(),
+      binding: ApplyHelperBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.helperHome,
+      page: () => HelperHomeView(),
+      binding: HelperHomeBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: Routes.helperJobDetails,
+      page: () => const HelperJobDetailsView(),
+      binding: HelperHomeBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.activeJobDetails,
+      page: () => const ActiveJobDetailsView(),
+      binding: HelperJobsBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.completedJobDetails,
+      page: () => const CompletedJobDetailsView(),
+      binding: HelperJobsBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.helperCancelDetails,
+      page: () => const helper_cancel.HelperCancelDetailsView(),
+      binding: HelperJobsBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.rateClient,
+      page: () => const RateClientView(),
+      binding: HelperJobsBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.helperEditProfile,
+      page: () => const HelperEditProfileView(),
+      binding: helper_profile.HelperProfileBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.helperPublicProfile,
+      page: () => const HelperPublicProfileView(),
+      binding: helper_profile.HelperProfileBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.helperEarning,
+      page: () => const EarningView(),
+      binding: helper_profile.HelperProfileBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.helperEarningSummary,
+      page: () => const EarningSummaryView(),
+      binding: helper_profile.HelperProfileBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.addCard,
+      page: () => const AddCardView(),
+      binding: helper_profile.HelperProfileBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.helperConnects,
+      page: () => const ConnectsView(),
+      binding: helper_profile.HelperProfileBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.buyConnects,
+      page: () => const BuyConnectsView(),
+      binding: helper_profile.HelperProfileBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.connectsHistory,
+      page: () => const ConnectsHistoryView(),
+      binding: helper_profile.HelperProfileBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.helperNotifications,
+      page: () => const HelperNotificationView(),
+      binding: HelperSettingsBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.helperNotificationSettings,
+      page: () => const HelperNotificationSettingsView(),
+      binding: HelperSettingsBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.helpCenter,
+      page: () => const HelpCenterView(),
+      binding: HelperSettingsBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.privacyPolicy,
+      page: () => const PrivacyPolicyView(),
+      binding: HelperSettingsBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.aboutUs,
+      page: () => const AboutUsView(),
+      binding: HelperSettingsBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.customerService,
+      page: () => const CustomerServiceView(),
+      binding: HelperSettingsBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.helperChatDetail,
+      page: () => const HelperChatDetailView(),
+      binding: HelperMessagesBinding(),
       transition: Transition.rightToLeft,
     ),
   ];

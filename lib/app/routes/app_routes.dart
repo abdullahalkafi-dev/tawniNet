@@ -21,6 +21,34 @@ abstract class Routes {
   static const chatDetail = _Paths.chatDetail;
   static const editProfile = _Paths.editProfile;
   static const notificationSettings = _Paths.notificationSettings;
+
+  // Helper routes
+  static const locationAllow = _Paths.locationAllow;
+  static const manualLocation = _Paths.manualLocation;
+  static const applyAsHelper = _Paths.applyAsHelper;
+  static const applicationPending = _Paths.applicationPending;
+  static const applicationRejected = _Paths.applicationRejected;
+  static const helperHome = _Paths.helperHome;
+  static const helperJobDetails = _Paths.helperJobDetails;
+  static const activeJobDetails = _Paths.activeJobDetails;
+  static const completedJobDetails = _Paths.completedJobDetails;
+  static const helperCancelDetails = _Paths.helperCancelDetails;
+  static const rateClient = _Paths.rateClient;
+  static const helperEditProfile = _Paths.helperEditProfile;
+  static const helperPublicProfile = _Paths.helperPublicProfile;
+  static const helperEarning = _Paths.helperEarning;
+  static const helperEarningSummary = _Paths.helperEarningSummary;
+  static const addCard = _Paths.addCard;
+  static const helperConnects = _Paths.helperConnects;
+  static const buyConnects = _Paths.buyConnects;
+  static const connectsHistory = _Paths.connectsHistory;
+  static const helperNotifications = _Paths.helperNotifications;
+  static const helperNotificationSettings = _Paths.helperNotificationSettings;
+  static const helpCenter = _Paths.helpCenter;
+  static const privacyPolicy = _Paths.privacyPolicy;
+  static const aboutUs = _Paths.aboutUs;
+  static const customerService = _Paths.customerService;
+  static const helperChatDetail = _Paths.helperChatDetail;
 }
 
 abstract class _Paths {
@@ -46,4 +74,32 @@ abstract class _Paths {
   static const chatDetail = '/chat-detail';
   static const editProfile = '/edit-profile';
   static const notificationSettings = '/notification-settings';
+
+  // Helper paths
+  static const locationAllow = '/location-allow';
+  static const manualLocation = '/manual-location';
+  static const applyAsHelper = '/apply-as-helper';
+  static const applicationPending = '/application-pending';
+  static const applicationRejected = '/application-rejected';
+  static const helperHome = '/helper-home';
+  static const helperJobDetails = '/helper-job-details';
+  static const activeJobDetails = '/active-job-details';
+  static const completedJobDetails = '/completed-job-details';
+  static const helperCancelDetails = '/helper-cancel-details';
+  static const rateClient = '/rate-client';
+  static const helperEditProfile = '/helper-edit-profile';
+  static const helperPublicProfile = '/helper-public-profile';
+  static const helperEarning = '/helper-earning';
+  static const helperEarningSummary = '/helper-earning-summary';
+  static const addCard = '/add-card';
+  static const helperConnects = '/helper-connects';
+  static const buyConnects = '/buy-connects';
+  static const connectsHistory = '/connects-history';
+  static const helperNotifications = '/helper-notifications';
+  static const helperNotificationSettings = '/helper-notification-settings';
+  static const helpCenter = '/help-center';
+  static const privacyPolicy = '/privacy-policy';
+  static const aboutUs = '/about-us';
+  static const customerService = '/customer-service';
+  static const helperChatDetail = '/helper-chat-detail';
 }
