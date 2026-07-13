@@ -1,7 +1,6 @@
 import 'package:get/get.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
-import 'package:awnneaapp/app/services/socket_service.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/data/models/message_model.dart';
 
@@ -93,21 +92,18 @@ class MessagesController extends GetxController {
   /// Start or get existing conversation with a user/helper.
   Future<ChatConversation?> startConversation(String participantId) async {
     try {
-      final response = await _api.post<ChatConversation>(
+      final response = await _api.post<dynamic>(
         ApiConstants.chatConversations,
         data: {'participantId': participantId},
-        fromData: (data) {
-          if (data is Map<String, dynamic>) {
-            return ChatConversation.fromJson(data);
-          }
-          return null;
-        },
       );
 
       if (response.success && response.data != null) {
-        // Refresh conversation list
-        await fetchConversations();
-        return response.data;
+        final data = response.data;
+        if (data is Map<String, dynamic>) {
+          final conversation = ChatConversation.fromJson(data);
+          await fetchConversations();
+          return conversation;
+        }
       }
     } catch (e) {
       // Silent fail
@@ -116,7 +112,7 @@ class MessagesController extends GetxController {
   }
 
   /// Get the current user ID.
-  String? get currentUserId => _authService.currentUser?.id;
+  String? get currentUserId => _authService.currentUser.value?.id;
 
   /// Format time for display.
   String _formatTime(DateTime dateTime) {

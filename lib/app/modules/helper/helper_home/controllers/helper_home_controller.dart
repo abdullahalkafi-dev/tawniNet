@@ -68,16 +68,17 @@ class HelperHomeController extends GetxController {
     Get.toNamed(Routes.helperJobDetails, arguments: job);
   }
 
-  void onJobChat(HelperJob job) {
-    Get.toNamed(Routes.helperChatDetail, arguments: ChatSummary(
-      id: job.id,
-      name: job.helperName,
-      image: job.helperImage,
-      lastMessage: '',
-      time: 'Now',
-      unreadCount: 0,
-      isOnline: true,
-    ));
+  Future<void> onJobChat(HelperJob job) async {
+    final messagesController = Get.find<MessagesController>();
+    final conversation = await messagesController.startConversation(job.postedByUserId);
+    if (conversation != null) {
+      final other = conversation.otherParticipant;
+      Get.toNamed(Routes.helperChatDetail, arguments: ChatSummary(
+        id: conversation.id,
+        name: other?.name ?? job.helperName,
+        image: other?.avatar ?? job.helperImage,
+      ));
+    }
   }
 
   void onNotificationTap() {

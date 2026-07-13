@@ -25,7 +25,7 @@ class ChatDetailController extends GetxController {
   String? _otherParticipantId;
   Timer? _typingTimer;
 
-  String? get currentUserId => _authService.currentUser?.id;
+  String? get currentUserId => _authService.currentUser.value?.id;
 
   @override
   void onInit() {
@@ -199,7 +199,7 @@ class ChatDetailController extends GetxController {
     if (_conversationId == null) return;
 
     try {
-      final response = await _api.post<ChatMessage>(
+      final response = await _api.post<dynamic>(
         ApiConstants.chatOffer(_conversationId!),
         data: {
           'title': title,
@@ -211,17 +211,14 @@ class ChatDetailController extends GetxController {
           'paymentMethod': paymentMethod,
           if (images != null) 'images': images,
         },
-        fromData: (data) {
-          if (data is Map<String, dynamic>) {
-            return ChatMessage.fromJson(data);
-          }
-          return null;
-        },
       );
 
       if (response.success && response.data != null) {
-        messages.add(response.data!.copyWith(isSentByMe: true));
-        _scrollToBottom();
+        final data = response.data;
+        if (data is Map<String, dynamic>) {
+          messages.add(ChatMessage.fromJson(data).copyWith(isSentByMe: true));
+          _scrollToBottom();
+        }
       }
     } catch (e) {
       // Handle error

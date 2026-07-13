@@ -390,7 +390,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
   }
 
   Widget _buildOfferMessage(ChatMessage message, bool isSent) {
-    final currentUserId = Get.find<AuthService>().currentUser?.id;
+    final currentUserId = Get.find<AuthService>().currentUser.value?.id;
     final isHelper = message.senderId == currentUserId;
 
     return Padding(

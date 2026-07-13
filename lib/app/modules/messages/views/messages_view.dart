@@ -20,8 +20,8 @@ class MessagesView extends GetView<MessagesController> {
             return TextField(
               autofocus: true,
               style: const TextStyle(color: Colors.black, fontSize: 16),
-              decoration: const InputDecoration(
-                hintText: 'Search chats...',
+              decoration: InputDecoration(
+                hintText: 'messages_search'.tr,
                 hintStyle: TextStyle(color: Colors.grey),
                 border: InputBorder.none,
               ),
@@ -29,7 +29,7 @@ class MessagesView extends GetView<MessagesController> {
             );
           }
           return Text(
-            'Messages',
+            'messages_title'.tr,
             style: AppStyles.h1.copyWith(
               fontSize: 24,
               color: const Color(0xFF1F2A37),
@@ -58,20 +58,60 @@ class MessagesView extends GetView<MessagesController> {
         ],
       ),
       body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
         final list = controller.filteredChats;
         if (list.isEmpty) {
-          return const Center(child: Text('No messages found'));
+          return _buildEmptyState();
         }
-        return ListView.separated(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          itemCount: list.length,
-          separatorBuilder: (context, index) =>
-              const Divider(height: 1, indent: 80),
-          itemBuilder: (context, index) {
-            return _buildChatItem(list[index]);
-          },
+
+        return RefreshIndicator(
+          onRefresh: controller.refreshData,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            itemCount: list.length,
+            separatorBuilder: (context, index) =>
+                const Divider(height: 1, indent: 80),
+            itemBuilder: (context, index) {
+              return _buildChatItem(list[index]);
+            },
+          ),
         );
       }),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.chat_bubble_outline,
+            size: 80,
+            color: Colors.grey[300],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'No conversations yet',
+            style: AppStyles.h2.copyWith(
+              color: Colors.grey[600],
+              fontSize: 18,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Start a conversation with a helper\nfrom their profile or job details',
+            textAlign: TextAlign.center,
+            style: AppStyles.bodyMedium.copyWith(
+              color: Colors.grey[400],
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -121,9 +161,12 @@ class MessagesView extends GetView<MessagesController> {
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            chat.name,
-            style: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+          Expanded(
+            child: Text(
+              chat.name,
+              style: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
           Text(
             chat.time,

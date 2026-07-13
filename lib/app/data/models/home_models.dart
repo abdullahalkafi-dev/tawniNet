@@ -48,6 +48,7 @@ class HelperJob {
   final String id;
   final String helperName;
   final String helperImage;
+  final String postedByUserId;
   final String timeAgo;
   final String category;
   final String title;
@@ -64,6 +65,7 @@ class HelperJob {
     required this.id,
     required this.helperName,
     required this.helperImage,
+    required this.postedByUserId,
     required this.timeAgo,
     required this.category,
     required this.title,
@@ -89,7 +91,9 @@ class HelperJob {
     // Helper info from postedBy or top-level
     String avatarUrl = 'https://i.pravatar.cc/150';
     String helperName = 'Helper';
+    String postedByUserId = '';
     if (json['postedBy'] is Map) {
+      postedByUserId = json['postedBy']['_id'] ?? '';
       helperName = json['postedBy']['name'] ?? 'Helper';
       if (json['postedBy']['avatar'] != null && (json['postedBy']['avatar'] as String).isNotEmpty) {
         avatarUrl = json['postedBy']['avatar'];
@@ -108,6 +112,7 @@ class HelperJob {
       id: json['_id'] ?? '',
       helperName: helperName,
       helperImage: avatarUrl,
+      postedByUserId: postedByUserId,
       timeAgo: _formatDate(json['createdAt']),
       category: category,
       title: json['title'] ?? 'Available for hire',
