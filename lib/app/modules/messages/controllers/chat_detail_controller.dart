@@ -283,10 +283,6 @@ class ChatDetailController extends GetxController {
       }
     }
   }
-        }
-      }
-    } catch (_) {}
-  }
 
   /// Send a service offer.
   Future<void> sendOffer({
