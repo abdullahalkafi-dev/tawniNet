@@ -5,8 +5,10 @@ import 'package:awnneaapp/app/modules/messages/controllers/messages_controller.d
 import 'package:awnneaapp/app/modules/messages/controllers/chat_detail_controller.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/offer_card_widget.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/offer_form_bottom_sheet.dart';
+import 'package:awnneaapp/app/modules/messages/views/widgets/upload_progress_dialog.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
+import 'package:awnneaapp/app/services/video_compressor.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
@@ -606,34 +608,53 @@ class _ChatDetailViewState extends State<ChatDetailView> {
 
     if (pickedFile == null) return;
 
-    try {
-      final file = File(pickedFile.path);
-      final fileBytes = await file.length();
+    final uploadProgress = 0.0.obs;
+    final uploadStatus = 'Compressing video...'.obs;
 
-      // Check file size (400MB limit)
+    try {
+      // Compress video
+      final compressed = await VideoCompressor.compress(pickedFile.path);
+      final file = compressed ?? File(pickedFile.path);
+
+      // Check compressed file size (400MB limit)
+      final fileBytes = await file.length();
       if (fileBytes > 400 * 1024 * 1024) {
         Get.snackbar('Error', 'Video must be under 400MB',
             snackPosition: SnackPosition.BOTTOM);
         return;
       }
 
+      // Show progress dialog
+      UploadProgressDialog.show(progress: uploadProgress, status: uploadStatus);
+
+      // Upload with progress
+      uploadStatus.value = 'Uploading video...';
       final api = Get.find<ApiClient>();
       final formData = dio.FormData.fromMap({
-        'file': await dio.MultipartFile.fromFile(pickedFile.path),
+        'file': await dio.MultipartFile.fromFile(file.path),
       });
 
       final response = await api.upload<dynamic>(
-        ApiConstants.uploadImage,
+        ApiConstants.uploadVideo,
         formData: formData,
+        onSendProgress: (sent, total) {
+          uploadProgress.value = sent / total;
+        },
       );
+
+      Get.back(); // Close progress dialog
 
       if (response.success && response.data != null) {
         final data = response.data;
         if (data is Map<String, dynamic> && data['key'] != null) {
           chatController.sendVideoMessage(data['key']);
         }
+      } else {
+        Get.snackbar('Error', 'Failed to upload video',
+            snackPosition: SnackPosition.BOTTOM);
       }
     } catch (e) {
+      Get.back(); // Close progress dialog if open
       if (mounted) {
         Get.snackbar('Error', 'Failed to upload video',
             snackPosition: SnackPosition.BOTTOM);

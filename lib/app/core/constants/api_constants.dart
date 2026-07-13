@@ -31,6 +31,7 @@ class ApiConstants {
 
   // ─── Upload ─────────────────────────────────────────────
   static const String uploadImage = '/upload/image';
+  static const String uploadVideo = '/upload/video';
   static const String uploadDocument = '/upload/document';
 
   // ─── Geocoding ──────────────────────────────────────────
