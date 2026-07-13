@@ -17,12 +17,17 @@ class ChatDetailController extends GetxController {
   final isLoadingMore = false.obs;
   final isTyping = false.obs;
   final hasMore = true.obs;
+  final onlineUsers = <String>{}.obs; // Set of online user IDs
 
   final messageController = TextEditingController();
   final scrollController = ScrollController();
 
   String? _conversationId;
   Timer? _typingTimer;
+  StreamSubscription? _messageSub;
+  StreamSubscription? _typingStartSub;
+  StreamSubscription? _typingStopSub;
+  StreamSubscription? _presenceSub;
 
   String? get currentUserId => _authService.currentUser.value?.id;
 
@@ -32,7 +37,7 @@ class ChatDetailController extends GetxController {
     _api = Get.find<ApiClient>();
     _authService = Get.find<AuthService>();
     _socketService = Get.find<SocketService>();
-    _setupSocketListeners();
+    _setupStreamListeners();
     _setupScrollListener();
   }
 
@@ -42,6 +47,10 @@ class ChatDetailController extends GetxController {
       _socketService.leaveConversation(_conversationId!);
     }
     _typingTimer?.cancel();
+    _messageSub?.cancel();
+    _typingStartSub?.cancel();
+    _typingStopSub?.cancel();
+    _presenceSub?.cancel();
     messageController.dispose();
     scrollController.dispose();
     super.onClose();
@@ -50,7 +59,6 @@ class ChatDetailController extends GetxController {
   /// Initialize with conversation data from arguments.
   void initConversation(String conversationId, String otherParticipantId) {
     _conversationId = conversationId;
-
     _socketService.joinConversation(conversationId);
     fetchMessages();
   }
@@ -58,6 +66,7 @@ class ChatDetailController extends GetxController {
   /// Fetch messages from API.
   Future<void> fetchMessages({bool loadMore = false}) async {
     if (_conversationId == null) return;
+    if (isClosed) return;
 
     if (loadMore) {
       isLoadingMore.value = true;
@@ -80,17 +89,23 @@ class ChatDetailController extends GetxController {
         queryParameters: query,
         fromData: (data) {
           if (data is Map<String, dynamic> && data['docs'] is List) {
+            final currentUserId = _authService.currentUser.value?.id;
             return (data['docs'] as List)
-                .map((e) => ChatMessage.fromJson(e).copyWith(
-                      isSentByMe: e['sender'] == currentUserId ||
-                          (e['sender'] is Map &&
-                              e['sender']['_id'] == currentUserId),
-                    ))
+                .map((e) {
+                  final msg = ChatMessage.fromJson(e);
+                  // Determine isSentByMe from sender field
+                  final senderId = e['sender'] is Map
+                      ? e['sender']['_id'] ?? ''
+                      : e['sender'] ?? '';
+                  return msg.copyWith(isSentByMe: senderId == currentUserId);
+                })
                 .toList();
           }
           return <ChatMessage>[];
         },
       );
+
+      if (isClosed) return;
 
       if (response.success && response.data != null) {
         if (loadMore) {
@@ -104,10 +119,15 @@ class ChatDetailController extends GetxController {
         }
       }
     } catch (e) {
-      // Silent fail
+      if (!isClosed) {
+        Get.snackbar('Error', 'Failed to load messages',
+            snackPosition: SnackPosition.BOTTOM);
+      }
     } finally {
-      isLoading.value = false;
-      isLoadingMore.value = false;
+      if (!isClosed) {
+        isLoading.value = false;
+        isLoadingMore.value = false;
+      }
     }
   }
 
@@ -115,6 +135,7 @@ class ChatDetailController extends GetxController {
   Future<void> sendTextMessage() async {
     final text = messageController.text.trim();
     if (text.isEmpty || _conversationId == null) return;
+    if (isClosed) return;
 
     messageController.clear();
     _stopTyping();
@@ -126,9 +147,10 @@ class ChatDetailController extends GetxController {
       content: text,
     );
 
-    // Add optimistic message
+    // Add optimistic message with temp ID
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     messages.add(ChatMessage(
-      id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+      id: tempId,
       conversationId: _conversationId!,
       senderId: currentUserId ?? '',
       type: 'text',
@@ -138,11 +160,37 @@ class ChatDetailController extends GetxController {
     ));
 
     _scrollToBottom();
+
+    // Also send via REST to get the real message ID
+    try {
+      final response = await _api.post<dynamic>(
+        ApiConstants.chatMessages(_conversationId!),
+        data: {
+          'type': 'text',
+          'content': text,
+        },
+      );
+
+      if (isClosed) return;
+
+      if (response.success && response.data != null) {
+        final data = response.data;
+        if (data is Map<String, dynamic>) {
+          final realMessage = ChatMessage.fromJson(data).copyWith(isSentByMe: true);
+          // Replace temp message with real one
+          final idx = messages.indexWhere((m) => m.id == tempId);
+          if (idx != -1) {
+            messages[idx] = realMessage;
+          }
+        }
+      }
+    } catch (_) {}
   }
 
   /// Send an image message.
   Future<void> sendImageMessage(List<String> imageKeys) async {
     if (imageKeys.isEmpty || _conversationId == null) return;
+    if (isClosed) return;
 
     _socketService.sendMessage(
       conversationId: _conversationId!,
@@ -150,8 +198,9 @@ class ChatDetailController extends GetxController {
       images: imageKeys,
     );
 
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     messages.add(ChatMessage(
-      id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+      id: tempId,
       conversationId: _conversationId!,
       senderId: currentUserId ?? '',
       type: 'image',
@@ -161,11 +210,35 @@ class ChatDetailController extends GetxController {
     ));
 
     _scrollToBottom();
+
+    try {
+      final response = await _api.post<dynamic>(
+        ApiConstants.chatMessages(_conversationId!),
+        data: {
+          'type': 'image',
+          'images': imageKeys,
+        },
+      );
+
+      if (isClosed) return;
+
+      if (response.success && response.data != null) {
+        final data = response.data;
+        if (data is Map<String, dynamic>) {
+          final realMessage = ChatMessage.fromJson(data).copyWith(isSentByMe: true);
+          final idx = messages.indexWhere((m) => m.id == tempId);
+          if (idx != -1) {
+            messages[idx] = realMessage;
+          }
+        }
+      }
+    } catch (_) {}
   }
 
   /// Send a video message.
   Future<void> sendVideoMessage(String videoKey) async {
     if (videoKey.isEmpty || _conversationId == null) return;
+    if (isClosed) return;
 
     _socketService.sendMessage(
       conversationId: _conversationId!,
@@ -173,8 +246,9 @@ class ChatDetailController extends GetxController {
       video: videoKey,
     );
 
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     messages.add(ChatMessage(
-      id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+      id: tempId,
       conversationId: _conversationId!,
       senderId: currentUserId ?? '',
       type: 'video',
@@ -184,6 +258,29 @@ class ChatDetailController extends GetxController {
     ));
 
     _scrollToBottom();
+
+    try {
+      final response = await _api.post<dynamic>(
+        ApiConstants.chatMessages(_conversationId!),
+        data: {
+          'type': 'video',
+          'video': videoKey,
+        },
+      );
+
+      if (isClosed) return;
+
+      if (response.success && response.data != null) {
+        final data = response.data;
+        if (data is Map<String, dynamic>) {
+          final realMessage = ChatMessage.fromJson(data).copyWith(isSentByMe: true);
+          final idx = messages.indexWhere((m) => m.id == tempId);
+          if (idx != -1) {
+            messages[idx] = realMessage;
+          }
+        }
+      }
+    } catch (_) {}
   }
 
   /// Send a service offer.
@@ -198,6 +295,7 @@ class ChatDetailController extends GetxController {
     List<String>? images,
   }) async {
     if (_conversationId == null) return;
+    if (isClosed) return;
 
     try {
       final response = await _api.post<dynamic>(
@@ -214,6 +312,8 @@ class ChatDetailController extends GetxController {
         },
       );
 
+      if (isClosed) return;
+
       if (response.success && response.data != null) {
         final data = response.data;
         if (data is Map<String, dynamic>) {
@@ -222,59 +322,79 @@ class ChatDetailController extends GetxController {
         }
       }
     } catch (e) {
-      // Handle error
+      if (!isClosed) {
+        Get.snackbar('Error', 'Failed to send offer',
+            snackPosition: SnackPosition.BOTTOM);
+      }
     }
   }
 
   /// Accept an offer.
   Future<void> acceptOffer(String offerMessageId) async {
     if (_conversationId == null) return;
+    if (isClosed) return;
 
     try {
       final response = await _api.post<Map<String, dynamic>>(
         ApiConstants.chatOfferAccept(_conversationId!, offerMessageId),
       );
 
+      if (isClosed) return;
+
       if (response.success) {
-        // Update offer status in messages list
         _updateOfferStatus(offerMessageId, 'accepted');
       }
     } catch (e) {
-      // Handle error
+      if (!isClosed) {
+        Get.snackbar('Error', 'Failed to accept offer',
+            snackPosition: SnackPosition.BOTTOM);
+      }
     }
   }
 
   /// Reject an offer.
   Future<void> rejectOffer(String offerMessageId) async {
     if (_conversationId == null) return;
+    if (isClosed) return;
 
     try {
       final response = await _api.post<Map<String, dynamic>>(
         ApiConstants.chatOfferReject(_conversationId!, offerMessageId),
       );
 
+      if (isClosed) return;
+
       if (response.success) {
         _updateOfferStatus(offerMessageId, 'rejected');
       }
     } catch (e) {
-      // Handle error
+      if (!isClosed) {
+        Get.snackbar('Error', 'Failed to reject offer',
+            snackPosition: SnackPosition.BOTTOM);
+      }
     }
   }
 
   /// Cancel/withdraw an offer (helper only).
   Future<void> cancelOffer(String offerMessageId) async {
     if (_conversationId == null) return;
+    if (isClosed) return;
 
     try {
       final response = await _api.post<Map<String, dynamic>>(
         ApiConstants.chatOfferCancel(_conversationId!, offerMessageId),
       );
 
+      if (isClosed) return;
+
       if (response.success) {
         _updateOfferStatus(offerMessageId, 'cancelled');
       }
     } catch (e) {
-      // Handle error
+      if (!isClosed) {
+        Get.snackbar('Error', 'Failed to cancel offer',
+            snackPosition: SnackPosition.BOTTOM);
+      }
     }
   }
 
@@ -291,6 +411,7 @@ class ChatDetailController extends GetxController {
     List<String>? images,
   }) async {
     if (_conversationId == null) return;
+    if (isClosed) return;
 
     try {
       final data = <String, dynamic>{};
@@ -308,8 +429,9 @@ class ChatDetailController extends GetxController {
         data: data,
       );
 
+      if (isClosed) return;
+
       if (response.success && response.data != null) {
-        // Update message in list
         final idx = messages.indexWhere((m) => m.id == offerMessageId);
         if (idx != -1) {
           messages[idx] = ChatMessage.fromJson(response.data!)
@@ -317,7 +439,10 @@ class ChatDetailController extends GetxController {
         }
       }
     } catch (e) {
-      // Handle error
+      if (!isClosed) {
+        Get.snackbar('Error', 'Failed to edit offer',
+            snackPosition: SnackPosition.BOTTOM);
+      }
     }
   }
 
@@ -354,32 +479,47 @@ class ChatDetailController extends GetxController {
     }
   }
 
-  void _setupSocketListeners() {
-    _socketService.onNewMessage = (message) {
+  void _setupStreamListeners() {
+    // Listen for new messages via stream
+    _messageSub = _socketService.onNewMessage.listen((message) {
+      if (isClosed) return;
       if (message.conversationId == _conversationId) {
-        // Don't add if it's our own message (already added optimistically)
         if (message.senderId != currentUserId) {
           messages.add(message);
           _scrollToBottom();
         }
       }
-    };
+    });
 
-    _socketService.onTypingStart = (convId, userId) {
-      if (convId == _conversationId && userId != currentUserId) {
+    // Listen for typing start
+    _typingStartSub = _socketService.onTypingStart.listen((data) {
+      if (isClosed) return;
+      if (data['conversationId'] == _conversationId &&
+          data['userId'] != currentUserId) {
         isTyping.value = true;
       }
-    };
+    });
 
-    _socketService.onTypingStop = (convId, userId) {
-      if (convId == _conversationId && userId != currentUserId) {
+    // Listen for typing stop
+    _typingStopSub = _socketService.onTypingStop.listen((data) {
+      if (isClosed) return;
+      if (data['conversationId'] == _conversationId &&
+          data['userId'] != currentUserId) {
         isTyping.value = false;
       }
-    };
+    });
 
-    _socketService.onMessagesRead = (userId, messageIds) {
-      // Could update read receipts here if needed
-    };
+    // Listen for presence updates
+    _presenceSub = _socketService.onPresenceUpdate.listen((data) {
+      if (isClosed) return;
+      final userId = data['userId'] as String? ?? '';
+      final isOnline = data['isOnline'] as bool? ?? false;
+      if (isOnline) {
+        onlineUsers.add(userId);
+      } else {
+        onlineUsers.remove(userId);
+      }
+    });
   }
 
   void _setupScrollListener() {

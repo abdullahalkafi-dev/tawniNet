@@ -1,24 +1,32 @@
+import 'dart:async';
 import 'package:get/get.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/data/models/message_model.dart';
 
 /// Real-time Socket.IO service for chat messaging.
-/// Connects with JWT auth, handles message send/receive, typing indicators, read receipts.
+/// Uses broadcast streams so multiple listeners can receive events.
 class SocketService extends GetxService {
   final isConnected = false.obs;
   final isConnecting = false.obs;
 
   IO.Socket? _socket;
-  String? _currentUserId;
 
-  // Event callbacks
-  Function(ChatMessage)? onNewMessage;
-  Function(String conversationId, String userId)? onTypingStart;
-  Function(String conversationId, String userId)? onTypingStop;
-  Function(String userId, List<String> messageIds)? onMessagesRead;
-  Function(String userId, bool isOnline)? onPresenceUpdate;
-  Function(String offerMessageId, String status)? onOfferUpdate;
+  // Broadcast streams — multiple listeners can subscribe
+  final _messageController = StreamController<ChatMessage>.broadcast();
+  final _typingStartController = StreamController<Map<String, String>>.broadcast();
+  final _typingStopController = StreamController<Map<String, String>>.broadcast();
+  final _readController = StreamController<Map<String, dynamic>>.broadcast();
+  final _presenceController = StreamController<Map<String, dynamic>>.broadcast();
+  final _offerUpdateController = StreamController<Map<String, dynamic>>.broadcast();
+
+  // Public streams
+  Stream<ChatMessage> get onNewMessage => _messageController.stream;
+  Stream<Map<String, String>> get onTypingStart => _typingStartController.stream;
+  Stream<Map<String, String>> get onTypingStop => _typingStopController.stream;
+  Stream<Map<String, dynamic>> get onMessagesRead => _readController.stream;
+  Stream<Map<String, dynamic>> get onPresenceUpdate => _presenceController.stream;
+  Stream<Map<String, dynamic>> get onOfferUpdate => _offerUpdateController.stream;
 
   /// Connect to the socket server with JWT token.
   void connect(String token) {
@@ -27,7 +35,6 @@ class SocketService extends GetxService {
 
     isConnecting.value = true;
 
-    // Extract base URL without /api/v1
     final baseUrl = ApiConstants.baseUrl.replaceAll('/api/v1', '');
 
     _socket = IO.io(
@@ -60,44 +67,47 @@ class SocketService extends GetxService {
       isConnected.value = true;
     });
 
-    // ─── Chat Events ───────────────────────────────
+    _setupChatListeners();
+  }
+
+  void _setupChatListeners() {
     _socket?.on('chat:receive', (data) {
       try {
         final message = ChatMessage.fromJson(data);
-        onNewMessage?.call(message);
+        _messageController.add(message);
       } catch (_) {}
     });
 
     _socket?.on('typing:start', (data) {
-      final conversationId = data['conversationId'] as String? ?? '';
-      final userId = data['userId'] as String? ?? '';
-      onTypingStart?.call(conversationId, userId);
+      _typingStartController.add({
+        'conversationId': data['conversationId'] ?? '',
+        'userId': data['userId'] ?? '',
+      });
     });
 
     _socket?.on('typing:stop', (data) {
-      final conversationId = data['conversationId'] as String? ?? '';
-      final userId = data['userId'] as String? ?? '';
-      onTypingStop?.call(conversationId, userId);
+      _typingStopController.add({
+        'conversationId': data['conversationId'] ?? '',
+        'userId': data['userId'] ?? '',
+      });
     });
 
     _socket?.on('chat:read', (data) {
-      final userId = data['userId'] as String? ?? '';
-      final messageIds = (data['messageIds'] as List?)?.cast<String>() ?? [];
-      onMessagesRead?.call(userId, messageIds);
+      _readController.add({
+        'userId': data['userId'] ?? '',
+        'messageIds': (data['messageIds'] as List?)?.cast<String>() ?? [],
+      });
     });
 
     _socket?.on('presence:update', (data) {
-      final userId = data['userId'] as String? ?? '';
-      final isOnline = data['isOnline'] as bool? ?? false;
-      onPresenceUpdate?.call(userId, isOnline);
+      _presenceController.add({
+        'userId': data['userId'] ?? '',
+        'isOnline': data['isOnline'] ?? false,
+      });
     });
 
     _socket?.on('chat:offer-update', (data) {
-      try {
-        final offerMessageId = data['_id'] as String? ?? '';
-        final status = data['offerData']?['status'] as String? ?? '';
-        onOfferUpdate?.call(offerMessageId, status);
-      } catch (_) {}
+      _offerUpdateController.add(data);
     });
   }
 
@@ -110,7 +120,7 @@ class SocketService extends GetxService {
     isConnecting.value = false;
   }
 
-  /// Join a conversation room (for receiving real-time messages).
+  /// Join a conversation room.
   void joinConversation(String conversationId) {
     _socket?.emit('chat:join', {'conversationId': conversationId});
   }
@@ -155,24 +165,15 @@ class SocketService extends GetxService {
     });
   }
 
-  /// Emit a generic event.
-  void emit(String event, dynamic data) {
-    _socket?.emit(event, data);
-  }
-
-  /// Listen to a generic event.
-  void on(String event, Function(dynamic) handler) {
-    _socket?.on(event, handler);
-  }
-
-  /// Remove listener for a generic event.
-  void off(String event) {
-    _socket?.off(event);
-  }
-
   @override
   void onClose() {
     disconnect();
+    _messageController.close();
+    _typingStartController.close();
+    _typingStopController.close();
+    _readController.close();
+    _presenceController.close();
+    _offerUpdateController.close();
     super.onClose();
   }
 }

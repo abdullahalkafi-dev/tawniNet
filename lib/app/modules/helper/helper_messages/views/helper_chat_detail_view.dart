@@ -6,8 +6,13 @@ import 'package:awnneaapp/app/modules/messages/controllers/messages_controller.d
 import 'package:awnneaapp/app/modules/messages/views/widgets/offer_card_widget.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/offer_form_bottom_sheet.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
+import 'package:awnneaapp/app/services/api_client.dart';
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class HelperChatDetailView extends StatefulWidget {
   const HelperChatDetailView({super.key});
@@ -526,23 +531,107 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
             ListTile(
               leading: const Icon(Icons.photo),
               title: const Text('Send Image'),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context);
-                // TODO: Pick and upload images
+                await _pickAndSendImages();
               },
             ),
             ListTile(
               leading: const Icon(Icons.videocam),
               title: const Text('Send Video'),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context);
-                // TODO: Pick and upload video
+                await _pickAndSendVideo();
               },
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _pickAndSendImages() async {
+    final picker = ImagePicker();
+    final pickedFiles = await picker.pickMultiImage(imageQuality: 80);
+
+    if (pickedFiles.isEmpty) return;
+
+    final files = pickedFiles.take(4).toList();
+
+    try {
+      final api = Get.find<ApiClient>();
+      final imageKeys = <String>[];
+
+      for (final file in files) {
+        final formData = dio.FormData.fromMap({
+          'image': await dio.MultipartFile.fromFile(file.path),
+        });
+
+        final response = await api.upload<dynamic>(
+          ApiConstants.uploadImage,
+          formData: formData,
+        );
+
+        if (response.success && response.data != null) {
+          final data = response.data;
+          if (data is Map<String, dynamic> && data['key'] != null) {
+            imageKeys.add(data['key']);
+          }
+        }
+      }
+
+      if (imageKeys.isNotEmpty) {
+        chatController.sendImageMessage(imageKeys);
+      }
+    } catch (e) {
+      if (mounted) {
+        Get.snackbar('Error', 'Failed to upload images',
+            snackPosition: SnackPosition.BOTTOM);
+      }
+    }
+  }
+
+  Future<void> _pickAndSendVideo() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickVideo(
+      source: ImageSource.gallery,
+      maxDuration: const Duration(minutes: 5),
+    );
+
+    if (pickedFile == null) return;
+
+    try {
+      final file = File(pickedFile.path);
+      final fileBytes = await file.length();
+
+      if (fileBytes > 400 * 1024 * 1024) {
+        Get.snackbar('Error', 'Video must be under 400MB',
+            snackPosition: SnackPosition.BOTTOM);
+        return;
+      }
+
+      final api = Get.find<ApiClient>();
+      final formData = dio.FormData.fromMap({
+        'image': await dio.MultipartFile.fromFile(pickedFile.path),
+      });
+
+      final response = await api.upload<dynamic>(
+        ApiConstants.uploadImage,
+        formData: formData,
+      );
+
+      if (response.success && response.data != null) {
+        final data = response.data;
+        if (data is Map<String, dynamic> && data['key'] != null) {
+          chatController.sendVideoMessage(data['key']);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Get.snackbar('Error', 'Failed to upload video',
+            snackPosition: SnackPosition.BOTTOM);
+      }
+    }
   }
 
   void _showOfferForm() {

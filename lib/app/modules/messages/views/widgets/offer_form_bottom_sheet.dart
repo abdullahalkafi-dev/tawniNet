@@ -1,6 +1,11 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/data/models/message_model.dart';
+import 'package:awnneaapp/app/services/api_client.dart';
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 
 class OfferFormBottomSheet extends StatefulWidget {
   final String conversationId;
@@ -367,12 +372,41 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
     );
   }
 
-  void _addImage() {
-    // TODO: Implement image picker
-    // For now, add a placeholder
-    setState(() {
-      _selectedImages.add('https://via.placeholder.com/150');
-    });
+  Future<void> _addImage() async {
+    if (_selectedImages.length >= 4) {
+      Get.snackbar('Error', 'Maximum 4 images allowed',
+          snackPosition: SnackPosition.BOTTOM);
+      return;
+    }
+
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+
+    if (pickedFile == null) return;
+
+    try {
+      final api = Get.find<ApiClient>();
+      final formData = dio.FormData.fromMap({
+        'image': await dio.MultipartFile.fromFile(pickedFile.path),
+      });
+
+      final response = await api.upload<dynamic>(
+        ApiConstants.uploadImage,
+        formData: formData,
+      );
+
+      if (response.success && response.data != null) {
+        final data = response.data;
+        if (data is Map<String, dynamic> && data['key'] != null) {
+          setState(() {
+            _selectedImages.add(data['key']);
+          });
+        }
+      }
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to upload image',
+          snackPosition: SnackPosition.BOTTOM);
+    }
   }
 
   void _submitOffer() {

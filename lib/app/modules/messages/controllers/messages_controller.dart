@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:get/get.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
+import 'package:awnneaapp/app/services/socket_service.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/data/models/message_model.dart';
 
@@ -27,24 +29,49 @@ class ChatSummary {
 class MessagesController extends GetxController {
   late final ApiClient _api;
   late final AuthService _authService;
+  late final SocketService _socketService;
 
   final conversations = <ChatConversation>[].obs;
   final isLoading = false.obs;
   final searchQuery = ''.obs;
   final isSearching = false.obs;
+  final onlineUserIds = <String>{}.obs;
+
+  StreamSubscription? _presenceSub;
 
   @override
   void onInit() {
     super.onInit();
     _api = Get.find<ApiClient>();
     _authService = Get.find<AuthService>();
+    _socketService = Get.find<SocketService>();
+    _setupPresenceListener();
     fetchConversations();
+  }
+
+  @override
+  void onClose() {
+    _presenceSub?.cancel();
+    super.onClose();
+  }
+
+  void _setupPresenceListener() {
+    _presenceSub = _socketService.onPresenceUpdate.listen((data) {
+      final userId = data['userId'] as String? ?? '';
+      final isOnline = data['isOnline'] as bool? ?? false;
+      if (isOnline) {
+        onlineUserIds.add(userId);
+      } else {
+        onlineUserIds.remove(userId);
+      }
+    });
   }
 
   List<ChatSummary> get filteredChats {
     final query = searchQuery.value.toLowerCase();
     return conversations.map((conv) {
       final other = conv.otherParticipant;
+      final otherId = other?.id ?? '';
       return ChatSummary(
         id: conv.id,
         name: other?.name ?? 'Unknown',
@@ -53,6 +80,7 @@ class MessagesController extends GetxController {
             (conv.lastMessage?.type == 'image' ? '📷 Image' : ''),
         time: _formatTime(conv.lastMessageAt),
         unreadCount: conv.unreadCount,
+        isOnline: onlineUserIds.contains(otherId),
       );
     }).where((chat) {
       if (query.isEmpty) return true;
