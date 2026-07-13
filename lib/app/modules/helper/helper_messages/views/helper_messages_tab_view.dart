@@ -21,8 +21,8 @@ class HelperMessagesTabView extends GetView<MessagesController> {
             return TextField(
               autofocus: true,
               style: const TextStyle(color: Colors.black, fontSize: 16),
-              decoration: const InputDecoration(
-                hintText: 'Search chats...',
+              decoration: InputDecoration(
+                hintText: 'messages_search'.tr,
                 hintStyle: TextStyle(color: Colors.grey),
                 border: InputBorder.none,
               ),
@@ -30,7 +30,7 @@ class HelperMessagesTabView extends GetView<MessagesController> {
             );
           }
           return Text(
-            'Messages',
+            'helper_messages_tab'.tr,
             style: AppStyles.h1.copyWith(
               fontSize: 24,
               color: const Color(0xFF1F2A37),
@@ -61,7 +61,7 @@ class HelperMessagesTabView extends GetView<MessagesController> {
       body: Obx(() {
         final list = controller.filteredChats;
         if (list.isEmpty) {
-          return const Center(child: Text('No messages found'));
+          return Center(child: Text('messages_no_messages'.tr));
         }
         return ListView.separated(
           padding: const EdgeInsets.symmetric(vertical: 10),

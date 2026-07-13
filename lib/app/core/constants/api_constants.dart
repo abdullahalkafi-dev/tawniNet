@@ -45,6 +45,23 @@ class ApiConstants {
   // ─── Helpers ────────────────────────────────────────────
   static const String helpersSearch = '/user/helpers/search';
 
+  // ─── Chat ──────────────────────────────────────────────
+  static const String chatConversations = '/chat/conversations';
+  static String chatMessages(String conversationId) =>
+      '/chat/conversations/$conversationId/messages';
+  static String chatOffer(String conversationId) =>
+      '/chat/conversations/$conversationId/offer';
+  static String chatOfferAccept(String conversationId, String offerId) =>
+      '/chat/conversations/$conversationId/offer/$offerId/accept';
+  static String chatOfferReject(String conversationId, String offerId) =>
+      '/chat/conversations/$conversationId/offer/$offerId/reject';
+  static String chatOfferCancel(String conversationId, String offerId) =>
+      '/chat/conversations/$conversationId/offer/$offerId/cancel';
+  static String chatOfferEdit(String conversationId, String offerId) =>
+      '/chat/conversations/$conversationId/offer/$offerId/edit';
+  static String chatMarkRead(String conversationId) =>
+      '/chat/conversations/$conversationId/read';
+
   // ─── Admin ──────────────────────────────────────────────
   static const String adminStats = '/admin/stats';
   static const String adminHelpers = '/admin/helpers';

@@ -54,7 +54,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      'Today',
+                      'chat_today'.tr,
                       style: AppStyles.bodyMedium.copyWith(color: Colors.blue[300], fontSize: 12),
                     ),
                   ),
@@ -156,8 +156,8 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
             Expanded(
               child: TextField(
                 controller: messageController,
-                decoration: const InputDecoration(
-                  hintText: 'Type a message...',
+                decoration: InputDecoration(
+                  hintText: 'label_type_message'.tr,
                   border: InputBorder.none,
                 ),
               ),

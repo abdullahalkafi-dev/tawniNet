@@ -189,3 +189,89 @@
 - **Files modified**: 9 Flutter + 7 backend = 16 total
 - **Bugs found**: 12
 - **Bugs fixed**: All 12
+
+---
+
+## Session 4 — Real-Time Chat + Service Offers (July 13, 2026)
+
+### What Was Done
+
+**Backend — New Chat Module (8 files):**
+
+| File | Purpose |
+|------|---------|
+| `src/module/chat/chat.interface.ts` | Enums: `MessageType`, `OfferStatus`, `PriceType`, `PaymentMethod`; Types: `TOfferData`, `TConversation`, `TMessage` |
+| `src/module/chat/conversation.model.ts` | Conversation schema — participants[2], lastMessage, unreadCounts |
+| `src/module/chat/message.model.ts` | Message schema — type (text/image/video/offer), images[], video, offerData sub-schema, readBy[] |
+| `src/module/chat/chat.repository.ts` | CRUD for conversations + messages, unread tracking, offer status updates |
+| `src/module/chat/chat.dto.ts` | Zod validation: sendMessage, sendOffer, editOffer, markRead, messageQuery |
+| `src/module/chat/chat.service.ts` | Business logic: list conversations, create/get conversation, send message, send/accept/reject/cancel/edit offer, mark read, auto-create job from accepted offer |
+| `src/module/chat/chat.controller.ts` | HTTP handlers for all chat endpoints |
+| `src/module/chat/chat.route.ts` | 10 routes: conversations CRUD, messages, offers (send/accept/reject/cancel/edit), mark read |
+
+**Backend — Modified Files (2):**
+
+| File | Changes |
+|------|---------|
+| `src/routes/index.ts` | Added `/chat` route prefix |
+| `src/socket/index.ts` | Added real-time events: `chat:join`, `chat:leave`, `chat:send`, `typing:start/stop`, `chat:read` |
+
+**Backend — Socket Events:**
+- `chat:join` / `chat:leave` — Join/leave conversation rooms
+- `chat:send` — Send message via socket (creates in DB, broadcasts to room)
+- `typing:start` / `typing:stop` — Typing indicators
+- `chat:read` — Read receipts (marks messages read, broadcasts to other user)
+
+**Flutter — New Files (5):**
+
+| File | Purpose |
+|------|---------|
+| `lib/app/data/models/message_model.dart` | `ChatConversation`, `ChatParticipant`, `ChatMessage`, `OfferData` models with `fromJson`/`toJson` |
+| `lib/app/modules/messages/controllers/chat_detail_controller.dart` | Real-time chat controller: fetch messages, send text/image/video/offer, accept/reject/cancel/edit offers, typing indicators |
+| `lib/app/modules/messages/views/widgets/offer_card_widget.dart` | Offer card UI — shows title, price, time, payment method, images, status badge, action buttons |
+| `lib/app/modules/messages/views/widgets/offer_form_bottom_sheet.dart` | Offer creation/edit form — title, description, price, priceType, startTime/endTime, paymentMethod, images |
+
+**Flutter — Modified Files (5):**
+
+| File | Changes |
+|------|---------|
+| `pubspec.yaml` | Added `socket_io_client: ^3.0.2` |
+| `lib/app/core/constants/api_constants.dart` | Added 9 chat endpoints |
+| `lib/app/services/socket_service.dart` | Replaced stub with real socket_io_client implementation — connect, disconnect, join/leave conversation, send message, typing indicators, read receipts |
+| `lib/app/modules/messages/controllers/messages_controller.dart` | Replaced mock with real API calls — fetchConversations, startConversation |
+| `lib/app/modules/messages/views/chat_detail_view.dart` | Replaced mock with real messages — text/image/video/offer bubbles, date separators, pagination, send via socket, input bar with image/offer buttons |
+
+### API Endpoints
+
+| # | Method | Route | Description |
+|---|--------|-------|-------------|
+| 1 | `GET` | `/chat/conversations` | List user's conversations |
+| 2 | `POST` | `/chat/conversations` | Start or get existing conversation |
+| 3 | `GET` | `/chat/conversations/:id/messages` | Paginated message history |
+| 4 | `POST` | `/chat/conversations/:id/messages` | Send message (text/image/video) |
+| 5 | `POST` | `/chat/conversations/:id/offer` | Send service offer |
+| 6 | `POST` | `/chat/conversations/:id/offer/:offerId/accept` | Accept offer → auto creates Job |
+| 7 | `POST` | `/chat/conversations/:id/offer/:offerId/reject` | Reject offer |
+| 8 | `POST` | `/chat/conversations/:id/offer/:offerId/cancel` | Helper withdraws offer |
+| 9 | `PATCH` | `/chat/conversations/:id/offer/:offerId/edit` | Edit offer before acceptance |
+| 10 | `POST` | `/chat/conversations/:id/read` | Mark messages as read |
+
+### Offer Business Logic
+
+**Offer fields:** title, description, price, priceType (fixed/hourly), startTime, endTime, paymentMethod (cash/online), images (max 4), status
+
+**Status flow:** `pending` → `accepted` | `rejected` | `cancelled`
+
+**Accept flow:**
+- **Cash** → Auto creates Job (status: open) → Offer status: accepted
+- **Online** → Auto creates Job (status: open) → Future: payment screen first
+
+**Cancel/Edit:** Only available to offer sender (helper), only while status is `pending`
+
+### Session 4 Summary
+- **Started**: July 13, 2026
+- **Completed**: July 13, 2026
+- **Focus**: Real-time chat system + service offers (Fiverr-style)
+- **Files created**: 8 backend + 4 Flutter = 12 new files
+- **Files modified**: 2 backend + 5 Flutter = 7 modified files
+- **Total files**: 19
