@@ -33,6 +33,12 @@ class SocketService extends GetxService {
     if (_socket?.connected == true) return;
     if (isConnecting.value) return;
 
+    // Disconnect existing socket before reconnecting to prevent duplicate listeners
+    _removeChatListeners();
+    _socket?.disconnect();
+    _socket?.dispose();
+    _socket = null;
+
     isConnecting.value = true;
 
     final baseUrl = ApiConstants.baseUrl.replaceAll('/api/v1', '');
@@ -109,6 +115,15 @@ class SocketService extends GetxService {
     _socket?.on('chat:offer-update', (data) {
       _offerUpdateController.add(data);
     });
+  }
+
+  void _removeChatListeners() {
+    _socket?.off('chat:receive');
+    _socket?.off('typing:start');
+    _socket?.off('typing:stop');
+    _socket?.off('chat:read');
+    _socket?.off('presence:update');
+    _socket?.off('chat:offer-update');
   }
 
   /// Disconnect from the socket server.

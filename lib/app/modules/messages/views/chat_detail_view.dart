@@ -25,11 +25,12 @@ class ChatDetailView extends StatefulWidget {
 
 class _ChatDetailViewState extends State<ChatDetailView> {
   late final ChatDetailController chatController;
-  final ChatSummary chat = Get.arguments;
+  late final ChatSummary chat;
 
   @override
   void initState() {
     super.initState();
+    chat = Get.arguments as ChatSummary;
     chatController = Get.put(ChatDetailController());
     chatController.initConversation(chat.id, chat.id);
   }
@@ -464,7 +465,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
 
   Widget _buildInputBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -476,6 +477,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
         ],
       ),
       child: SafeArea(
+        top: false,
         child: Row(
           children: [
             // Image picker button
@@ -585,6 +587,13 @@ class _ChatDetailViewState extends State<ChatDetailView> {
           if (data is Map<String, dynamic> && data['key'] != null) {
             imageKeys.add(data['key']);
           }
+        } else {
+          // If any image fails, abort all
+          if (mounted) {
+            Get.snackbar('Error', 'Failed to upload image ${imageKeys.length + 1}',
+                snackPosition: SnackPosition.BOTTOM);
+          }
+          return;
         }
       }
 
@@ -610,10 +619,11 @@ class _ChatDetailViewState extends State<ChatDetailView> {
 
     final uploadProgress = 0.0.obs;
     final uploadStatus = 'Compressing video...'.obs;
+    bool dialogShowing = false;
+    File? compressed;
 
     try {
-      // Compress video
-      final compressed = await VideoCompressor.compress(pickedFile.path);
+      compressed = await VideoCompressor.compress(pickedFile.path);
       final file = compressed ?? File(pickedFile.path);
 
       // Check compressed file size (400MB limit)
@@ -626,6 +636,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
 
       // Show progress dialog
       UploadProgressDialog.show(progress: uploadProgress, status: uploadStatus);
+      dialogShowing = true;
 
       // Upload with progress
       uploadStatus.value = 'Uploading video...';
@@ -642,7 +653,10 @@ class _ChatDetailViewState extends State<ChatDetailView> {
         },
       );
 
-      Get.back(); // Close progress dialog
+      if (dialogShowing && Get.isDialogOpen == true) {
+        Get.back(); // Close progress dialog
+        dialogShowing = false;
+      }
 
       if (response.success && response.data != null) {
         final data = response.data;
@@ -654,10 +668,17 @@ class _ChatDetailViewState extends State<ChatDetailView> {
             snackPosition: SnackPosition.BOTTOM);
       }
     } catch (e) {
-      Get.back(); // Close progress dialog if open
+      if (dialogShowing && Get.isDialogOpen == true) {
+        Get.back(); // Close progress dialog if open
+      }
       if (mounted) {
         Get.snackbar('Error', 'Failed to upload video',
             snackPosition: SnackPosition.BOTTOM);
+      }
+    } finally {
+      // Clean up compressed temp file
+      if (compressed != null) {
+        try { await compressed.delete(); } catch (_) {}
       }
     }
   }

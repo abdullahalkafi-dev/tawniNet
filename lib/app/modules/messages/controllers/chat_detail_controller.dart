@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
@@ -162,7 +163,7 @@ class ChatDetailController extends GetxController {
     _stopTyping();
 
     // Add optimistic message with temp ID
-    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final tempId = 'temp_${Random.secure().nextInt(999999999)}';
     messages.add(ChatMessage(
       id: tempId,
       conversationId: _conversationId!,
@@ -214,7 +215,7 @@ class ChatDetailController extends GetxController {
     if (imageKeys.isEmpty || _conversationId == null) return;
     if (isClosed) return;
 
-    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final tempId = 'temp_${Random.secure().nextInt(999999999)}';
     messages.add(ChatMessage(
       id: tempId,
       conversationId: _conversationId!,
@@ -262,7 +263,7 @@ class ChatDetailController extends GetxController {
     if (videoKey.isEmpty || _conversationId == null) return;
     if (isClosed) return;
 
-    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    final tempId = 'temp_${Random.secure().nextInt(999999999)}';
     messages.add(ChatMessage(
       id: tempId,
       conversationId: _conversationId!,
@@ -506,7 +507,11 @@ class ChatDetailController extends GetxController {
     _messageSub = _socketService.onNewMessage.listen((message) {
       if (isClosed) return;
       if (message.conversationId == _conversationId) {
-        if (message.senderId != currentUserId) {
+        // Skip own messages (sent via REST, will be added by REST response)
+        if (message.senderId == currentUserId) return;
+        // Skip duplicates (message already exists by ID)
+        final exists = messages.any((m) => m.id == message.id);
+        if (!exists) {
           messages.add(message);
           _scrollToBottom();
         }

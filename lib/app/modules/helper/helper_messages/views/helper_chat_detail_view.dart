@@ -25,11 +25,12 @@ class HelperChatDetailView extends StatefulWidget {
 
 class _HelperChatDetailViewState extends State<HelperChatDetailView> {
   late final ChatDetailController chatController;
-  final ChatSummary chat = Get.arguments;
+  late final ChatSummary chat;
 
   @override
   void initState() {
     super.initState();
+    chat = Get.arguments as ChatSummary;
     chatController = Get.put(ChatDetailController());
     chatController.initConversation(chat.id, chat.id);
   }
@@ -463,7 +464,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
 
   Widget _buildInputBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -475,6 +476,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
         ],
       ),
       child: SafeArea(
+        top: false,
         child: Row(
           children: [
             IconButton(
@@ -579,6 +581,12 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
           if (data is Map<String, dynamic> && data['key'] != null) {
             imageKeys.add(data['key']);
           }
+        } else {
+          if (mounted) {
+            Get.snackbar('Error', 'Failed to upload image ${imageKeys.length + 1}',
+                snackPosition: SnackPosition.BOTTOM);
+          }
+          return;
         }
       }
 
@@ -604,9 +612,11 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
 
     final uploadProgress = 0.0.obs;
     final uploadStatus = 'Compressing video...'.obs;
+    bool dialogShowing = false;
+    File? compressed;
 
     try {
-      final compressed = await VideoCompressor.compress(pickedFile.path);
+      compressed = await VideoCompressor.compress(pickedFile.path);
       final file = compressed ?? File(pickedFile.path);
 
       final fileBytes = await file.length();
@@ -617,6 +627,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
       }
 
       UploadProgressDialog.show(progress: uploadProgress, status: uploadStatus);
+      dialogShowing = true;
 
       uploadStatus.value = 'Uploading video...';
       final api = Get.find<ApiClient>();
@@ -632,7 +643,10 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
         },
       );
 
-      Get.back();
+      if (dialogShowing && Get.isDialogOpen == true) {
+        Get.back();
+        dialogShowing = false;
+      }
 
       if (response.success && response.data != null) {
         final data = response.data;
@@ -644,10 +658,16 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
             snackPosition: SnackPosition.BOTTOM);
       }
     } catch (e) {
-      Get.back();
+      if (dialogShowing && Get.isDialogOpen == true) {
+        Get.back();
+      }
       if (mounted) {
         Get.snackbar('Error', 'Failed to upload video',
             snackPosition: SnackPosition.BOTTOM);
+      }
+    } finally {
+      if (compressed != null) {
+        try { await compressed.delete(); } catch (_) {}
       }
     }
   }

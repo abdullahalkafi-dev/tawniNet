@@ -105,12 +105,16 @@ class MessagesController extends GetxController {
       );
 
       if (response.success && response.data != null) {
-        conversations.assignAll(response.data!);
+        if (!isClosed) {
+          conversations.assignAll(response.data!);
+        }
       }
     } catch (e) {
       // Silent fail
     } finally {
-      isLoading.value = false;
+      if (!isClosed) {
+        isLoading.value = false;
+      }
     }
   }
 
