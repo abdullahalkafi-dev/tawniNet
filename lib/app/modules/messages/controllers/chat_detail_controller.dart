@@ -90,8 +90,8 @@ class ChatDetailController extends GetxController {
       };
 
       if (loadMore && messages.isNotEmpty) {
-        // Use the oldest message's createdAt as cursor for next page
-        query['before'] = messages.first.createdAt.toIso8601String();
+        // Messages are oldest-first, use LAST message's timestamp as cursor
+        query['before'] = messages.last.createdAt.toIso8601String();
       }
 
       final response = await _api.get<List<ChatMessage>>(
@@ -120,13 +120,12 @@ class ChatDetailController extends GetxController {
         final newMessages = response.data!;
 
         if (loadMore) {
-          // Prepend older messages (avoid duplicates)
+          // Append newer messages (avoid duplicates)
           final existingIds = messages.map((m) => m.id).toSet();
           final uniqueNew = newMessages.where((m) => !existingIds.contains(m.id)).toList();
           if (uniqueNew.isNotEmpty) {
-            messages.insertAll(0, uniqueNew);
+            messages.addAll(uniqueNew);
           }
-          // If no new messages were returned, we've reached the end
           if (newMessages.isEmpty) {
             hasMore.value = false;
           }
@@ -547,24 +546,19 @@ class ChatDetailController extends GetxController {
 
   void _setupScrollListener() {
     scrollController.addListener(() {
-      // Only trigger loadMore after initial load and not already fetching
+      // Load older messages when scrolling to TOP (oldest-first sort)
       if (!_initialLoadDone || _isFetchingMore || !hasMore.value) return;
 
-      if (scrollController.position.pixels >=
-          scrollController.position.maxScrollExtent - 50) {
+      if (scrollController.position.pixels <= 50) {
         fetchMessages(loadMore: true);
       }
     });
   }
 
   void _scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 100), () {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (scrollController.hasClients) {
-        scrollController.animateTo(
-          scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
+        scrollController.jumpTo(scrollController.position.maxScrollExtent);
       }
     });
   }

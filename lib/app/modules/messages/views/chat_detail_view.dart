@@ -570,7 +570,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
 
       for (final file in files) {
         final formData = dio.FormData.fromMap({
-          'image': await dio.MultipartFile.fromFile(file.path),
+          'file': await dio.MultipartFile.fromFile(file.path),
         });
 
         final response = await api.upload<dynamic>(
@@ -619,7 +619,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
 
       final api = Get.find<ApiClient>();
       final formData = dio.FormData.fromMap({
-        'image': await dio.MultipartFile.fromFile(pickedFile.path),
+        'file': await dio.MultipartFile.fromFile(pickedFile.path),
       });
 
       final response = await api.upload<dynamic>(

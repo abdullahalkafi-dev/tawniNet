@@ -387,7 +387,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
     try {
       final api = Get.find<ApiClient>();
       final formData = dio.FormData.fromMap({
-        'image': await dio.MultipartFile.fromFile(pickedFile.path),
+        'file': await dio.MultipartFile.fromFile(pickedFile.path),
       });
 
       final response = await api.upload<dynamic>(
