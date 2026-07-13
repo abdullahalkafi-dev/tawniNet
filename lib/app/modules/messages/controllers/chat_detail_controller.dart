@@ -17,7 +17,7 @@ class ChatDetailController extends GetxController {
   final isLoadingMore = false.obs;
   final isTyping = false.obs;
   final hasMore = true.obs;
-  final onlineUsers = <String>{}.obs; // Set of online user IDs
+  final onlineUsers = <String>{}.obs;
 
   final messageController = TextEditingController();
   final scrollController = ScrollController();
@@ -28,6 +28,9 @@ class ChatDetailController extends GetxController {
   StreamSubscription? _typingStartSub;
   StreamSubscription? _typingStopSub;
   StreamSubscription? _presenceSub;
+
+  bool _initialLoadDone = false;
+  bool _isFetchingMore = false;
 
   String? get currentUserId => _authService.currentUser.value?.id;
 
@@ -59,6 +62,11 @@ class ChatDetailController extends GetxController {
   /// Initialize with conversation data from arguments.
   void initConversation(String conversationId, String otherParticipantId) {
     _conversationId = conversationId;
+    _initialLoadDone = false;
+    _isFetchingMore = false;
+    hasMore.value = true;
+    messages.clear(); // Clear old messages from previous conversation
+
     _socketService.joinConversation(conversationId);
     fetchMessages();
   }
@@ -67,8 +75,10 @@ class ChatDetailController extends GetxController {
   Future<void> fetchMessages({bool loadMore = false}) async {
     if (_conversationId == null) return;
     if (isClosed) return;
+    if (_isFetchingMore) return; // Prevent concurrent fetches
 
     if (loadMore) {
+      _isFetchingMore = true;
       isLoadingMore.value = true;
     } else {
       isLoading.value = true;
@@ -76,11 +86,11 @@ class ChatDetailController extends GetxController {
 
     try {
       final query = <String, dynamic>{
-        'page': loadMore ? (messages.length ~/ 20 + 1) : 1,
         'limit': 20,
       };
 
       if (loadMore && messages.isNotEmpty) {
+        // Use the oldest message's createdAt as cursor for next page
         query['before'] = messages.first.createdAt.toIso8601String();
       }
 
@@ -93,7 +103,6 @@ class ChatDetailController extends GetxController {
             return (data['docs'] as List)
                 .map((e) {
                   final msg = ChatMessage.fromJson(e);
-                  // Determine isSentByMe from sender field
                   final senderId = e['sender'] is Map
                       ? e['sender']['_id'] ?? ''
                       : e['sender'] ?? '';
@@ -108,10 +117,22 @@ class ChatDetailController extends GetxController {
       if (isClosed) return;
 
       if (response.success && response.data != null) {
+        final newMessages = response.data!;
+
         if (loadMore) {
-          messages.insertAll(0, response.data!);
+          // Prepend older messages (avoid duplicates)
+          final existingIds = messages.map((m) => m.id).toSet();
+          final uniqueNew = newMessages.where((m) => !existingIds.contains(m.id)).toList();
+          if (uniqueNew.isNotEmpty) {
+            messages.insertAll(0, uniqueNew);
+          }
+          // If no new messages were returned, we've reached the end
+          if (newMessages.isEmpty) {
+            hasMore.value = false;
+          }
         } else {
-          messages.assignAll(response.data!);
+          messages.assignAll(newMessages);
+          _initialLoadDone = true;
         }
 
         if (response.meta != null) {
@@ -124,6 +145,7 @@ class ChatDetailController extends GetxController {
             snackPosition: SnackPosition.BOTTOM);
       }
     } finally {
+      _isFetchingMore = false;
       if (!isClosed) {
         isLoading.value = false;
         isLoadingMore.value = false;
@@ -525,11 +547,12 @@ class ChatDetailController extends GetxController {
 
   void _setupScrollListener() {
     scrollController.addListener(() {
-      if (scrollController.position.pixels ==
-          scrollController.position.maxScrollExtent) {
-        if (hasMore.value && !isLoadingMore.value) {
-          fetchMessages(loadMore: true);
-        }
+      // Only trigger loadMore after initial load and not already fetching
+      if (!_initialLoadDone || _isFetchingMore || !hasMore.value) return;
+
+      if (scrollController.position.pixels >=
+          scrollController.position.maxScrollExtent - 50) {
+        fetchMessages(loadMore: true);
       }
     });
   }
