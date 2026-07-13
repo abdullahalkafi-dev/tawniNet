@@ -103,12 +103,27 @@ Widget buildTextMessage(ChatMessage message, bool isSent, String otherAvatar) {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  _formatTime(message.createdAt),
-                  style: TextStyle(
-                    color: isSent ? Colors.white70 : Colors.grey,
-                    fontSize: 10,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _formatTime(message.createdAt),
+                      style: TextStyle(
+                        color: isSent ? Colors.white70 : Colors.grey,
+                        fontSize: 10,
+                      ),
+                    ),
+                    if (isSent) ...[
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.done_all,
+                        size: 14,
+                        color: message.id.startsWith('temp_')
+                            ? Colors.white54
+                            : Colors.white70,
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),

@@ -21,7 +21,14 @@ class ChatConversation {
 
   factory ChatConversation.fromJson(Map<String, dynamic> json) {
     final participants = (json['participants'] as List?)
-            ?.map((p) => ChatParticipant.fromJson(p is String ? {} : p))
+            ?.map((p) {
+              // Handle populated objects OR raw ObjectId strings
+              if (p is Map<String, dynamic>) {
+                return ChatParticipant.fromJson(p);
+              }
+              // Raw ObjectId string — create placeholder
+              return ChatParticipant(id: p.toString(), name: '', avatar: '');
+            })
             .toList() ??
         [];
 
@@ -30,7 +37,7 @@ class ChatConversation {
       participants: participants,
       otherParticipant: json['otherParticipant'] != null
           ? ChatParticipant.fromJson(json['otherParticipant'])
-          : (participants.isNotEmpty ? participants.first : null),
+          : null, // otherParticipant must come from backend (populated)
       lastMessage: json['lastMessage'] != null &&
               json['lastMessage'] is Map<String, dynamic>
           ? ChatMessage.fromJson(json['lastMessage'])

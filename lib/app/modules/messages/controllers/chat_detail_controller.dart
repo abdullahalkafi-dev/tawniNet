@@ -131,7 +131,7 @@ class ChatDetailController extends GetxController {
     }
   }
 
-  /// Send a text message.
+  /// Send a text message (REST only — socket is for receiving only).
   Future<void> sendTextMessage() async {
     final text = messageController.text.trim();
     if (text.isEmpty || _conversationId == null) return;
@@ -139,13 +139,6 @@ class ChatDetailController extends GetxController {
 
     messageController.clear();
     _stopTyping();
-
-    // Send via socket for real-time
-    _socketService.sendMessage(
-      conversationId: _conversationId!,
-      type: 'text',
-      content: text,
-    );
 
     // Add optimistic message with temp ID
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
@@ -161,7 +154,7 @@ class ChatDetailController extends GetxController {
 
     _scrollToBottom();
 
-    // Also send via REST to get the real message ID
+    // Send via REST
     try {
       final response = await _api.post<dynamic>(
         ApiConstants.chatMessages(_conversationId!),
@@ -177,26 +170,28 @@ class ChatDetailController extends GetxController {
         final data = response.data;
         if (data is Map<String, dynamic>) {
           final realMessage = ChatMessage.fromJson(data).copyWith(isSentByMe: true);
-          // Replace temp message with real one
           final idx = messages.indexWhere((m) => m.id == tempId);
           if (idx != -1) {
             messages[idx] = realMessage;
           }
         }
+      } else {
+        // Remove optimistic message on failure
+        messages.removeWhere((m) => m.id == tempId);
+        Get.snackbar('Error', 'Failed to send message', snackPosition: SnackPosition.BOTTOM);
       }
-    } catch (_) {}
+    } catch (_) {
+      if (!isClosed) {
+        messages.removeWhere((m) => m.id == tempId);
+        Get.snackbar('Error', 'Failed to send message', snackPosition: SnackPosition.BOTTOM);
+      }
+    }
   }
 
-  /// Send an image message.
+  /// Send an image message (REST only).
   Future<void> sendImageMessage(List<String> imageKeys) async {
     if (imageKeys.isEmpty || _conversationId == null) return;
     if (isClosed) return;
-
-    _socketService.sendMessage(
-      conversationId: _conversationId!,
-      type: 'image',
-      images: imageKeys,
-    );
 
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     messages.add(ChatMessage(
@@ -231,20 +226,20 @@ class ChatDetailController extends GetxController {
             messages[idx] = realMessage;
           }
         }
+      } else {
+        messages.removeWhere((m) => m.id == tempId);
       }
-    } catch (_) {}
+    } catch (_) {
+      if (!isClosed) {
+        messages.removeWhere((m) => m.id == tempId);
+      }
+    }
   }
 
-  /// Send a video message.
+  /// Send a video message (REST only).
   Future<void> sendVideoMessage(String videoKey) async {
     if (videoKey.isEmpty || _conversationId == null) return;
     if (isClosed) return;
-
-    _socketService.sendMessage(
-      conversationId: _conversationId!,
-      type: 'video',
-      video: videoKey,
-    );
 
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
     messages.add(ChatMessage(
@@ -278,6 +273,16 @@ class ChatDetailController extends GetxController {
           if (idx != -1) {
             messages[idx] = realMessage;
           }
+        }
+      } else {
+        messages.removeWhere((m) => m.id == tempId);
+      }
+    } catch (_) {
+      if (!isClosed) {
+        messages.removeWhere((m) => m.id == tempId);
+      }
+    }
+  }
         }
       }
     } catch (_) {}
