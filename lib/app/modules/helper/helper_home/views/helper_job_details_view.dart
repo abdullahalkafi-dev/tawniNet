@@ -1,7 +1,7 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/widgets/custom_button.dart';
-import 'package:awnneaapp/app/data/models/helper_models.dart';
+import 'package:awnneaapp/app/data/models/home_models.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -10,7 +10,7 @@ class HelperJobDetailsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final HelperJobListing job = Get.arguments;
+    final HelperJob job = Get.arguments;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -22,7 +22,7 @@ class HelperJobDetailsView extends StatelessWidget {
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Job Details',
+          'job_details_title'.tr,
           style: AppStyles.h2.copyWith(fontSize: 20, color: Colors.black),
         ),
         centerTitle: true,
@@ -41,10 +41,10 @@ class HelperJobDetailsView extends StatelessWidget {
             _buildPaymentBreakdown(),
             const SizedBox(height: 16),
             CustomButton(
-              text: 'Accept Job',
+              text: 'job_accept'.tr,
               onPressed: () {
                 Get.back();
-                Get.snackbar('Accepted', 'Job accepted successfully!',
+                Get.snackbar('job_accepted'.tr, 'job_accepted_success'.tr,
                     snackPosition: SnackPosition.BOTTOM);
               },
             ),
@@ -57,7 +57,7 @@ class HelperJobDetailsView extends StatelessWidget {
     );
   }
 
-  Widget _buildJobInfoCard(HelperJobListing job) {
+  Widget _buildJobInfoCard(HelperJob job) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -75,11 +75,11 @@ class HelperJobDetailsView extends StatelessWidget {
             children: [
               Icon(Icons.calendar_today, size: 16, color: AppColors.textSecondary),
               const SizedBox(width: 8),
-              Text('Sunday, Feb 11, 2026', style: AppStyles.bodyMedium.copyWith(fontSize: 13)),
+              Flexible(child: Text('job_sunday'.tr, style: AppStyles.bodyMedium.copyWith(fontSize: 13), overflow: TextOverflow.ellipsis)),
               const SizedBox(width: 16),
               Icon(Icons.access_time_filled, size: 16, color: AppColors.textSecondary),
               const SizedBox(width: 8),
-              Text('10:00 AM - 12:00 PM', style: AppStyles.bodyMedium.copyWith(fontSize: 13)),
+              Flexible(child: Text('job_time_range'.tr, style: AppStyles.bodyMedium.copyWith(fontSize: 13), overflow: TextOverflow.ellipsis)),
             ],
           ),
           const SizedBox(height: 8),
@@ -87,11 +87,11 @@ class HelperJobDetailsView extends StatelessWidget {
             children: [
               Icon(Icons.location_on, size: 16, color: AppColors.textSecondary),
               const SizedBox(width: 8),
-              Text('123 Elm Street, Morocco', style: AppStyles.bodyMedium.copyWith(fontSize: 13)),
+              Flexible(child: Text('job_address'.tr, style: AppStyles.bodyMedium.copyWith(fontSize: 13), overflow: TextOverflow.ellipsis)),
             ],
           ),
           const SizedBox(height: 4),
-          Text('2km away', style: AppStyles.bodyMedium.copyWith(fontSize: 12)),
+          Text('job_distance'.tr, style: AppStyles.bodyMedium.copyWith(fontSize: 12)),
         ],
       ),
     );
@@ -109,7 +109,7 @@ class HelperJobDetailsView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Customer Information', style: AppStyles.h2.copyWith(fontSize: 16)),
+          Text('job_customer_info'.tr, style: AppStyles.h2.copyWith(fontSize: 16)),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -145,7 +145,7 @@ class HelperJobDetailsView extends StatelessWidget {
             children: [
               Icon(Icons.location_on, size: 14, color: AppColors.textHint),
               const SizedBox(width: 4),
-              Text('123 Elm Street, Morocco', style: AppStyles.bodyMedium.copyWith(fontSize: 13)),
+              Flexible(child: Text('job_address'.tr, style: AppStyles.bodyMedium.copyWith(fontSize: 13), overflow: TextOverflow.ellipsis)),
             ],
           ),
         ],
@@ -165,16 +165,16 @@ class HelperJobDetailsView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Job Description', style: AppStyles.h2.copyWith(fontSize: 16)),
+          Text('label_job_description'.tr, style: AppStyles.h2.copyWith(fontSize: 16)),
           const SizedBox(height: 12),
-          Text('Tasks Required:', style: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold, fontSize: 14)),
+          Text('label_tasks_required'.tr, style: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold, fontSize: 14)),
           const SizedBox(height: 8),
           Text(
             'Lorem ipsum dolor sit amet consectetur. Elit ac gravida augue suspendisse in scelerisque pellentesque diam elementum. Lorem quam vitae mus metus tortor turpis at. Cras accumsan pharetra odio euismod metus leo neque dui. More',
             style: AppStyles.bodyMedium.copyWith(height: 1.5),
           ),
           const SizedBox(height: 16),
-          Text('Photos', style: AppStyles.h2.copyWith(fontSize: 16)),
+          Text('label_photos'.tr, style: AppStyles.h2.copyWith(fontSize: 16)),
           const SizedBox(height: 12),
           Row(
             children: List.generate(3, (index) {
@@ -217,13 +217,13 @@ class HelperJobDetailsView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Online Payment Breakdown', style: AppStyles.h2.copyWith(fontSize: 16)),
+          Text('job_payment_breakdown'.tr, style: AppStyles.h2.copyWith(fontSize: 16)),
           const SizedBox(height: 16),
-          _buildPaymentRow('Job Payment', 'MAD 100.00'),
+          _buildPaymentRow('job_payment'.tr, 'MAD 100.00'),
           const SizedBox(height: 8),
-          _buildPaymentRow('Platform Fee (12%)', '-MAD 12.00', isNegative: true),
+          _buildPaymentRow('job_platform_fee'.tr, '-MAD 12.00', isNegative: true),
           const Divider(height: 30),
-          _buildPaymentRow('Your Earnings', 'MAD 88.00', isBold: true),
+          _buildPaymentRow('job_your_earnings'.tr, 'MAD 88.00', isBold: true),
           const SizedBox(height: 12),
           Container(
             width: double.infinity,
@@ -238,7 +238,7 @@ class HelperJobDetailsView extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Payment will be processed within 24 hours after completion',
+                    'job_payment_note'.tr,
                     style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: Colors.black),
                   ),
                 ),
@@ -275,11 +275,11 @@ class HelperJobDetailsView extends StatelessWidget {
 
   Widget _buildJobStatusTimeline() {
     final steps = [
-      {'label': 'Submitted', 'date': 'Jan 8, 2025 at 2:30 PM', 'completed': true},
-      {'label': 'Accepted', 'date': 'Jan 9, 2025 at 8:15 AM', 'completed': true},
-      {'label': 'In Progress', 'date': 'Pending', 'completed': false},
-      {'label': 'Completed', 'date': 'Pending', 'completed': false},
-      {'label': 'Payment Processed', 'date': 'Pending', 'completed': false},
+      {'label': 'job_status_submitted'.tr, 'date': 'Jan 8, 2025 at 2:30 PM', 'completed': true},
+      {'label': 'job_status_accepted'.tr, 'date': 'Jan 9, 2025 at 8:15 AM', 'completed': true},
+      {'label': 'status_in_progress'.tr, 'date': 'Pending', 'completed': false},
+      {'label': 'status_completed'.tr, 'date': 'Pending', 'completed': false},
+      {'label': 'status_payment_processed'.tr, 'date': 'Pending', 'completed': false},
     ];
 
     return Container(
@@ -293,7 +293,7 @@ class HelperJobDetailsView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Job Status', style: AppStyles.h2.copyWith(fontSize: 16)),
+          Text('label_job_status'.tr, style: AppStyles.h2.copyWith(fontSize: 16)),
           const SizedBox(height: 16),
           ...steps.asMap().entries.map((entry) {
             final step = entry.value;
@@ -377,10 +377,10 @@ class HelperJobDetailsView extends StatelessWidget {
           children: [
             const Icon(Icons.image_outlined, color: AppColors.primary),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: TextField(
                 decoration: InputDecoration(
-                  hintText: 'Type a message...',
+                  hintText: 'label_type_message'.tr,
                   border: InputBorder.none,
                 ),
               ),

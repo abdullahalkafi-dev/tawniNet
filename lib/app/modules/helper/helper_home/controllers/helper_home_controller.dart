@@ -1,37 +1,78 @@
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
+import 'package:awnneaapp/app/data/models/home_models.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
-import 'package:get/get.dart';
-import 'package:awnneaapp/app/data/models/helper_models.dart';
+import 'package:awnneaapp/app/services/api_client.dart';
+import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/modules/messages/controllers/messages_controller.dart';
+import 'package:get/get.dart';
 
 class HelperHomeController extends GetxController {
   final currentIndex = 0.obs;
   final searchQuery = ''.obs;
+  final isLoading = false.obs;
 
-  final helperName = 'Al Jabir'.obs;
-  final helperLocation = 'Manchester'.obs;
-  final helperAvatar = 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200'.obs;
+  final nearbyJobs = <HelperJob>[].obs;
 
-  final jobListings = <HelperJobListing>[
-    HelperJobListing(id: '1', title: 'Plumber', price: 'MAD 25', distance: '2km away', category: 'Plumber'),
-    HelperJobListing(id: '2', title: 'House Cleaning', price: 'MAD 25', distance: '2km away', category: 'Cleaning'),
-    HelperJobListing(id: '3', title: 'Barber', price: 'MAD 25', distance: '2km away', category: 'Barber'),
-    HelperJobListing(id: '4', title: 'Electrician', price: 'MAD 25', distance: '2km away', category: 'Electrician'),
-    HelperJobListing(id: '5', title: 'Painter', price: 'MAD 25', distance: '2km away', category: 'Painter'),
-  ].obs;
+  @override
+  void onInit() {
+    super.onInit();
+    fetchNearbyJobs();
+  }
 
   void changeIndex(int index) {
     currentIndex.value = index;
   }
 
-  void onJobDetails(HelperJobListing job) {
+  Future<void> fetchNearbyJobs() async {
+    isLoading.value = true;
+    try {
+      final authService = Get.find<AuthService>();
+      final user = authService.currentUser.value;
+      final api = Get.find<ApiClient>();
+
+      final queryParams = <String, dynamic>{
+        'limit': 20,
+      };
+      if (user?.latitude != null && user?.longitude != null) {
+        queryParams['lat'] = user!.latitude;
+        queryParams['lon'] = user.longitude;
+      }
+
+      final response = await api.get(
+        ApiConstants.jobsNearby,
+        queryParameters: queryParams,
+        fromData: (data) => data,
+      );
+
+      if (response.success && response.data != null) {
+        final data = response.data as Map<String, dynamic>;
+        final items = data['docs'] as List? ?? [];
+        nearbyJobs.assignAll(
+          items.map<HelperJob>((e) => HelperJob.fromJson(e as Map<String, dynamic>)).toList(),
+        );
+      } else {
+        nearbyJobs.clear();
+      }
+    } catch (_) {
+      nearbyJobs.clear();
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> refreshData() async {
+    await fetchNearbyJobs();
+  }
+
+  void onJobDetails(HelperJob job) {
     Get.toNamed(Routes.helperJobDetails, arguments: job);
   }
 
-  void onJobChat(HelperJobListing job) {
+  void onJobChat(HelperJob job) {
     Get.toNamed(Routes.helperChatDetail, arguments: ChatSummary(
       id: job.id,
-      name: job.title,
-      image: 'https://i.pravatar.cc/150?u=${job.id}',
+      name: job.helperName,
+      image: job.helperImage,
       lastMessage: '',
       time: 'Now',
       unreadCount: 0,
@@ -43,10 +84,11 @@ class HelperHomeController extends GetxController {
     Get.toNamed(Routes.helperNotifications);
   }
 
-  List<HelperJobListing> get filteredJobs {
-    if (searchQuery.value.isEmpty) return jobListings;
-    return jobListings
-        .where((j) => j.title.toLowerCase().contains(searchQuery.value.toLowerCase()))
+  List<HelperJob> get filteredJobs {
+    if (searchQuery.value.isEmpty) return nearbyJobs;
+    return nearbyJobs
+        .where((j) => j.helperName.toLowerCase().contains(searchQuery.value.toLowerCase())
+            || j.category.toLowerCase().contains(searchQuery.value.toLowerCase()))
         .toList();
   }
 }

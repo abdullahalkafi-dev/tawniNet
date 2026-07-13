@@ -1,6 +1,7 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
+import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -27,70 +28,79 @@ class _HelperPublicProfileViewState extends State<HelperPublicProfileView> {
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Profile',
+          'public_profile'.tr,
           style: AppStyles.h2.copyWith(fontSize: 20, color: Colors.black),
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            _buildProfileHeader(),
-            const SizedBox(height: 20),
-            _buildActionButtons(),
-            const SizedBox(height: 24),
-            _buildAboutSection(),
-            const SizedBox(height: 24),
-            _buildPhotosSection(),
-            const SizedBox(height: 24),
-            _buildReviewsSection(),
-          ],
-        ),
-      ),
+      body: Obx(() {
+        final user = Get.find<AuthService>().currentUser.value;
+        if (user == null) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildProfileHeader(user),
+              const SizedBox(height: 20),
+              _buildActionButtons(),
+              const SizedBox(height: 24),
+              _buildAboutSection(user),
+              const SizedBox(height: 24),
+              _buildPhotosSection(user),
+              const SizedBox(height: 24),
+              _buildInfoSection(user),
+            ],
+          ),
+        );
+      }),
     );
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildProfileHeader(dynamic user) {
+    final avatar = user.avatar;
+    final name = user.name ?? 'Helper';
+    final serviceName = user.serviceType != null
+        ? (user.serviceType is String
+            ? user.serviceType
+            : user.serviceType['name'] ?? '')
+        : '';
+
     return Center(
       child: Column(
         children: [
           ClipOval(
-            child: Image.network(
-              'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
-              width: 100,
-              height: 100,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 100,
-                  height: 100,
-                  color: const Color(0xFFF3F4F6),
-                  child: const Icon(Icons.person, size: 40, color: Colors.grey),
-                );
-              },
-            ),
+            child: avatar != null && avatar.isNotEmpty
+                ? Image.network(
+                    avatar,
+                    width: 100,
+                    height: 100,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _buildAvatarPlaceholder(),
+                  )
+                : _buildAvatarPlaceholder(),
           ),
           const SizedBox(height: 12),
-          Text('Ethan Carter', style: AppStyles.h1.copyWith(fontSize: 22)),
-          Text(
-            'Handyman, Cleaning, Moving',
-            style: AppStyles.bodyMedium.copyWith(fontSize: 14),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.star, color: Colors.amber, size: 20),
-              const SizedBox(width: 4),
-              Text(
-                '4.8 (124 reviews)',
-                style: AppStyles.bodyLarge.copyWith(fontSize: 14),
-              ),
-            ],
-          ),
+          Text(name, style: AppStyles.h1.copyWith(fontSize: 22)),
+          if (serviceName.isNotEmpty)
+            Text(
+              serviceName,
+              style: AppStyles.bodyMedium.copyWith(fontSize: 14),
+            ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAvatarPlaceholder() {
+    return Container(
+      width: 100,
+      height: 100,
+      color: const Color(0xFFF3F4F6),
+      child: const Icon(Icons.person, size: 40, color: Colors.grey),
     );
   }
 
@@ -105,7 +115,7 @@ class _HelperPublicProfileViewState extends State<HelperPublicProfileView> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
-            child: Text('Edit Info', style: AppStyles.buttonText.copyWith(color: AppColors.primary, fontSize: 14)),
+            child: Text('public_edit_info'.tr, style: AppStyles.buttonText.copyWith(color: AppColors.primary, fontSize: 14)),
           ),
         ),
         const SizedBox(width: 12),
@@ -118,7 +128,7 @@ class _HelperPublicProfileViewState extends State<HelperPublicProfileView> {
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
             child: Text(
-              isAvailable ? 'Available' : 'Unavailable',
+              isAvailable ? 'public_available'.tr : 'public_unavailable'.tr,
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
             ),
           ),
@@ -127,29 +137,43 @@ class _HelperPublicProfileViewState extends State<HelperPublicProfileView> {
     );
   }
 
-  Widget _buildAboutSection() {
-    const fullText = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam. At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores.';
-    const shortText = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.';
+  Widget _buildAboutSection(dynamic user) {
+    final bio = user.bio ?? '';
+    if (bio.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('label_about_me'.tr, style: AppStyles.h2.copyWith(fontSize: 18)),
+          const SizedBox(height: 12),
+          Text(
+            'No bio added yet.',
+            style: AppStyles.bodyMedium.copyWith(color: Colors.grey),
+          ),
+        ],
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('About me', style: AppStyles.h2.copyWith(fontSize: 18)),
+        Text('label_about_me'.tr, style: AppStyles.h2.copyWith(fontSize: 18)),
         const SizedBox(height: 12),
         GestureDetector(
           onTap: () => setState(() => isAboutExpanded = !isAboutExpanded),
           child: RichText(
             text: TextSpan(
-              text: isAboutExpanded ? fullText : shortText,
+              text: isAboutExpanded ? bio : (bio.length > 120 ? '${bio.substring(0, 120)}...' : bio),
               style: AppStyles.bodyMedium.copyWith(height: 1.5),
               children: [
-                TextSpan(
-                  text: isAboutExpanded ? ' Read less...' : ' Read more...',
-                  style: AppStyles.bodyMedium.copyWith(
-                    height: 1.5,
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w600,
+                if (bio.length > 120)
+                  TextSpan(
+                    text: isAboutExpanded ? 'btn_read_less'.tr : 'btn_read_more'.tr,
+                    style: AppStyles.bodyMedium.copyWith(
+                      height: 1.5,
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -158,147 +182,85 @@ class _HelperPublicProfileViewState extends State<HelperPublicProfileView> {
     );
   }
 
-  Widget _buildPhotosSection() {
+  Widget _buildPhotosSection(dynamic user) {
+    final profilePhotos = user.profilePhotos;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Photos', style: AppStyles.h2.copyWith(fontSize: 18)),
+        Text('label_photos'.tr, style: AppStyles.h2.copyWith(fontSize: 18)),
         const SizedBox(height: 12),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-          ),
-          itemCount: 4,
-          itemBuilder: (context, index) {
-            return ClipRRect(
+        if (profilePhotos == null || profilePhotos.isEmpty)
+          Container(
+            height: 120,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF3F4F6),
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                'https://i.pravatar.cc/150?u=photo$index',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
+            ),
+            child: const Center(
+              child: Text('No photos added yet', style: TextStyle(color: Colors.grey)),
+            ),
+          )
+        else
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemCount: profilePhotos.length,
+            itemBuilder: (context, index) {
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  profilePhotos[index],
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(
                     color: const Color(0xFFF3F4F6),
                     child: const Icon(Icons.image, color: Colors.grey),
-                  );
-                },
-              ),
-            );
-          },
-        ),
+                  ),
+                ),
+              );
+            },
+          ),
       ],
     );
   }
 
-  Widget _buildReviewsSection() {
+  Widget _buildInfoSection(dynamic user) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Reviews', style: AppStyles.h2.copyWith(fontSize: 18)),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Text('4.9', style: AppStyles.h1.copyWith(fontSize: 36)),
-            const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: List.generate(5, (i) => Icon(Icons.star, color: AppColors.primary, size: 18)),
-                ),
-                Text('175 Reviews', style: AppStyles.bodyMedium.copyWith(fontSize: 12)),
-              ],
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildReviewBar(5, '80%'),
-        _buildReviewBar(4, '12%'),
-        _buildReviewBar(3, '5%'),
-        _buildReviewBar(2, '3%'),
-        _buildReviewBar(1, '0%'),
-        const SizedBox(height: 20),
-        _buildReviewItem('Rihanna', 'https://i.pravatar.cc/150?u=rihanna', 5, '45m ago',
-            'I\'m very happy with order, it was delivered on and good quality. Recommended!'),
-        const SizedBox(height: 16),
-        _buildReviewItem('Jhon', 'https://i.pravatar.cc/150?u=jhon', 5, '30m ago',
-            'I love it. Awesome customer service!! Helped me out with adding an additional item to my order. Thanks again!'),
-        const SizedBox(height: 16),
-        _buildReviewItem('Rihanna', 'https://i.pravatar.cc/150?u=rihanna2', 5, '50m ago',
-            'I\'m very happy with order, it was delivered on and good quality. Recommended!'),
+        Text('Details', style: AppStyles.h2.copyWith(fontSize: 18)),
+        const SizedBox(height: 12),
+        _buildInfoRow(Icons.location_on_outlined, 'Location', user.address ?? 'Not set'),
+        _buildInfoRow(Icons.work_outline, 'Experience', '${user.experience ?? 0} years'),
+        _buildInfoRow(Icons.attach_money, 'Price', '${user.pricePerHour ?? 0}/hour'),
+        _buildInfoRow(Icons.language, 'Language', user.language ?? 'Not set'),
+        _buildInfoRow(Icons.my_location, 'Service Radius', '${user.serviceRadius ?? 0} km'),
       ],
     );
   }
 
-  Widget _buildReviewBar(int stars, String percent) {
+  Widget _buildInfoRow(IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          SizedBox(
-            width: 20,
-            child: Text('$stars', style: AppStyles.bodyMedium.copyWith(fontSize: 14)),
-          ),
-          Icon(Icons.star, color: AppColors.primary, size: 14),
-          const SizedBox(width: 8),
-          Expanded(
-            child: LinearProgressIndicator(
-              value: double.parse(percent.replaceAll('%', '')) / 100,
-              backgroundColor: const Color(0xFFE5E7EB),
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-              minHeight: 6,
-              borderRadius: BorderRadius.circular(3),
-            ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(
-            width: 35,
-            child: Text(percent, style: AppStyles.bodyMedium.copyWith(fontSize: 12)),
+          Icon(icon, size: 20, color: AppColors.primary),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: Colors.grey)),
+              Text(value, style: AppStyles.bodyLarge.copyWith(fontSize: 14)),
+            ],
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildReviewItem(String name, String image, int rating, String time, String comment) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Image.network(
-                image,
-                width: 36,
-                height: 36,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 36,
-                    height: 36,
-                    color: const Color(0xFFF3F4F6),
-                    child: const Icon(Icons.person, size: 16, color: Colors.grey),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(name, style: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold, fontSize: 14)),
-            const Spacer(),
-            Text(time, style: AppStyles.bodyMedium.copyWith(fontSize: 12)),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Row(
-          children: List.generate(rating, (i) => Icon(Icons.star, color: AppColors.primary, size: 14)),
-        ),
-        const SizedBox(height: 8),
-        Text(comment, style: AppStyles.bodyMedium.copyWith(height: 1.4)),
-      ],
     );
   }
 }

@@ -1,12 +1,180 @@
+import 'dart:io';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
-import 'package:awnneaapp/app/core/widgets/custom_button.dart';
-import 'package:awnneaapp/app/core/widgets/custom_text_field.dart';
+import 'package:awnneaapp/app/services/api_client.dart';
+import 'package:awnneaapp/app/services/auth_service.dart';
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 
-class HelperEditProfileView extends StatelessWidget {
+class HelperEditProfileView extends StatefulWidget {
   const HelperEditProfileView({super.key});
+
+  @override
+  State<HelperEditProfileView> createState() => _HelperEditProfileViewState();
+}
+
+class _HelperEditProfileViewState extends State<HelperEditProfileView> {
+  late TextEditingController nameCtl;
+  late TextEditingController emailCtl;
+  late TextEditingController phoneCtl;
+  late TextEditingController bioCtl;
+  final isSaving = false.obs;
+  final isUploadingAvatar = false.obs;
+  final _picker = ImagePicker();
+  String? _pickedAvatarPath;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = Get.find<AuthService>().currentUser.value;
+    nameCtl = TextEditingController(text: user?.name ?? '');
+    emailCtl = TextEditingController(text: user?.email ?? '');
+    phoneCtl = TextEditingController(text: user?.phone ?? '');
+    bioCtl = TextEditingController(text: user?.bio ?? '');
+  }
+
+  @override
+  void dispose() {
+    nameCtl.dispose();
+    emailCtl.dispose();
+    phoneCtl.dispose();
+    bioCtl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickAndUploadAvatar() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 512,
+        maxHeight: 512,
+        imageQuality: 80,
+      );
+      if (image == null) return;
+
+      setState(() => _pickedAvatarPath = image.path);
+      isUploadingAvatar.value = true;
+
+      final key = await _uploadFile(image.path);
+      if (key != null) {
+        final api = Get.find<ApiClient>();
+        final response = await api.patch(
+          ApiConstants.userMe,
+          data: {'avatar': key},
+        );
+
+        if (response.success) {
+          await Get.find<AuthService>().getMe();
+          if (mounted) {
+            Get.snackbar(
+              'Success',
+              'Profile photo updated',
+              snackPosition: SnackPosition.BOTTOM,
+            );
+          }
+        } else {
+          if (mounted) {
+            Get.snackbar(
+              'Error',
+              response.message ?? 'Failed to update photo',
+              snackPosition: SnackPosition.BOTTOM,
+            );
+          }
+        }
+      } else {
+        if (mounted) {
+          Get.snackbar(
+            'Error',
+            'Failed to upload image',
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Get.snackbar(
+          'Error',
+          'Failed to pick image',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } finally {
+      isUploadingAvatar.value = false;
+    }
+  }
+
+  Future<String?> _uploadFile(String filePath) async {
+    try {
+      final fileName = filePath.split('/').last;
+      final formData = dio.FormData.fromMap({
+        'file': await dio.MultipartFile.fromFile(
+          filePath,
+          filename: fileName,
+        ),
+      });
+
+      final api = Get.find<ApiClient>();
+      final response = await api.upload(
+        ApiConstants.uploadImage,
+        formData: formData,
+      );
+
+      if (response.success && response.data != null) {
+        return response.data['key'];
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    isSaving.value = true;
+    try {
+      final api = Get.find<ApiClient>();
+      final response = await api.patch(
+        ApiConstants.userMe,
+        data: {
+          if (nameCtl.text.trim().isNotEmpty) 'name': nameCtl.text.trim(),
+          if (phoneCtl.text.trim().isNotEmpty) 'phone': phoneCtl.text.trim(),
+          if (bioCtl.text.trim().isNotEmpty) 'bio': bioCtl.text.trim(),
+        },
+      );
+
+      if (response.success) {
+        await Get.find<AuthService>().getMe();
+        if (mounted) {
+          Get.back();
+          Get.snackbar(
+            'Success',
+            'Profile updated successfully',
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        }
+      } else {
+        if (mounted) {
+          Get.snackbar(
+            'Error',
+            response.message ?? 'Update failed',
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        Get.snackbar(
+          'Error',
+          e.toString(),
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+    } finally {
+      isSaving.value = false;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +188,7 @@ class HelperEditProfileView extends StatelessWidget {
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Profile',
+          'helper_edit_profile'.tr,
           style: AppStyles.h2.copyWith(fontSize: 20, color: Colors.black),
         ),
         centerTitle: true,
@@ -34,50 +202,16 @@ class HelperEditProfileView extends StatelessWidget {
             const SizedBox(height: 30),
             Align(
               alignment: Alignment.centerLeft,
-              child: Text('Personal Information', style: AppStyles.h2.copyWith(fontSize: 18)),
+              child: Text('helper_personal_info'.tr, style: AppStyles.h2.copyWith(fontSize: 18)),
             ),
             const SizedBox(height: 16),
-            CustomTextField(label: 'Full name', hint: 'Name'),
+            _buildField('apply_full_name'.tr, nameCtl),
             const SizedBox(height: 16),
-            CustomTextField(label: 'Email', hint: 'Email'),
+            _buildField('apply_email'.tr, emailCtl, readOnly: true),
             const SizedBox(height: 16),
-            CustomTextField(label: 'Phone Number', hint: '+1(555) 1234-2342'),
+            _buildField('helper_phone'.tr, phoneCtl),
             const SizedBox(height: 16),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Bio (optional)',
-                  style: AppStyles.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  maxLines: 8,
-                  minLines: 5,
-                  decoration: InputDecoration(
-                    hintText: 'Enter your bio',
-                    hintStyle: AppStyles.bodyMedium.copyWith(color: AppColors.textHint),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            _buildPhotoUploadSection(),
+            _buildBioField(),
             const SizedBox(height: 30),
             Row(
               children: [
@@ -89,19 +223,26 @@ class HelperEditProfileView extends StatelessWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: Text('Cancel', style: AppStyles.buttonText.copyWith(color: AppColors.primary)),
+                    child: Text('btn_cancel'.tr, style: AppStyles.buttonText.copyWith(color: AppColors.primary)),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: CustomButton(
-                    text: 'Save Changes',
-                    onPressed: () {
-                      Get.back();
-                      Get.snackbar('Saved', 'Profile updated successfully',
-                          snackPosition: SnackPosition.BOTTOM);
-                    },
-                  ),
+                  child: Obx(() => ElevatedButton(
+                    onPressed: isSaving.value ? null : _saveProfile,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: isSaving.value
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : Text('helper_save_changes'.tr, style: AppStyles.buttonText),
+                  )),
                 ),
               ],
             ),
@@ -113,8 +254,11 @@ class HelperEditProfileView extends StatelessWidget {
   }
 
   Widget _buildAvatarSection() {
+    final user = Get.find<AuthService>().currentUser.value;
+    final avatar = user?.avatar;
+
     return Center(
-      child: Stack(
+      child: Obx(() => Stack(
         children: [
           Container(
             width: 120,
@@ -127,97 +271,111 @@ class HelperEditProfileView extends StatelessWidget {
               ],
             ),
             child: ClipOval(
-              child: Image.network(
-                'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: const Color(0xFFF3F4F6),
-                    child: const Icon(Icons.person, size: 50, color: Colors.grey),
-                  );
-                },
-              ),
+              child: _pickedAvatarPath != null
+                  ? Image.file(
+                      File(_pickedAvatarPath!),
+                      fit: BoxFit.cover,
+                    )
+                  : avatar != null && avatar.isNotEmpty
+                      ? Image.network(
+                          avatar,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _buildAvatarPlaceholder(),
+                        )
+                      : _buildAvatarPlaceholder(),
             ),
           ),
           Positioned(
             bottom: 5,
             right: 5,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: const BoxDecoration(
-                color: Color(0xFF5AB9A7),
-                shape: BoxShape.circle,
+            child: GestureDetector(
+              onTap: isUploadingAvatar.value ? null : _pickAndUploadAvatar,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF5AB9A7),
+                  shape: BoxShape.circle,
+                ),
+                child: isUploadingAvatar.value
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.camera_alt, color: Colors.white, size: 18),
               ),
-              child: const Icon(Icons.edit, color: Colors.white, size: 18),
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 
-  Widget _buildPhotoUploadSection() {
+  Widget _buildAvatarPlaceholder() {
+    return Container(
+      color: const Color(0xFFF3F4F6),
+      child: const Icon(Icons.person, size: 50, color: Colors.grey),
+    );
+  }
+
+  Widget _buildField(String label, TextEditingController ctl, {bool readOnly = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Add photos (optional)',
-          style: AppStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                border: Border.all(color: const Color(0xFFD1D5DB)),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.camera_alt_outlined, color: AppColors.textHint, size: 28),
+        Text(label, style: AppStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: ctl,
+          readOnly: readOnly,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
             ),
-            const SizedBox(width: 12),
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                image: const DecorationImage(
-                  image: NetworkImage('https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&q=80&w=200'),
-                  fit: BoxFit.cover,
-                ),
-              ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
             ),
-          ],
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+            ),
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildAvailabilitySection() {
+  Widget _buildBioField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Availability',
+          'helper_bio'.tr,
           style: AppStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 8),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFFD1D5DB)),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: 'Available Weekdays',
-              isExpanded: true,
-              items: ['Available Weekdays', 'Available Weekends', 'Available All Days'].map((String item) {
-                return DropdownMenuItem<String>(value: item, child: Text(item));
-              }).toList(),
-              onChanged: (String? newValue) {},
+        TextField(
+          controller: bioCtl,
+          maxLines: 8,
+          minLines: 5,
+          decoration: InputDecoration(
+            hintText: 'helper_enter_bio'.tr,
+            hintStyle: AppStyles.bodyMedium.copyWith(color: AppColors.textHint),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
             ),
           ),
         ),
