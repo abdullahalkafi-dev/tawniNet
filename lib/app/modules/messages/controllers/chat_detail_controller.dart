@@ -8,9 +8,9 @@ import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/data/models/message_model.dart';
 
 class ChatDetailController extends GetxController {
-  final _api = Get.find<ApiClient>();
-  final _authService = Get.find<AuthService>();
-  final _socketService = Get.find<SocketService>();
+  late final ApiClient _api;
+  late final AuthService _authService;
+  late final SocketService _socketService;
 
   final messages = <ChatMessage>[].obs;
   final isLoading = false.obs;
@@ -22,7 +22,6 @@ class ChatDetailController extends GetxController {
   final scrollController = ScrollController();
 
   String? _conversationId;
-  String? _otherParticipantId;
   Timer? _typingTimer;
 
   String? get currentUserId => _authService.currentUser.value?.id;
@@ -30,6 +29,9 @@ class ChatDetailController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _api = Get.find<ApiClient>();
+    _authService = Get.find<AuthService>();
+    _socketService = Get.find<SocketService>();
     _setupSocketListeners();
     _setupScrollListener();
   }
@@ -48,7 +50,6 @@ class ChatDetailController extends GetxController {
   /// Initialize with conversation data from arguments.
   void initConversation(String conversationId, String otherParticipantId) {
     _conversationId = conversationId;
-    _otherParticipantId = otherParticipantId;
 
     _socketService.joinConversation(conversationId);
     fetchMessages();

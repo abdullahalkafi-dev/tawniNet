@@ -25,13 +25,21 @@ class ChatSummary {
 }
 
 class MessagesController extends GetxController {
-  final _api = Get.find<ApiClient>();
-  final _authService = Get.find<AuthService>();
+  late final ApiClient _api;
+  late final AuthService _authService;
 
   final conversations = <ChatConversation>[].obs;
   final isLoading = false.obs;
   final searchQuery = ''.obs;
   final isSearching = false.obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    _api = Get.find<ApiClient>();
+    _authService = Get.find<AuthService>();
+    fetchConversations();
+  }
 
   List<ChatSummary> get filteredChats {
     final query = searchQuery.value.toLowerCase();
@@ -50,12 +58,6 @@ class MessagesController extends GetxController {
       if (query.isEmpty) return true;
       return chat.name.toLowerCase().contains(query);
     }).toList();
-  }
-
-  @override
-  void onInit() {
-    super.onInit();
-    fetchConversations();
   }
 
   /// Fetch all conversations from API.

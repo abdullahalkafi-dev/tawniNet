@@ -2,6 +2,7 @@ enum BookingStatus { inProgress, completed, cancelled }
 
 class Booking {
   final String id;
+  final String workerUserId;
   final String workerName;
   final String workerImage;
   final String category;
@@ -16,6 +17,7 @@ class Booking {
 
   Booking({
     required this.id,
+    required this.workerUserId,
     required this.workerName,
     required this.workerImage,
     required this.category,
