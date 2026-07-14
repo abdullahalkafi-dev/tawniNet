@@ -6,6 +6,7 @@ class VideoThumbnail extends StatefulWidget {
   final double width;
   final double height;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
   const VideoThumbnail({
     super.key,
@@ -13,6 +14,7 @@ class VideoThumbnail extends StatefulWidget {
     this.width = 200,
     this.height = 150,
     this.onTap,
+    this.onLongPress,
   });
 
   @override
@@ -58,6 +60,7 @@ class _VideoThumbnailState extends State<VideoThumbnail> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: widget.onTap,
+      onLongPress: widget.onLongPress,
       child: Container(
         width: widget.width,
         height: widget.height,

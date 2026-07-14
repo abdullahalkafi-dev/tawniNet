@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
+import 'package:awnneaapp/app/modules/messages/views/widgets/media_downloader.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final String videoUrl;
@@ -108,6 +109,21 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             child: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () => Get.back(),
+            ),
+          ),
+
+          // Download button
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            right: 8,
+            child: IconButton(
+              icon: const Icon(Icons.download, color: Colors.white),
+              onPressed: () {
+                MediaDownloader.download(
+                  url: widget.videoUrl,
+                  fileName: 'video_${DateTime.now().millisecondsSinceEpoch}.mp4',
+                );
+              },
             ),
           ),
 

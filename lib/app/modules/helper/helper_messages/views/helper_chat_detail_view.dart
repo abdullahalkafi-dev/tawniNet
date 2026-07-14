@@ -9,6 +9,7 @@ import 'package:awnneaapp/app/modules/messages/views/widgets/upload_progress_dia
 import 'package:awnneaapp/app/modules/messages/views/widgets/video_player_screen.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/video_thumbnail.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/image_viewer_screen.dart';
+import 'package:awnneaapp/app/modules/messages/views/widgets/media_downloader.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/video_compressor.dart';
@@ -293,12 +294,21 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
     );
   }
 
+  void _saveImage(String url) {
+    final ext = url.split('.').last.split('?').first;
+    MediaDownloader.download(
+      url: url,
+      fileName: 'image_${DateTime.now().millisecondsSinceEpoch}.$ext',
+    );
+  }
+
   Widget _buildImageGrid(List<String> images) {
     final count = images.length.clamp(1, 4);
 
     if (count == 1) {
       return GestureDetector(
         onTap: () => Get.to(() => ImageViewerScreen(imageUrls: images, initialIndex: 0)),
+        onLongPress: () => _saveImage(images[0]),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(8),
           child: Image.network(
@@ -317,7 +327,6 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
       );
     }
 
-    // Multi-image grid
     return SizedBox(
       width: 220,
       child: count <= 2
@@ -328,6 +337,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
                     padding: EdgeInsets.only(right: index < count - 1 ? 4 : 0),
                     child: GestureDetector(
                       onTap: () => Get.to(() => ImageViewerScreen(imageUrls: images, initialIndex: index)),
+                      onLongPress: () => _saveImage(images[index]),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: Image.network(
@@ -349,7 +359,6 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
           : Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Top row: 2 images
                 Row(
                   children: List.generate(2, (index) {
                     return Expanded(
@@ -357,6 +366,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
                         padding: EdgeInsets.only(right: index == 0 ? 4 : 0, bottom: 4),
                         child: GestureDetector(
                           onTap: () => Get.to(() => ImageViewerScreen(imageUrls: images, initialIndex: index)),
+                          onLongPress: () => _saveImage(images[index]),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: Image.network(
@@ -375,7 +385,6 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
                     );
                   }),
                 ),
-                // Bottom row: remaining images
                 Row(
                   children: List.generate(count - 2, (i) {
                     final index = i + 2;
@@ -386,6 +395,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
                         ),
                         child: GestureDetector(
                           onTap: () => Get.to(() => ImageViewerScreen(imageUrls: images, initialIndex: index)),
+                          onLongPress: () => _saveImage(images[index]),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: Image.network(
@@ -446,6 +456,14 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
                     onTap: () {
                       if (message.video != null && message.video!.isNotEmpty) {
                         Get.to(() => VideoPlayerScreen(videoUrl: message.video!));
+                      }
+                    },
+                    onLongPress: () {
+                      if (message.video != null && message.video!.isNotEmpty) {
+                        MediaDownloader.download(
+                          url: message.video!,
+                          fileName: 'video_${DateTime.now().millisecondsSinceEpoch}.mp4',
+                        );
                       }
                     },
                   ),

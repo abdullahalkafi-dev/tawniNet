@@ -156,33 +156,15 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Time Range
+                  // Date Range
                   Row(
                     children: [
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildLabel('Start Time'),
-                            TextField(
-                              controller: _startTimeController,
-                              decoration: _buildInputDecoration('09:00'),
-                            ),
-                          ],
-                        ),
+                        child: _buildDateField('Start Date', _startTimeController),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildLabel('End Time'),
-                            TextField(
-                              controller: _endTimeController,
-                              decoration: _buildInputDecoration('17:00'),
-                            ),
-                          ],
-                        ),
+                        child: _buildDateField('End Date', _endTimeController),
                       ),
                     ],
                   ),
@@ -328,6 +310,40 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
     );
   }
 
+  Widget _buildDateField(String label, TextEditingController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel(label),
+        GestureDetector(
+          onTap: () async {
+            final now = DateTime.now();
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: controller.text.isNotEmpty
+                  ? DateTime.tryParse(controller.text) ?? now
+                  : now,
+              firstDate: now,
+              lastDate: now.add(const Duration(days: 365)),
+            );
+            if (picked != null) {
+              controller.text = picked.toIso8601String().split('T')[0];
+            }
+          },
+          child: AbsorbPointer(
+            child: TextField(
+              controller: controller,
+              decoration: _buildInputDecoration('Select date').copyWith(
+                suffixIcon: const Icon(Icons.calendar_today, size: 20),
+                hintText: 'Select date',
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   InputDecoration _buildInputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
@@ -397,9 +413,9 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
 
       if (response.success && response.data != null) {
         final data = response.data;
-        if (data is Map<String, dynamic> && data['key'] != null) {
+        if (data is Map<String, dynamic> && data['url'] != null) {
           setState(() {
-            _selectedImages.add(data['key']);
+            _selectedImages.add(data['url']);
           });
         }
       }

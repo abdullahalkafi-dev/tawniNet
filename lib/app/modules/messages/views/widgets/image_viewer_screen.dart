@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:awnneaapp/app/modules/messages/views/widgets/media_downloader.dart';
 
 class ImageViewerScreen extends StatefulWidget {
   final List<String> imageUrls;
@@ -83,6 +84,23 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
             child: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.white),
               onPressed: () => Get.back(),
+            ),
+          ),
+
+          // Download button
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            right: 8,
+            child: IconButton(
+              icon: const Icon(Icons.download, color: Colors.white),
+              onPressed: () {
+                final url = widget.imageUrls[_currentIndex];
+                final ext = url.split('.').last.split('?').first;
+                MediaDownloader.download(
+                  url: url,
+                  fileName: 'image_${DateTime.now().millisecondsSinceEpoch}.$ext',
+                );
+              },
             ),
           ),
 
