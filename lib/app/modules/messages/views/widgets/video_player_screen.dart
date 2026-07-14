@@ -106,9 +106,15 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
             left: 8,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Get.back(),
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.black54,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Get.back(),
+              ),
             ),
           ),
 
@@ -116,14 +122,20 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
             right: 8,
-            child: IconButton(
-              icon: const Icon(Icons.download, color: Colors.white),
-              onPressed: () {
-                MediaDownloader.download(
-                  url: widget.videoUrl,
-                  fileName: 'video_${DateTime.now().millisecondsSinceEpoch}.mp4',
-                );
-              },
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.black54,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.download, color: Colors.white),
+                onPressed: () {
+                  MediaDownloader.download(
+                    url: widget.videoUrl,
+                    fileName: 'video_${DateTime.now().millisecondsSinceEpoch}.mp4',
+                  );
+                },
+              ),
             ),
           ),
 

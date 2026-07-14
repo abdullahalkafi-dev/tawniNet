@@ -165,14 +165,18 @@ class OfferCardWidget extends StatelessWidget {
 
                 const SizedBox(height: 8),
 
-                // Time range
-                if (offer.startTime.isNotEmpty || offer.endTime.isNotEmpty)
+                // Date + Time range
+                if (offer.date.isNotEmpty || offer.startTime.isNotEmpty || offer.endTime.isNotEmpty)
                   Row(
                     children: [
                       Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
                       const SizedBox(width: 4),
                       Text(
-                        '${offer.startTime} - ${offer.endTime}',
+                        [
+                          if (offer.date.isNotEmpty) offer.date,
+                          if (offer.startTime.isNotEmpty || offer.endTime.isNotEmpty)
+                            '${offer.startTime} - ${offer.endTime}',
+                        ].join('  '),
                         style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                       ),
                     ],

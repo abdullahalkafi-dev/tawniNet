@@ -81,9 +81,15 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
             left: 8,
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => Get.back(),
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.black54,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => Get.back(),
+              ),
             ),
           ),
 
@@ -91,16 +97,22 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
           Positioned(
             top: MediaQuery.of(context).padding.top + 8,
             right: 8,
-            child: IconButton(
-              icon: const Icon(Icons.download, color: Colors.white),
-              onPressed: () {
-                final url = widget.imageUrls[_currentIndex];
-                final ext = url.split('.').last.split('?').first;
-                MediaDownloader.download(
-                  url: url,
-                  fileName: 'image_${DateTime.now().millisecondsSinceEpoch}.$ext',
-                );
-              },
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Colors.black54,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: const Icon(Icons.download, color: Colors.white),
+                onPressed: () {
+                  final url = widget.imageUrls[_currentIndex];
+                  final ext = url.split('.').last.split('?').first;
+                  MediaDownloader.download(
+                    url: url,
+                    fileName: 'image_${DateTime.now().millisecondsSinceEpoch}.$ext',
+                  );
+                },
+              ),
             ),
           ),
 

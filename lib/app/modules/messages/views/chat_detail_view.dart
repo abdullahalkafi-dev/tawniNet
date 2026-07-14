@@ -555,7 +555,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
 
   Widget _buildInputBar() {
     return Container(
-      padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
+      padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [

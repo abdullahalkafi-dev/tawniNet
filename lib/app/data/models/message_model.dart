@@ -146,6 +146,7 @@ class OfferData {
   final String description;
   final double price;
   final String priceType; // fixed, hourly
+  final String date;
   final String startTime;
   final String endTime;
   final String paymentMethod; // cash, online
@@ -157,6 +158,7 @@ class OfferData {
     this.description = '',
     required this.price,
     this.priceType = 'fixed',
+    this.date = '',
     this.startTime = '',
     this.endTime = '',
     this.paymentMethod = 'cash',
@@ -170,6 +172,7 @@ class OfferData {
       description: json['description'] ?? '',
       price: (json['price'] ?? 0).toDouble(),
       priceType: json['priceType'] ?? 'fixed',
+      date: json['date'] ?? '',
       startTime: json['startTime'] ?? '',
       endTime: json['endTime'] ?? '',
       paymentMethod: json['paymentMethod'] ?? 'cash',

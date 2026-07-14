@@ -27,6 +27,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
   late final TextEditingController _titleController;
   late final TextEditingController _descController;
   late final TextEditingController _priceController;
+  late final TextEditingController _dateController;
   late final TextEditingController _startTimeController;
   late final TextEditingController _endTimeController;
 
@@ -42,6 +43,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
     _priceController = TextEditingController(
       text: widget.editOffer?.price.toString() ?? '',
     );
+    _dateController = TextEditingController(text: widget.editOffer?.date ?? '');
     _startTimeController = TextEditingController(text: widget.editOffer?.startTime ?? '');
     _endTimeController = TextEditingController(text: widget.editOffer?.endTime ?? '');
 
@@ -57,6 +59,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
     _titleController.dispose();
     _descController.dispose();
     _priceController.dispose();
+    _dateController.dispose();
     _startTimeController.dispose();
     _endTimeController.dispose();
     super.dispose();
@@ -156,15 +159,19 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Date Range
+                  // Date
+                  _buildDateField('Date', _dateController),
+                  const SizedBox(height: 16),
+
+                  // Time Range
                   Row(
                     children: [
                       Expanded(
-                        child: _buildDateField('Start Date', _startTimeController),
+                        child: _buildTimeField('Start Time', _startTimeController),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: _buildDateField('End Date', _endTimeController),
+                        child: _buildTimeField('End Time', _endTimeController),
                       ),
                     ],
                   ),
@@ -344,6 +351,51 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
     );
   }
 
+  Widget _buildTimeField(String label, TextEditingController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel(label),
+        GestureDetector(
+          onTap: () async {
+            final now = TimeOfDay.now();
+            final picked = await showTimePicker(
+              context: context,
+              initialTime: controller.text.isNotEmpty
+                  ? _parseTimeOfDay(controller.text) ?? now
+                  : now,
+            );
+            if (picked != null) {
+              controller.text =
+                  '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+            }
+          },
+          child: AbsorbPointer(
+            child: TextField(
+              controller: controller,
+              decoration: _buildInputDecoration('Select time').copyWith(
+                suffixIcon: const Icon(Icons.access_time, size: 20),
+                hintText: 'Select time',
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  TimeOfDay? _parseTimeOfDay(String time) {
+    final parts = time.split(':');
+    if (parts.length == 2) {
+      final hour = int.tryParse(parts[0]);
+      final minute = int.tryParse(parts[1]);
+      if (hour != null && minute != null) {
+        return TimeOfDay(hour: hour, minute: minute);
+      }
+    }
+    return null;
+  }
+
   InputDecoration _buildInputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
@@ -448,6 +500,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
       'description': _descController.text.trim(),
       'price': price,
       'priceType': _priceType,
+      'date': _dateController.text.trim(),
       'startTime': _startTimeController.text.trim(),
       'endTime': _endTimeController.text.trim(),
       'paymentMethod': _paymentMethod,
