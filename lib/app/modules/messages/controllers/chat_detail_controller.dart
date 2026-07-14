@@ -121,11 +121,11 @@ class ChatDetailController extends GetxController {
         final newMessages = response.data!;
 
         if (loadMore) {
-          // Append newer messages (avoid duplicates)
+          // Prepend older messages (avoid duplicates)
           final existingIds = messages.map((m) => m.id).toSet();
           final uniqueNew = newMessages.where((m) => !existingIds.contains(m.id)).toList();
           if (uniqueNew.isNotEmpty) {
-            messages.addAll(uniqueNew);
+            messages.insertAll(0, uniqueNew);
           }
           if (newMessages.length < 20) {
             hasMore.value = false;
@@ -133,6 +133,7 @@ class ChatDetailController extends GetxController {
         } else {
           messages.assignAll(newMessages);
           _initialLoadDone = true;
+          _scrollToBottom();
         }
 
         if (response.meta != null) {

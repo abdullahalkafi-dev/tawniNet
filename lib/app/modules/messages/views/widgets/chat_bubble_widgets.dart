@@ -4,6 +4,7 @@ import 'package:awnneaapp/app/modules/messages/controllers/chat_detail_controlle
 import 'package:awnneaapp/app/modules/messages/views/widgets/offer_card_widget.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/video_player_screen.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/video_thumbnail.dart';
+import 'package:awnneaapp/app/modules/messages/views/widgets/image_viewer_screen.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -288,48 +289,112 @@ Widget _buildImageGrid(List<String> images) {
   final count = images.length.clamp(1, 4);
 
   if (count == 1) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: Image.network(
-        images[0],
-        width: 200,
-        height: 150,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Container(
+    return GestureDetector(
+      onTap: () => Get.to(() => ImageViewerScreen(imageUrls: images, initialIndex: 0)),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          images[0],
           width: 200,
-          height: 150,
-          color: Colors.grey[300],
-          child: const Icon(Icons.broken_image),
+          height: 250,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => Container(
+            width: 200,
+            height: 250,
+            color: Colors.grey[300],
+            child: const Icon(Icons.broken_image),
+          ),
         ),
       ),
     );
   }
 
   return SizedBox(
-    width: 200,
-    height: 150,
-    child: GridView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: count > 2 ? 2 : count,
-        crossAxisSpacing: 4,
-        mainAxisSpacing: 4,
-      ),
-      itemCount: count,
-      itemBuilder: (context, index) {
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: Image.network(
-            images[index],
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
-              color: Colors.grey[300],
-              child: const Icon(Icons.broken_image, size: 20),
-            ),
+    width: 220,
+    child: count <= 2
+        ? Row(
+            children: List.generate(count, (index) {
+              return Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(right: index < count - 1 ? 4 : 0),
+                  child: GestureDetector(
+                    onTap: () => Get.to(() => ImageViewerScreen(imageUrls: images, initialIndex: index)),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        images[index],
+                        height: 150,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          height: 150,
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.broken_image, size: 20),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          )
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: List.generate(2, (index) {
+                  return Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(right: index == 0 ? 4 : 0, bottom: 4),
+                      child: GestureDetector(
+                        onTap: () => Get.to(() => ImageViewerScreen(imageUrls: images, initialIndex: index)),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            images[index],
+                            height: 100,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              height: 100,
+                              color: Colors.grey[300],
+                              child: const Icon(Icons.broken_image, size: 20),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+              Row(
+                children: List.generate(count - 2, (i) {
+                  final index = i + 2;
+                  return Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        right: index < count - 1 ? 4 : 0,
+                      ),
+                      child: GestureDetector(
+                        onTap: () => Get.to(() => ImageViewerScreen(imageUrls: images, initialIndex: index)),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            images[index],
+                            height: 100,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              height: 100,
+                              color: Colors.grey[300],
+                              child: const Icon(Icons.broken_image, size: 20),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ],
           ),
-        );
-      },
-    ),
   );
 }
 
