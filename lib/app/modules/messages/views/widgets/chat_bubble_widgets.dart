@@ -2,6 +2,7 @@ import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/data/models/message_model.dart';
 import 'package:awnneaapp/app/modules/messages/controllers/chat_detail_controller.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/offer_card_widget.dart';
+import 'package:awnneaapp/app/modules/messages/views/widgets/video_player_screen.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -217,7 +218,7 @@ Widget buildVideoMessage(
                 GestureDetector(
                   onTap: () {
                     if (message.video != null && message.video!.isNotEmpty) {
-                      // TODO: Open video player
+                      Get.to(() => VideoPlayerScreen(videoUrl: message.video!));
                     }
                   },
                   child: Container(

@@ -6,6 +6,7 @@ import 'package:awnneaapp/app/modules/messages/controllers/chat_detail_controlle
 import 'package:awnneaapp/app/modules/messages/views/widgets/offer_card_widget.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/offer_form_bottom_sheet.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/upload_progress_dialog.dart';
+import 'package:awnneaapp/app/modules/messages/views/widgets/video_player_screen.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/video_compressor.dart';
@@ -371,18 +372,25 @@ class _ChatDetailViewState extends State<ChatDetailView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Container(
-                    width: 200,
-                    height: 150,
-                    decoration: BoxDecoration(
-                      color: Colors.black87,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.play_circle_fill,
-                        color: Colors.white,
-                        size: 48,
+                  GestureDetector(
+                    onTap: () {
+                      if (message.video != null && message.video!.isNotEmpty) {
+                        Get.to(() => VideoPlayerScreen(videoUrl: message.video!));
+                      }
+                    },
+                    child: Container(
+                      width: 200,
+                      height: 150,
+                      decoration: BoxDecoration(
+                        color: Colors.black87,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.play_circle_fill,
+                          color: Colors.white,
+                          size: 48,
+                        ),
                       ),
                     ),
                   ),
@@ -629,20 +637,25 @@ class _ChatDetailViewState extends State<ChatDetailView> {
     File? compressed;
 
     try {
+      // Show progress dialog IMMEDIATELY (before compression)
+      UploadProgressDialog.show(progress: uploadProgress, status: uploadStatus);
+      dialogShowing = true;
+
+      // Compress video (dialog visible with "Compressing video...")
       compressed = await VideoCompressor.compress(pickedFile.path);
       final file = compressed ?? File(pickedFile.path);
 
       // Check compressed file size (400MB limit)
       final fileBytes = await file.length();
       if (fileBytes > 400 * 1024 * 1024) {
+        if (dialogShowing && Get.isDialogOpen == true) {
+          Get.back();
+          dialogShowing = false;
+        }
         Get.snackbar('Error', 'Video must be under 400MB',
             snackPosition: SnackPosition.BOTTOM);
         return;
       }
-
-      // Show progress dialog
-      UploadProgressDialog.show(progress: uploadProgress, status: uploadStatus);
-      dialogShowing = true;
 
       // Upload with progress
       uploadStatus.value = 'Uploading video...';
