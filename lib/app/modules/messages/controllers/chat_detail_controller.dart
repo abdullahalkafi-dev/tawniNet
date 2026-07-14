@@ -91,8 +91,8 @@ class ChatDetailController extends GetxController {
       };
 
       if (loadMore && messages.isNotEmpty) {
-        // Messages are oldest-first, use LAST message's timestamp as cursor
-        query['before'] = messages.last.createdAt.toIso8601String();
+        // Messages are oldest-first, use FIRST message's timestamp as cursor (scroll up = older)
+        query['before'] = messages.first.createdAt.toIso8601String();
       }
 
       final response = await _api.get<List<ChatMessage>>(
@@ -127,7 +127,7 @@ class ChatDetailController extends GetxController {
           if (uniqueNew.isNotEmpty) {
             messages.addAll(uniqueNew);
           }
-          if (newMessages.isEmpty) {
+          if (newMessages.length < 20) {
             hasMore.value = false;
           }
         } else {

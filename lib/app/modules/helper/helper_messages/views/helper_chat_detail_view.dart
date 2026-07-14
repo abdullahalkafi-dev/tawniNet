@@ -99,12 +99,19 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
                   final message = chatController.messages[index];
                   final isSent = message.isSentByMe;
 
+                  // Date separator + message (separator above, not instead of message)
                   if (index == 0 ||
                       !_isSameDay(
                         chatController.messages[index - 1].createdAt,
                         message.createdAt,
                       )) {
-                    return _buildDateSeparator(message.createdAt);
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildDateSeparator(message.createdAt),
+                        _buildMessageWidget(message, isSent),
+                      ],
+                    );
                   }
 
                   return _buildMessageWidget(message, isSent);
