@@ -3,6 +3,7 @@ import 'package:awnneaapp/app/data/models/message_model.dart';
 import 'package:awnneaapp/app/modules/messages/controllers/chat_detail_controller.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/offer_card_widget.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/video_player_screen.dart';
+import 'package:awnneaapp/app/modules/messages/views/widgets/video_thumbnail.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -215,23 +216,13 @@ Widget buildVideoMessage(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                GestureDetector(
+                VideoThumbnail(
+                  videoUrl: message.video ?? '',
                   onTap: () {
                     if (message.video != null && message.video!.isNotEmpty) {
                       Get.to(() => VideoPlayerScreen(videoUrl: message.video!));
                     }
                   },
-                  child: Container(
-                    width: 200,
-                    height: 150,
-                    decoration: BoxDecoration(
-                      color: Colors.black87,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Center(
-                      child: Icon(Icons.play_circle_fill, color: Colors.white, size: 48),
-                    ),
-                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(

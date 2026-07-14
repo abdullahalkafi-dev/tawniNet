@@ -7,6 +7,7 @@ import 'package:awnneaapp/app/modules/messages/views/widgets/offer_card_widget.d
 import 'package:awnneaapp/app/modules/messages/views/widgets/offer_form_bottom_sheet.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/upload_progress_dialog.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/video_player_screen.dart';
+import 'package:awnneaapp/app/modules/messages/views/widgets/video_thumbnail.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/video_compressor.dart';
@@ -372,27 +373,13 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  GestureDetector(
+                  VideoThumbnail(
+                    videoUrl: message.video ?? '',
                     onTap: () {
                       if (message.video != null && message.video!.isNotEmpty) {
                         Get.to(() => VideoPlayerScreen(videoUrl: message.video!));
                       }
                     },
-                    child: Container(
-                      width: 200,
-                      height: 150,
-                      decoration: BoxDecoration(
-                        color: Colors.black87,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.play_circle_fill,
-                          color: Colors.white,
-                          size: 48,
-                        ),
-                      ),
-                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
