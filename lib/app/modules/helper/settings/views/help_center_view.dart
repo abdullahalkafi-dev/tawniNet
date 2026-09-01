@@ -25,17 +25,14 @@ class _HelpCenterViewState extends State<HelpCenterView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Help Center',
-          style: AppStyles.h2.copyWith(fontSize: 20, color: Colors.black),
+          'settings_help_center'.tr,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 20),
         ),
         centerTitle: true,
       ),
@@ -57,10 +54,10 @@ class _HelpCenterViewState extends State<HelpCenterView> {
                       ),
                     ),
                     child: Text(
-                      'FAQ',
+                      'settings_faq'.tr,
                       textAlign: TextAlign.center,
                       style: AppStyles.bodyLarge.copyWith(
-                        color: selectedTab == 0 ? AppColors.primary : Colors.grey,
+                        color: selectedTab == 0 ? AppColors.primary : context.textHintColor,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -81,10 +78,10 @@ class _HelpCenterViewState extends State<HelpCenterView> {
                       ),
                     ),
                     child: Text(
-                      'Contact us',
+                      'settings_contact_us'.tr,
                       textAlign: TextAlign.center,
                       style: AppStyles.bodyLarge.copyWith(
-                        color: selectedTab == 1 ? AppColors.primary : Colors.grey,
+                        color: selectedTab == 1 ? AppColors.primary : context.textHintColor,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -94,24 +91,24 @@ class _HelpCenterViewState extends State<HelpCenterView> {
             ],
           ),
           Expanded(
-            child: selectedTab == 0 ? _buildFaqTab() : _buildContactTab(),
+            child: selectedTab == 0 ? _buildFaqTab(context) : _buildContactTab(context),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFaqTab() {
+  Widget _buildFaqTab(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Frequently Asked Questions', style: AppStyles.h2.copyWith(fontSize: 18)),
+          Text('settings_faq_title'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 18)),
           const SizedBox(height: 8),
           Text(
-            'This FAQ\'s last updated was 16 January 2026',
-            style: AppStyles.bodyMedium.copyWith(fontSize: 13),
+            'settings_faq_updated'.tr,
+            style: AppStyles.bodyMedium.copyWith(fontSize: 13, color: context.textSecondaryColor),
           ),
           const SizedBox(height: 20),
           ...faqs.asMap().entries.map((entry) {
@@ -120,10 +117,10 @@ class _HelpCenterViewState extends State<HelpCenterView> {
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: isExpanded ? AppColors.primary.withOpacity(0.05) : Colors.white,
+                color: isExpanded ? AppColors.primary.withOpacity(0.08) : context.cardColor,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isExpanded ? AppColors.primary.withOpacity(0.2) : const Color(0xFFF3F4F6),
+                  color: isExpanded ? AppColors.primary.withOpacity(0.3) : context.borderSubtle,
                 ),
               ),
               child: ExpansionTile(
@@ -132,11 +129,11 @@ class _HelpCenterViewState extends State<HelpCenterView> {
                 initiallyExpanded: isExpanded,
                 title: Text(
                   faq['question'] as String,
-                  style: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600, fontSize: 14),
+                  style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.w600, fontSize: 14),
                 ),
                 trailing: Icon(
                   isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-                  color: AppColors.textSecondary,
+                  color: context.textSecondaryColor,
                 ),
                 onExpansionChanged: (expanded) {
                   setState(() => faq['expanded'] = expanded);
@@ -144,7 +141,7 @@ class _HelpCenterViewState extends State<HelpCenterView> {
                 children: [
                   Text(
                     faq['answer'] as String,
-                    style: AppStyles.bodyMedium.copyWith(fontSize: 14, height: 1.5),
+                    style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 14, height: 1.5, color: context.textSecondaryColor),
                   ),
                 ],
               ),
@@ -155,7 +152,7 @@ class _HelpCenterViewState extends State<HelpCenterView> {
     );
   }
 
-  Widget _buildContactTab() {
+  Widget _buildContactTab(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -165,8 +162,9 @@ class _HelpCenterViewState extends State<HelpCenterView> {
             children: [
               Expanded(
                 child: _buildContactCard(
-                  'Support Chat',
-                  '24x7 Online Support',
+                  context,
+                  'settings_support_chat'.tr,
+                  'settings_24x7_support'.tr,
                   Icons.chat_bubble_outline,
                   AppColors.primary,
                   onTap: () => Get.toNamed(Routes.customerService),
@@ -175,7 +173,8 @@ class _HelpCenterViewState extends State<HelpCenterView> {
               const SizedBox(width: 16),
               Expanded(
                 child: _buildContactCard(
-                  'Email',
+                  context,
+                  'settings_email'.tr,
                   'admin@shifty.com',
                   Icons.email_outlined,
                   Colors.purple,
@@ -189,15 +188,15 @@ class _HelpCenterViewState extends State<HelpCenterView> {
     );
   }
 
-  Widget _buildContactCard(String title, String subtitle, IconData icon, Color color, {VoidCallback? onTap}) {
+  Widget _buildContactCard(BuildContext context, String title, String subtitle, IconData icon, Color color, {VoidCallback? onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFF3F4F6)),
+          border: Border.all(color: context.borderSubtle),
         ),
         child: Column(
           children: [
@@ -210,9 +209,9 @@ class _HelpCenterViewState extends State<HelpCenterView> {
               child: Icon(icon, color: color, size: 28),
             ),
             const SizedBox(height: 12),
-            Text(title, style: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold, fontSize: 14)),
+            Text(title, style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold, fontSize: 14)),
             const SizedBox(height: 4),
-            Text(subtitle, style: AppStyles.bodyMedium.copyWith(fontSize: 12), textAlign: TextAlign.center),
+            Text(subtitle, style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: context.textSecondaryColor), textAlign: TextAlign.center),
           ],
         ),
       ),

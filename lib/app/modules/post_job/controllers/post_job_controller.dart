@@ -1,7 +1,18 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
+import 'package:awnneaapp/app/data/models/home_models.dart';
+import 'package:awnneaapp/app/routes/app_routes.dart';
+import 'package:awnneaapp/app/services/api_client.dart';
+import 'package:awnneaapp/app/services/auth_service.dart';
+import 'package:awnneaapp/app/services/category_service.dart';
+import 'package:awnneaapp/app/services/location_service.dart';
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
 
 class PostJobController extends GetxController {
   final titleController = TextEditingController();
@@ -15,14 +26,159 @@ class PostJobController extends GetxController {
   final isHourly = true.obs;
   final isOnlinePayment = true.obs;
 
+  final categories = <Category>[].obs;
+  final selectedCategory = Rxn<Category>();
   final selectedImages = <String>[].obs;
-  final ImagePicker _picker = ImagePicker();
+  final uploadedImageUrls = <String>[].obs;
 
-  void toggleBudget(bool hourly) {
+  final selectedLatitude = RxnDouble();
+  final selectedLongitude = RxnDouble();
+
+  final addressSuggestions = <Map<String, dynamic>>[].obs;
+  final isSearchingAddress = false.obs;
+  Timer? _debounce;
+
+  final isLoadingCategories = false.obs;
+  final isSubmitting = false.obs;
+
+  final _imagePicker = ImagePicker();
+
+  @override
+  void onInit() {
+    super.onInit();
+    fetchCategories();
+    _initUserAddress();
+  }
+
+  void _initUserAddress() {
+    try {
+      final user = Get.find<AuthService>().currentUser.value;
+      if (user != null && user.address != null && user.address!.isNotEmpty) {
+        addressController.text = user.address!;
+        selectedLatitude.value = user.latitude;
+        selectedLongitude.value = user.longitude;
+      }
+    } catch (_) {}
+  }
+
+  // ─── Categories ─────────────────────────────────────────
+
+  Future<void> fetchCategories() async {
+    isLoadingCategories.value = true;
+    try {
+      final categoryService = Get.find<CategoryService>();
+      final result = await categoryService.getActiveCategories();
+      categories.assignAll(result);
+    } catch (e) {
+      // Fallback to mock categories if API fails
+      categories.assignAll([
+        Category(id: 'mock_1', name: 'Cleaning Service', icon: Icons.home_repair_service_outlined, color: Colors.yellow),
+        Category(id: 'mock_2', name: 'Shifting Service', icon: Icons.local_shipping_outlined, color: Colors.amber),
+        Category(id: 'mock_3', name: 'Electrician Service', icon: Icons.bolt, color: Colors.purple),
+        Category(id: 'mock_4', name: 'Plumber Service', icon: Icons.plumbing, color: Colors.blue),
+        Category(id: 'mock_5', name: 'Painting Service', icon: Icons.format_paint, color: Colors.deepOrange),
+        Category(id: 'mock_6', name: 'Moving', icon: Icons.directions_bus_outlined, color: Colors.blue),
+        Category(id: 'mock_7', name: 'Garden', icon: Icons.opacity_outlined, color: Colors.orangeAccent),
+        Category(id: 'mock_8', name: 'Mechanic Service', icon: Icons.build, color: Colors.brown),
+        Category(id: 'mock_9', name: 'Laundry', icon: Icons.local_laundry_service, color: Colors.cyan),
+        Category(id: 'mock_10', name: 'Others', icon: Icons.help_outline, color: Colors.grey),
+      ]);
+    } finally {
+      if (!isClosed) {
+        isLoadingCategories.value = false;
+      }
+    }
+  }
+
+  void selectCategory(Category cat) {
+    selectedCategory.value = cat;
+  }
+
+  void toggleBudgetType(bool hourly) {
     isHourly.value = hourly;
   }
 
+  void toggleBudget(bool hourly) => toggleBudgetType(hourly);
+
+  void togglePaymentMethod(bool online) {
+    isOnlinePayment.value = online;
+  }
+
+  // ─── Address Search & Auto-complete ─────────────────────
+
+  RxBool get isSearchingLocation => isSearchingAddress;
+  RxList<Map<String, dynamic>> get searchResults => addressSuggestions;
+
+  void searchAddress(String query) => onAddressChanged(query);
+
+  void onAddressChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    if (query.trim().length < 3) {
+      addressSuggestions.clear();
+      return;
+    }
+
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      _searchAddress(query.trim());
+    });
+  }
+
+  Future<void> _searchAddress(String query) async {
+    isSearchingAddress.value = true;
+    try {
+      final locService = Get.find<LocationService>();
+      final results = await locService.searchPlaces(query);
+      addressSuggestions.assignAll(results);
+    } catch (_) {
+      addressSuggestions.clear();
+    } finally {
+      if (!isClosed) {
+        isSearchingAddress.value = false;
+      }
+    }
+  }
+
+  void selectSearchResult(Map<String, dynamic> result) {
+    selectAddressSuggestion(result);
+  }
+
+  void selectAddressSuggestion(Map<String, dynamic> suggestion) {
+    final address = (suggestion['displayName'] ?? suggestion['address']) as String? ?? '';
+    final lat = ((suggestion['lat'] ?? suggestion['latitude']) as num?)?.toDouble();
+    final lng = ((suggestion['lon'] ?? suggestion['longitude']) as num?)?.toDouble();
+
+    addressController.text = address;
+    selectedLatitude.value = lat;
+    selectedLongitude.value = lng;
+    addressSuggestions.clear();
+  }
+
+  Future<void> useCurrentLocation() async {
+    try {
+      final locService = Get.find<LocationService>();
+      final address = await locService.getCurrentAddress();
+      if (address != null && address.isNotEmpty) {
+        addressController.text = address;
+        selectedLatitude.value = locService.currentLatitude.value;
+        selectedLongitude.value = locService.currentLongitude.value;
+        addressSuggestions.clear();
+      } else {
+        Get.snackbar(
+          'Location',
+          'Could not determine current address',
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(16),
+        );
+      }
+    } catch (_) {}
+  }
+
+  // ─── Date & Time Pickers ────────────────────────────────
+
+
   Future<void> pickDate(BuildContext context) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -31,18 +187,26 @@ class PostJobController extends GetxController {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
+            colorScheme: isDark
+                ? const ColorScheme.dark(
+                    primary: AppColors.primary,
+                    onPrimary: Colors.white,
+                    surface: AppColors.darkCard,
+                    onSurface: AppColors.darkTextPrimary,
+                  )
+                : const ColorScheme.light(
+                    primary: AppColors.primary,
+                    onPrimary: Colors.white,
+                    onSurface: Colors.black,
+                  ),
           ),
           child: child!,
         );
       },
     );
     if (picked != null) {
-      dateController.text = '${picked.month.toString().padLeft(2, '0')}/${picked.day.toString().padLeft(2, '0')}/${picked.year}';
+      dateController.text =
+          '${picked.month.toString().padLeft(2, '0')}/${picked.day.toString().padLeft(2, '0')}/${picked.year}';
     }
   }
 
@@ -50,17 +214,25 @@ class PostJobController extends GetxController {
     BuildContext context,
     TextEditingController controller,
   ) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
+            colorScheme: isDark
+                ? const ColorScheme.dark(
+                    primary: AppColors.primary,
+                    onPrimary: Colors.white,
+                    surface: AppColors.darkCard,
+                    onSurface: AppColors.darkTextPrimary,
+                  )
+                : const ColorScheme.light(
+                    primary: AppColors.primary,
+                    onPrimary: Colors.white,
+                    onSurface: Colors.black,
+                  ),
           ),
           child: child!,
         );
@@ -72,22 +244,109 @@ class PostJobController extends GetxController {
     }
   }
 
-  Future<void> pickImage() async {
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      selectedImages.add(image.path);
+  // ─── Image Picker ───────────────────────────────────────
+
+  Future<void> pickImage() => pickImages();
+
+  Future<void> pickImages() async {
+    try {
+      final List<XFile> images = await _imagePicker.pickMultiImage(
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 80,
+      );
+
+      if (images.isNotEmpty) {
+        for (final img in images) {
+          if (selectedImages.length < 5) {
+            selectedImages.add(img.path);
+          }
+        }
+      }
+    } catch (e) {
+      _showError('Failed to pick images');
     }
   }
 
+  void removeImage(int index) {
+    if (index >= 0 && index < selectedImages.length) {
+      selectedImages.removeAt(index);
+    }
+  }
+
+  // ─── Upload Images to Backend ───────────────────────────
+
+  Future<List<String>> _uploadImages() async {
+    final api = Get.find<ApiClient>();
+    final urls = <String>[];
+
+    for (final path in selectedImages) {
+      try {
+        final formData = dio.FormData.fromMap({
+          'file': await dio.MultipartFile.fromFile(
+            path,
+            filename: path.split(Platform.pathSeparator).last,
+          ),
+        });
+
+        final response = await api.upload(
+          ApiConstants.uploadImage,
+          formData: formData,
+        );
+
+        if (response.success && response.data != null) {
+          final key = (response.data['key'] ?? response.data['url']) as String?;
+          if (key != null) {
+            urls.add(key);
+          }
+        }
+      } catch (_) {}
+    }
+
+    return urls;
+  }
+
+  // ─── Submit Job ─────────────────────────────────────────
+
   void postJob() {
+    // Validate required fields
+    if (titleController.text.trim().isEmpty) {
+      _showError('Please enter a job title');
+      return;
+    }
+    if (budgetController.text.trim().isEmpty) {
+      _showError('Please enter a budget');
+      return;
+    }
+    if (selectedCategory.value == null) {
+      _showError('Please select a category');
+      return;
+    }
+
+    // Show payment dialog
+    _showPaymentDialog();
+  }
+
+  void _showPaymentDialog() {
+    final isDark = Get.isDarkMode;
     Get.dialog(
       Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: isDark ? AppColors.darkCard : Colors.white,
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Text(
+                'Select Payment Method',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? AppColors.darkTextPrimary : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 20),
               Row(
                 children: [
                   Expanded(
@@ -124,12 +383,12 @@ class PostJobController extends GetxController {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        side: BorderSide(color: Colors.grey[300]!),
+                        side: BorderSide(color: isDark ? AppColors.darkBorder : Colors.grey[300]!),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Cancel',
                         style: TextStyle(
-                          color: Colors.black87,
+                          color: isDark ? AppColors.darkTextPrimary : Colors.black87,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -140,16 +399,7 @@ class PostJobController extends GetxController {
                     child: ElevatedButton(
                       onPressed: () {
                         Get.back(); // Close dialog
-                        if (isOnlinePayment.value) {
-                          Get.toNamed('/checkout');
-                        } else {
-                          // Handle cash confirmation
-                          Get.snackbar(
-                            'Success',
-                            'Job posted successfully with Cash payment',
-                          );
-                          Get.offAllNamed('/home');
-                        }
+                        _submitJob();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
@@ -160,7 +410,7 @@ class PostJobController extends GetxController {
                       ),
                       child: const Text(
                         'Continue',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ),
@@ -173,21 +423,102 @@ class PostJobController extends GetxController {
     );
   }
 
+  Future<void> _submitJob() async {
+    if (isSubmitting.value) return;
+    isSubmitting.value = true;
+
+    try {
+      // Upload images first
+      if (selectedImages.isNotEmpty) {
+        uploadedImageUrls.clear();
+        final urls = await _uploadImages();
+        uploadedImageUrls.assignAll(urls);
+      }
+
+      // Build job payload
+      final data = <String, dynamic>{
+        'title': titleController.text.trim(),
+        'budget': double.tryParse(budgetController.text.trim()) ?? 0,
+        'budgetType': isHourly.value ? 'hourly' : 'fixed',
+        'paymentMethod': isOnlinePayment.value ? 'online' : 'cash',
+        'category': selectedCategory.value!.id,
+      };
+
+      if (descController.text.trim().isNotEmpty) {
+        data['description'] = descController.text.trim();
+      }
+      if (dateController.text.trim().isNotEmpty) {
+        data['date'] = dateController.text.trim();
+      }
+      if (startTimeController.text.trim().isNotEmpty) {
+        data['startTime'] = startTimeController.text.trim();
+      }
+      if (endTimeController.text.trim().isNotEmpty) {
+        data['endTime'] = endTimeController.text.trim();
+      }
+      if (addressController.text.trim().isNotEmpty) {
+        data['address'] = addressController.text.trim();
+      }
+      if (selectedLatitude.value != null) {
+        data['latitude'] = selectedLatitude.value;
+      }
+      if (selectedLongitude.value != null) {
+        data['longitude'] = selectedLongitude.value;
+      }
+      if (uploadedImageUrls.isNotEmpty) {
+        data['images'] = uploadedImageUrls.toList();
+      }
+
+      final api = Get.find<ApiClient>();
+      final response = await api.post(
+        ApiConstants.jobs,
+        data: data,
+      );
+
+      if (response.success) {
+        Get.snackbar(
+          'Success',
+          'Job posted successfully!',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green.shade100,
+          colorText: Colors.green.shade900,
+          margin: const EdgeInsets.all(16),
+        );
+        Get.offAllNamed(Routes.home);
+      } else {
+        throw Exception(response.message ?? 'Failed to post job');
+      }
+    } catch (e) {
+      _showError(e.toString().replaceAll('Exception: ', ''));
+    } finally {
+      if (!isClosed) {
+        isSubmitting.value = false;
+      }
+    }
+  }
+
+  void _showError(dynamic message) {
+    AppSnackbar.showError(message);
+  }
+
   Widget _buildPaymentOption(
     String title,
     IconData icon,
     bool isSelected,
     VoidCallback onTap,
   ) {
+    final isDark = Get.isDarkMode;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFF3F4F6) : Colors.white,
+          color: isSelected
+              ? (isDark ? AppColors.primary.withValues(alpha: 0.15) : const Color(0xFFF3F4F6))
+              : (isDark ? AppColors.darkSurface : Colors.white),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.grey[100]!,
+            color: isSelected ? AppColors.primary : (isDark ? AppColors.darkBorder : Colors.grey[200]!),
           ),
         ),
         child: Stack(
@@ -197,7 +528,9 @@ class PostJobController extends GetxController {
                 Icon(
                   icon,
                   size: 40,
-                  color: isSelected ? Colors.black : Colors.grey[300],
+                  color: isSelected
+                      ? (isDark ? AppColors.primary : Colors.black)
+                      : (isDark ? AppColors.darkTextHint : Colors.grey[400]),
                 ),
                 const SizedBox(height: 12),
                 Text(
@@ -205,7 +538,9 @@ class PostJobController extends GetxController {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: isSelected ? Colors.black : Colors.grey[300],
+                    color: isSelected
+                        ? (isDark ? AppColors.darkTextPrimary : Colors.black)
+                        : (isDark ? AppColors.darkTextSecondary : Colors.grey[400]),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -230,7 +565,7 @@ class PostJobController extends GetxController {
                   height: 18,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.grey[200]!),
+                    border: Border.all(color: isDark ? AppColors.darkBorder : Colors.grey[300]!),
                   ),
                 ),
               ),
@@ -238,5 +573,18 @@ class PostJobController extends GetxController {
         ),
       ),
     );
+  }
+
+  @override
+  void onClose() {
+    _debounce?.cancel();
+    titleController.dispose();
+    dateController.dispose();
+    startTimeController.dispose();
+    endTimeController.dispose();
+    descController.dispose();
+    addressController.dispose();
+    budgetController.dispose();
+    super.onClose();
   }
 }

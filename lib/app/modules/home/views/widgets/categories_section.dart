@@ -8,27 +8,55 @@ import '../../../../core/values/app_styles.dart';
 class CategoriesSection extends GetView<HomeController> {
   const CategoriesSection({super.key});
 
-  String _getCategorySvg(String id) {
-    switch (id) {
-      case '1':
+  String _getCategoryFallback(String name) {
+    switch (name) {
+      case 'Carrying':
         return 'assets/svgs/carrying_icon.svg';
-      case '2':
+      case 'Cleaning':
         return 'assets/svgs/cleaning_icon.svg';
-      case '3':
+      case 'Electrician':
         return 'assets/svgs/electrician_icon.svg';
-      case '4':
+      case 'Barber':
         return 'assets/svgs/barber_icon.svg';
-      case '5':
+      case 'Floor':
         return 'assets/svgs/floor_icon.svg';
-      case '6':
+      case 'Shifting':
         return 'assets/svgs/shifting2_icon.svg';
-      case '7':
+      case 'Garden':
         return 'assets/svgs/garden_icon.svg';
-      case '8':
+      case 'Moving':
         return 'assets/svgs/shifting_icon.svg';
       default:
         return 'assets/svgs/cleaning_icon.svg';
     }
+  }
+
+  Widget _buildCategoryIcon(String? iconUrl, String name, double size) {
+    if (iconUrl != null && iconUrl.isNotEmpty) {
+      return SvgPicture.network(
+        iconUrl,
+        width: size,
+        height: size,
+        placeholderBuilder: (context) => Icon(
+          Icons.category_outlined,
+          size: size,
+          color: AppColors.primary,
+        ),
+        errorBuilder: (context, error, stackTrace) {
+          // Fallback to local asset
+          return SvgPicture.asset(
+            _getCategoryFallback(name),
+            width: size,
+            height: size,
+          );
+        },
+      );
+    }
+    return SvgPicture.asset(
+      _getCategoryFallback(name),
+      width: size,
+      height: size,
+    );
   }
 
   @override
@@ -41,9 +69,8 @@ class CategoriesSection extends GetView<HomeController> {
           children: [
             Text(
               'Categories',
-              style: AppStyles.h2.copyWith(
+              style: AppStyles.h2Of(context).copyWith(
                 fontSize: 18,
-                color: const Color(0xFF1F2937),
               ),
             ),
             TextButton(
@@ -62,14 +89,13 @@ class CategoriesSection extends GetView<HomeController> {
         const SizedBox(height: 12),
         LayoutBuilder(
           builder: (context, constraints) {
-            // 4 items per row, 12px gap between items horizontally
             final double gap = 12.0;
             final double itemWidth = (constraints.maxWidth - (gap * 3)) / 4;
-            
+
             return Obx(
               () => Wrap(
                 spacing: gap,
-                runSpacing: 20.0, // Vertical gap between rows
+                runSpacing: 20.0,
                 children: controller.categories.map((cat) {
                   return GestureDetector(
                     onTap: () => controller.onCategorySelected(cat),
@@ -78,11 +104,11 @@ class CategoriesSection extends GetView<HomeController> {
                       child: Column(
                         children: [
                           Container(
-                            height: itemWidth, // Make it a square container
+                            height: itemWidth,
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: context.cardColor,
                               borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: const Color(0xFFE5E7EB)),
+                              border: Border.all(color: context.borderSubtle),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withOpacity(0.01),
@@ -93,26 +119,27 @@ class CategoriesSection extends GetView<HomeController> {
                             ),
                             alignment: Alignment.center,
                             child: Container(
-                              width: itemWidth * 0.65, // Inner circle size proportional to outer square
+                              width: itemWidth * 0.65,
                               height: itemWidth * 0.65,
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFF0FDF8), // Light cyan/teal circular background
+                              decoration: BoxDecoration(
+                                color: context.isDarkMode
+                                    ? AppColors.primary.withOpacity(0.12)
+                                    : const Color(0xFFF0FDF8),
                                 shape: BoxShape.circle,
                               ),
                               alignment: Alignment.center,
-                              child: SvgPicture.asset(
-                                _getCategorySvg(cat.id),
-                                width: 24,
-                                height: 24,
+                              child: _buildCategoryIcon(
+                                cat.resolvedIconUrl,
+                                cat.name,
+                                24,
                               ),
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             cat.name,
-                            style: AppStyles.bodyMedium.copyWith(
+                            style: AppStyles.bodyMediumOf(context).copyWith(
                               fontSize: 13,
-                              color: const Color(0xFF1F2937),
                               fontWeight: FontWeight.w500,
                             ),
                             textAlign: TextAlign.center,

@@ -10,17 +10,14 @@ class ManualLocationView extends GetView<LocationController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Search Your Location',
-          style: AppStyles.h2.copyWith(fontSize: 20, color: Colors.black),
+          'location_search_title'.tr,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 20),
         ),
         centerTitle: true,
       ),
@@ -32,20 +29,21 @@ class ManualLocationView extends GetView<LocationController> {
             const SizedBox(height: 16),
             TextField(
               onChanged: controller.searchLocation,
+              style: TextStyle(color: context.textPrimaryColor),
               decoration: InputDecoration(
-                hintText: 'Search your location...',
-                hintStyle: AppStyles.bodyMedium.copyWith(color: AppColors.textHint),
-                prefixIcon: Icon(Icons.search, color: AppColors.textHint),
+                hintText: 'location_search_hint'.tr,
+                hintStyle: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+                prefixIcon: Icon(Icons.search, color: context.textHintColor),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: context.inputFillColor,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+                  borderSide: BorderSide(color: context.borderSubtle),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+                  borderSide: BorderSide(color: context.borderSubtle),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -58,13 +56,12 @@ class ManualLocationView extends GetView<LocationController> {
               onTap: controller.onUseCurrentLocation,
               child: Row(
                 children: [
-                  Icon(Icons.send, color: AppColors.primary, size: 20),
+                  const Icon(Icons.send, color: AppColors.primary, size: 20),
                   const SizedBox(width: 8),
                   Text(
-                    'Use my current location',
-                    style: AppStyles.bodyLarge.copyWith(
+                    'location_use_current'.tr,
+                    style: AppStyles.bodyLargeOf(context).copyWith(
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
                     ),
                   ),
                 ],
@@ -72,7 +69,7 @@ class ManualLocationView extends GetView<LocationController> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Search Results',
+              'location_search_results'.tr,
               style: AppStyles.bodyLarge.copyWith(
                 color: AppColors.primary,
                 fontWeight: FontWeight.bold,
@@ -81,24 +78,40 @@ class ManualLocationView extends GetView<LocationController> {
               ),
             ),
             const SizedBox(height: 12),
-            Obx(() => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: controller.searchResults.map((loc) {
-                return GestureDetector(
-                  onTap: () => controller.selectLocation(loc),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      loc,
-                      style: AppStyles.bodyLarge.copyWith(
-                        color: AppColors.textPrimary,
-                        fontSize: 18,
+            Obx(() {
+              if (controller.isSearching.value) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                );
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: controller.searchResults.map((result) {
+                  final displayName = result['displayName'] as String? ?? '';
+                  return GestureDetector(
+                    onTap: () => controller.selectLocation(result),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.location_on_outlined, color: AppColors.primary, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              displayName,
+                              style: AppStyles.bodyLargeOf(context).copyWith(
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                );
-              }).toList(),
-            )),
+                  );
+                }).toList(),
+              );
+            }),
           ],
         ),
       ),

@@ -1,4 +1,3 @@
-import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/widgets/custom_button.dart';
 import 'package:awnneaapp/app/core/widgets/custom_text_field.dart';
@@ -11,17 +10,14 @@ class AddCardView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Add New Card',
-          style: AppStyles.h2.copyWith(fontSize: 20, color: Colors.black),
+          'card_title'.tr,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 20),
         ),
         centerTitle: true,
       ),
@@ -31,19 +27,19 @@ class AddCardView extends StatelessWidget {
           children: [
             _buildCardPreview(),
             const SizedBox(height: 30),
-            CustomTextField(label: 'Card Holder Name', hint: 'Arlene Flores'),
+            CustomTextField(label: 'card_holder_name'.tr, hint: 'Arlene Flores'),
             const SizedBox(height: 16),
-            CustomTextField(label: 'Card Number', hint: '2222 4444 6666 7777'),
+            CustomTextField(label: 'card_number'.tr, hint: '2222 4444 6666 7777'),
             const SizedBox(height: 16),
-            CustomTextField(label: 'Expire Date', hint: '28/02/26'),
+            CustomTextField(label: 'card_expire'.tr, hint: '28/02/26'),
             const SizedBox(height: 16),
-            CustomTextField(label: 'Cv', hint: '755'),
+            CustomTextField(label: 'card_cv'.tr, hint: '755'),
             const SizedBox(height: 24),
             CustomButton(
-              text: 'Add New Card',
+              text: 'card_title'.tr,
               onPressed: () {
                 Get.back();
-                Get.snackbar('Success', 'Card added successfully',
+                Get.snackbar('connects_success'.tr, 'card_added'.tr,
                     snackPosition: SnackPosition.BOTTOM);
               },
             ),
@@ -78,7 +74,7 @@ class AddCardView extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              const Text(
                 'ADRBANK',
                 style: TextStyle(
                   color: Colors.white,
@@ -91,7 +87,7 @@ class AddCardView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 30),
-          Text(
+          const Text(
             '8763 2736 9873 0329',
             style: TextStyle(
               color: Colors.white,
@@ -108,10 +104,10 @@ class AddCardView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Card Holder Name',
+                    'card_holder_name'.tr,
                     style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 10),
                   ),
-                  Text(
+                  const Text(
                     'HILLERY NEVELIN',
                     style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                   ),
@@ -121,10 +117,10 @@ class AddCardView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Expired Date',
+                    'card_expired_date'.tr,
                     style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 10),
                   ),
-                  Text(
+                  const Text(
                     '10/28',
                     style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
                   ),

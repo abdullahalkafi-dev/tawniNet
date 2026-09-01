@@ -21,26 +21,17 @@ class SplashView extends GetView<SplashController> {
             ),
             const SizedBox(height: 10),
             Text(
-              '3awniNet',
+              'splash_brand'.tr,
               style: AppStyles.h1.copyWith(
                 fontSize: 40,
-                color: const Color(0xFF2D1408), // Darker brown from image
+                color: context.textPrimaryColor,
               ),
             ),
             Text(
-              'Help is in your hands.',
+              'splash_help_text'.tr,
               style: AppStyles.bodyMedium.copyWith(
                 fontSize: 18,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              'المساعدة بين يديك',
-              style: AppStyles.bodyMedium.copyWith(
-                fontSize: 18,
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
+                color: context.textSecondaryColor,
               ),
             ),
             const SizedBox(height: 100),
@@ -50,8 +41,8 @@ class SplashView extends GetView<SplashController> {
             ),
             const SizedBox(height: 10),
             Text(
-              'Loading...',
-              style: AppStyles.bodyMedium,
+              'splash_loading'.tr,
+              style: AppStyles.bodyMediumOf(context),
             ),
           ],
         ),

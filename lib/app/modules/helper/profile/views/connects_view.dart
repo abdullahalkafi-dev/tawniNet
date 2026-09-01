@@ -10,17 +10,14 @@ class ConnectsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Connects',
-          style: AppStyles.h2.copyWith(fontSize: 20, color: Colors.black),
+          'connects_title'.tr,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 20),
         ),
         centerTitle: true,
       ),
@@ -33,16 +30,16 @@ class ConnectsView extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF9FAFB),
+                color: context.inputFillColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFF3F4F6)),
+                border: Border.all(color: context.borderSubtle),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Available Balance 30',
-                    style: AppStyles.h2.copyWith(fontSize: 18),
+                    'connects_balance'.tr,
+                    style: AppStyles.h2Of(context).copyWith(fontSize: 18),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -50,7 +47,7 @@ class ConnectsView extends StatelessWidget {
                       GestureDetector(
                         onTap: () => Get.toNamed(Routes.connectsHistory),
                         child: Text(
-                          'View details',
+                          'connects_view_details'.tr,
                           style: AppStyles.bodyLarge.copyWith(
                             color: AppColors.primary,
                             fontWeight: FontWeight.bold,
@@ -61,7 +58,7 @@ class ConnectsView extends StatelessWidget {
                       GestureDetector(
                         onTap: () => Get.toNamed(Routes.buyConnects),
                         child: Text(
-                          'Buy Connects',
+                          'connects_buy'.tr,
                           style: AppStyles.bodyLarge.copyWith(
                             color: AppColors.primary,
                             fontWeight: FontWeight.bold,

@@ -1,63 +1,112 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/services/wallet_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class EarningSummaryView extends StatelessWidget {
+class EarningSummaryView extends StatefulWidget {
   const EarningSummaryView({super.key});
 
   @override
+  State<EarningSummaryView> createState() => _EarningSummaryViewState();
+}
+
+class _EarningSummaryViewState extends State<EarningSummaryView> {
+  double balance = 0.0;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchWallet();
+  }
+
+  Future<void> _fetchWallet() async {
+    try {
+      final walletService = Get.find<WalletService>();
+      final res = await walletService.getWalletBalance();
+      if (mounted) {
+        setState(() {
+          balance = (res['balance'] as num?)?.toDouble() ?? 0.0;
+          isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final formattedBalance = 'MAD ${balance.toStringAsFixed(2)}';
+    final onlineEarnings = 'MAD ${(balance * 0.75).toStringAsFixed(2)}';
+    final offlineEarnings = 'MAD ${(balance * 0.25).toStringAsFixed(2)}';
+
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Earning',
-          style: AppStyles.h2.copyWith(fontSize: 20, color: Colors.black),
+          'earning_title'.tr,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 20),
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildTotalEarningsCard(),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(child: _buildEarningTypeCard('Online Earnings', '\$3,250.00')),
-                const SizedBox(width: 12),
-                Expanded(child: _buildEarningTypeCard('Offline Earnings', '\$1,000.00')),
-              ],
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildTotalEarningsCard(formattedBalance),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildEarningTypeCard(
+                          context,
+                          'earning_online_earnings'.tr,
+                          onlineEarnings,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildEarningTypeCard(
+                          context,
+                          'earning_offline_earnings'.tr,
+                          offlineEarnings,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatCard(context, 'earning_jobs_completed'.tr, 'Active'),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildStatCard(context, 'earning_withdrawals'.tr, '0'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Text('earning_next'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 18)),
+                  Divider(height: 30, color: context.borderSubtle),
+                  Text('earning_mature_amount'.tr, style: AppStyles.bodyLargeOf(context).copyWith(fontSize: 14)),
+                  const SizedBox(height: 8),
+                  Text('earning_estimate'.tr, style: AppStyles.bodyLargeOf(context).copyWith(fontSize: 14)),
+                ],
+              ),
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(child: _buildStatCard('Jobs Completed', '25')),
-                const SizedBox(width: 12),
-                Expanded(child: _buildStatCard('Withdrawals', '2')),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Text('Next earning', style: AppStyles.h2.copyWith(fontSize: 18)),
-            const Divider(height: 30),
-            Text('Current mature amount MAD 300', style: AppStyles.bodyLarge.copyWith(fontSize: 14)),
-            const SizedBox(height: 8),
-            Text('Estimate Payment MAD 300', style: AppStyles.bodyLarge.copyWith(fontSize: 14)),
-          ],
-        ),
-      ),
     );
   }
 
-  Widget _buildTotalEarningsCard() {
+  Widget _buildTotalEarningsCard(String formattedBalance) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
@@ -69,13 +118,13 @@ class EarningSummaryView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Total Earnings',
+            'earning_total'.tr,
             style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
           ),
           const SizedBox(height: 8),
           Text(
-            '\$1,250.00',
-            style: TextStyle(
+            formattedBalance,
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 36,
               fontWeight: FontWeight.bold,
@@ -86,7 +135,7 @@ class EarningSummaryView extends StatelessWidget {
     );
   }
 
-  Widget _buildEarningTypeCard(String title, String amount) {
+  Widget _buildEarningTypeCard(BuildContext context, String title, String amount) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -97,29 +146,35 @@ class EarningSummaryView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: TextStyle(color: AppColors.primary, fontSize: 12)),
-          const SizedBox(height: 8),
-          Text(amount, style: TextStyle(color: AppColors.primary, fontSize: 20, fontWeight: FontWeight.bold)),
+          Text(title, style: const TextStyle(color: AppColors.primary, fontSize: 12)),
+          const SizedBox(height: 6),
+          Text(
+            amount,
+            style: AppStyles.h2Of(context).copyWith(fontSize: 16, color: AppColors.primary),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard(String title, String value) {
+  Widget _buildStatCard(BuildContext context, String title, String value) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: context.inputFillColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF3F4F6)),
+        border: Border.all(color: context.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: AppStyles.bodyMedium.copyWith(fontSize: 12)),
-          const SizedBox(height: 8),
-          Text(value, style: AppStyles.h1.copyWith(fontSize: 24)),
+          Text(title, style: TextStyle(color: context.textHintColor, fontSize: 12)),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: AppStyles.h2Of(context).copyWith(fontSize: 18),
+          ),
         ],
       ),
     );

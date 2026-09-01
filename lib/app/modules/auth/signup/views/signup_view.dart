@@ -5,7 +5,9 @@ import '../../../../core/values/app_colors.dart';
 import '../../../../core/values/app_styles.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import '../../../../core/widgets/morocco_phone_field.dart';
+import '../../../../core/widgets/theme_toggle_icon_button.dart';
+import '../../../../core/widgets/app_back_button.dart';
 
 class SignupView extends GetView<SignupController> {
   const SignupView({super.key});
@@ -15,37 +17,53 @@ class SignupView extends GetView<SignupController> {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 40),
+              const SizedBox(height: 12),
+              // Top Bar with Minimal Back Button & Theme Switcher
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  AppBackButton(
+                    onPressed: () => Get.offAllNamed('/role-selection'),
+                  ),
+                  const ThemeToggleIconButton(),
+                ],
+              ),
+              const SizedBox(height: 24),
               Text(
-                'Create Your Account',
-                style: AppStyles.h1.copyWith(fontSize: 32),
+                'auth_create_account'.tr,
+                style: AppStyles.h1Of(context).copyWith(fontSize: 32),
               ),
               const SizedBox(height: 8),
               Text(
-                'Join 3awniNet and get started in seconds.',
-                style: AppStyles.bodyMedium.copyWith(fontSize: 16),
+                'auth_signup_subtitle'.tr,
+                style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 15),
+                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 36),
               CustomTextField(
-                label: 'Full name',
-                hint: 'Name',
+                label: 'auth_full_name'.tr,
+                hint: 'auth_name'.tr,
                 controller: controller.nameController,
               ),
               const SizedBox(height: 20),
-              CustomTextField(
-                label: 'Email',
-                hint: 'Email',
-                controller: controller.emailController,
+
+              // Moroccan Phone Input with Flag Badge
+              MoroccoPhoneField(
+                label: 'auth_phone'.tr.isNotEmpty && 'auth_phone'.tr != 'auth_phone'
+                    ? 'auth_phone'.tr
+                    : 'Moroccan Mobile Phone',
+                controller: controller.phoneController,
               ),
+
               const SizedBox(height: 20),
               Obx(
                 () => CustomTextField(
-                  label: 'Password',
-                  hint: 'Password',
+                  label: 'auth_password'.tr,
+                  hint: 'auth_password'.tr,
                   isPassword: true,
                   isVisible: controller.isPasswordVisible.value,
                   onToggleVisibility: controller.togglePasswordVisibility,
@@ -55,8 +73,8 @@ class SignupView extends GetView<SignupController> {
               const SizedBox(height: 20),
               Obx(
                 () => CustomTextField(
-                  label: 'Confirm Password',
-                  hint: 'Confirm Password',
+                  label: 'auth_confirm_password'.tr,
+                  hint: 'auth_confirm_password'.tr,
                   isPassword: true,
                   isVisible: controller.isConfirmPasswordVisible.value,
                   onToggleVisibility:
@@ -64,24 +82,26 @@ class SignupView extends GetView<SignupController> {
                   controller: controller.confirmPasswordController,
                 ),
               ),
-              const SizedBox(height: 30),
-              CustomButton(text: 'Sign Up', onPressed: controller.signup),
-              const SizedBox(height: 30),
-              _buildDivider(),
-              const SizedBox(height: 30),
-              _buildGoogleButton(),
-              const SizedBox(height: 40),
+              const SizedBox(height: 28),
+              Obx(
+                () => CustomButton(
+                  text: 'auth_signup'.tr,
+                  onPressed: controller.signup,
+                  isLoading: controller.isLoading.value,
+                ),
+              ),
+              const SizedBox(height: 36),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "Already have an account? ",
-                    style: AppStyles.bodyMedium,
+                    "auth_has_account".tr + ' ',
+                    style: AppStyles.bodyMediumOf(context),
                   ),
                   GestureDetector(
                     onTap: controller.goToLogin,
                     child: Text(
-                      'Log In',
+                      'auth_log_in'.tr,
                       style: AppStyles.bodyMedium.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.bold,
@@ -95,31 +115,6 @@ class SignupView extends GetView<SignupController> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Row(
-      children: [
-        const Expanded(child: Divider()),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'OR',
-            style: AppStyles.bodyMedium.copyWith(color: Colors.grey),
-          ),
-        ),
-        const Expanded(child: Divider()),
-      ],
-    );
-  }
-
-  Widget _buildGoogleButton() {
-    return CustomButton(
-      text: 'Continue with Google',
-      onPressed: controller.signupWithGoogle,
-      isOutlined: true,
-      icon: SvgPicture.asset('assets/svgs/google.svg', height: 24),
     );
   }
 }

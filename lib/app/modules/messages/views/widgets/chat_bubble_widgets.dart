@@ -1,18 +1,16 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
+import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/data/models/message_model.dart';
-import 'package:awnneaapp/app/modules/messages/controllers/chat_detail_controller.dart';
+import 'package:awnneaapp/app/modules/messages/views/widgets/image_viewer_screen.dart';
+import 'package:awnneaapp/app/modules/messages/views/widgets/media_downloader.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/offer_card_widget.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/video_player_screen.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/video_thumbnail.dart';
-import 'package:awnneaapp/app/modules/messages/views/widgets/image_viewer_screen.dart';
-import 'package:awnneaapp/app/modules/messages/views/widgets/media_downloader.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-/// Shared message bubble widgets used by both client and helper chat views.
-
-Widget buildDateSeparator(DateTime date) {
+Widget buildDateSeparator(BuildContext context, DateTime date) {
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
   final messageDate = DateTime(date.year, date.month, date.day);
@@ -32,13 +30,15 @@ Widget buildDateSeparator(DateTime date) {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.blue[50],
+          color: context.isDarkMode
+              ? AppColors.primary.withOpacity(0.2)
+              : Colors.blue[50],
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           label,
-          style: TextStyle(
-            color: Colors.blue[300],
+          style: AppStyles.bodyMedium.copyWith(
+            color: context.isDarkMode ? AppColors.primary : Colors.blue[300],
             fontSize: 12,
           ),
         ),
@@ -48,36 +48,54 @@ Widget buildDateSeparator(DateTime date) {
 }
 
 Widget buildMessageWidget(
-  ChatMessage message,
-  bool isSent,
-  String otherAvatar,
-  ChatDetailController controller,
   BuildContext context,
-) {
+  ChatMessage message,
+  bool isSent, {
+  required String chatAvatar,
+  required VoidCallback? onAcceptOffer,
+  required VoidCallback? onRejectOffer,
+  required VoidCallback? onCancelOffer,
+  required VoidCallback? onEditOffer,
+}) {
   switch (message.type) {
     case 'image':
-      return buildImageMessage(message, isSent, otherAvatar);
+      return buildImageMessage(context, message, isSent, chatAvatar: chatAvatar);
     case 'video':
-      return buildVideoMessage(message, isSent, otherAvatar, context);
+      return buildVideoMessage(context, message, isSent, chatAvatar: chatAvatar);
     case 'offer':
-      return buildOfferMessage(message, isSent, otherAvatar, controller, context);
+      return buildOfferMessage(
+        message,
+        isSent,
+        chatAvatar: chatAvatar,
+        onAccept: onAcceptOffer,
+        onReject: onRejectOffer,
+        onCancel: onCancelOffer,
+        onEdit: onEditOffer,
+      );
     default:
-      return buildTextMessage(message, isSent, otherAvatar);
+      return buildTextMessage(context, message, isSent, chatAvatar: chatAvatar);
   }
 }
 
-Widget buildTextMessage(ChatMessage message, bool isSent, String otherAvatar) {
+Widget buildTextMessage(
+  BuildContext context,
+  ChatMessage message,
+  bool isSent, {
+  required String chatAvatar,
+}) {
   return Padding(
     padding: const EdgeInsets.only(bottom: 12),
     child: Row(
-      mainAxisAlignment: isSent ? MainAxisAlignment.end : MainAxisAlignment.start,
+      mainAxisAlignment:
+          isSent ? MainAxisAlignment.end : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         if (!isSent) ...[
           CircleAvatar(
             radius: 16,
-            backgroundImage: otherAvatar.isNotEmpty ? NetworkImage(otherAvatar) : null,
-            child: otherAvatar.isEmpty ? const Icon(Icons.person, size: 16) : null,
+            backgroundImage:
+                chatAvatar.isNotEmpty ? NetworkImage(chatAvatar) : null,
+            child: chatAvatar.isEmpty ? const Icon(Icons.person, size: 16) : null,
           ),
           const SizedBox(width: 8),
         ],
@@ -86,14 +104,15 @@ Widget buildTextMessage(ChatMessage message, bool isSent, String otherAvatar) {
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: isSent
-                  ? AppColors.primary.withOpacity(0.8)
-                  : const Color(0xFFF3F4F6),
+                  ? AppColors.primary.withOpacity(0.85)
+                  : context.cardColor,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(16),
                 topRight: const Radius.circular(16),
                 bottomLeft: isSent ? const Radius.circular(16) : Radius.zero,
                 bottomRight: isSent ? Radius.zero : const Radius.circular(16),
               ),
+              border: isSent ? null : Border.all(color: context.borderSubtle),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -101,33 +120,18 @@ Widget buildTextMessage(ChatMessage message, bool isSent, String otherAvatar) {
                 Text(
                   message.content ?? '',
                   style: TextStyle(
-                    color: isSent ? Colors.white : Colors.black87,
+                    color: isSent ? Colors.white : context.textPrimaryColor,
                     fontSize: 14,
                     height: 1.4,
                   ),
                 ),
                 const SizedBox(height: 4),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      _formatTime(message.createdAt),
-                      style: TextStyle(
-                        color: isSent ? Colors.white70 : Colors.grey,
-                        fontSize: 10,
-                      ),
-                    ),
-                    if (isSent) ...[
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.done_all,
-                        size: 14,
-                        color: message.id.startsWith('temp_')
-                            ? Colors.white54
-                            : Colors.white70,
-                      ),
-                    ],
-                  ],
+                Text(
+                  _formatTime(message.createdAt),
+                  style: TextStyle(
+                    color: isSent ? Colors.white70 : context.textHintColor,
+                    fontSize: 10,
+                  ),
                 ),
               ],
             ),
@@ -138,21 +142,28 @@ Widget buildTextMessage(ChatMessage message, bool isSent, String otherAvatar) {
   );
 }
 
-Widget buildImageMessage(ChatMessage message, bool isSent, String otherAvatar) {
+Widget buildImageMessage(
+  BuildContext context,
+  ChatMessage message,
+  bool isSent, {
+  required String chatAvatar,
+}) {
   final images = message.images;
   if (images.isEmpty) return const SizedBox.shrink();
 
   return Padding(
     padding: const EdgeInsets.only(bottom: 12),
     child: Row(
-      mainAxisAlignment: isSent ? MainAxisAlignment.end : MainAxisAlignment.start,
+      mainAxisAlignment:
+          isSent ? MainAxisAlignment.end : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         if (!isSent) ...[
           CircleAvatar(
             radius: 16,
-            backgroundImage: otherAvatar.isNotEmpty ? NetworkImage(otherAvatar) : null,
-            child: otherAvatar.isEmpty ? const Icon(Icons.person, size: 16) : null,
+            backgroundImage:
+                chatAvatar.isNotEmpty ? NetworkImage(chatAvatar) : null,
+            child: chatAvatar.isEmpty ? const Icon(Icons.person, size: 16) : null,
           ),
           const SizedBox(width: 8),
         ],
@@ -161,19 +172,20 @@ Widget buildImageMessage(ChatMessage message, bool isSent, String otherAvatar) {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: isSent
-                  ? AppColors.primary.withOpacity(0.8)
-                  : const Color(0xFFF3F4F6),
+                  ? AppColors.primary.withOpacity(0.85)
+                  : context.cardColor,
               borderRadius: BorderRadius.circular(16),
+              border: isSent ? null : Border.all(color: context.borderSubtle),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                _buildImageGrid(images),
+                _buildImageGrid(context, images),
                 const SizedBox(height: 4),
                 Text(
                   _formatTime(message.createdAt),
                   style: TextStyle(
-                    color: isSent ? Colors.white70 : Colors.grey,
+                    color: isSent ? Colors.white70 : context.textHintColor,
                     fontSize: 10,
                   ),
                 ),
@@ -187,22 +199,24 @@ Widget buildImageMessage(ChatMessage message, bool isSent, String otherAvatar) {
 }
 
 Widget buildVideoMessage(
-  ChatMessage message,
-  bool isSent,
-  String otherAvatar,
   BuildContext context,
-) {
+  ChatMessage message,
+  bool isSent, {
+  required String chatAvatar,
+}) {
   return Padding(
     padding: const EdgeInsets.only(bottom: 12),
     child: Row(
-      mainAxisAlignment: isSent ? MainAxisAlignment.end : MainAxisAlignment.start,
+      mainAxisAlignment:
+          isSent ? MainAxisAlignment.end : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         if (!isSent) ...[
           CircleAvatar(
             radius: 16,
-            backgroundImage: otherAvatar.isNotEmpty ? NetworkImage(otherAvatar) : null,
-            child: otherAvatar.isEmpty ? const Icon(Icons.person, size: 16) : null,
+            backgroundImage:
+                chatAvatar.isNotEmpty ? NetworkImage(chatAvatar) : null,
+            child: chatAvatar.isEmpty ? const Icon(Icons.person, size: 16) : null,
           ),
           const SizedBox(width: 8),
         ],
@@ -211,9 +225,10 @@ Widget buildVideoMessage(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: isSent
-                  ? AppColors.primary.withOpacity(0.8)
-                  : const Color(0xFFF3F4F6),
+                  ? AppColors.primary.withOpacity(0.85)
+                  : context.cardColor,
               borderRadius: BorderRadius.circular(16),
+              border: isSent ? null : Border.all(color: context.borderSubtle),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -229,7 +244,8 @@ Widget buildVideoMessage(
                     if (message.video != null && message.video!.isNotEmpty) {
                       MediaDownloader.download(
                         url: message.video!,
-                        fileName: 'video_${DateTime.now().millisecondsSinceEpoch}.mp4',
+                        fileName:
+                            'video_${DateTime.now().millisecondsSinceEpoch}.mp4',
                       );
                     }
                   },
@@ -238,7 +254,7 @@ Widget buildVideoMessage(
                 Text(
                   _formatTime(message.createdAt),
                   style: TextStyle(
-                    color: isSent ? Colors.white70 : Colors.grey,
+                    color: isSent ? Colors.white70 : context.textHintColor,
                     fontSize: 10,
                   ),
                 ),
@@ -253,25 +269,29 @@ Widget buildVideoMessage(
 
 Widget buildOfferMessage(
   ChatMessage message,
-  bool isSent,
-  String otherAvatar,
-  ChatDetailController controller,
-  BuildContext context,
-) {
+  bool isSent, {
+  required String chatAvatar,
+  required VoidCallback? onAccept,
+  required VoidCallback? onReject,
+  required VoidCallback? onCancel,
+  required VoidCallback? onEdit,
+}) {
   final currentUserId = Get.find<AuthService>().currentUser.value?.id;
   final isHelper = message.senderId == currentUserId;
 
   return Padding(
     padding: const EdgeInsets.only(bottom: 12),
     child: Row(
-      mainAxisAlignment: isSent ? MainAxisAlignment.end : MainAxisAlignment.start,
+      mainAxisAlignment:
+          isSent ? MainAxisAlignment.end : MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         if (!isSent) ...[
           CircleAvatar(
             radius: 16,
-            backgroundImage: otherAvatar.isNotEmpty ? NetworkImage(otherAvatar) : null,
-            child: otherAvatar.isEmpty ? const Icon(Icons.person, size: 16) : null,
+            backgroundImage:
+                chatAvatar.isNotEmpty ? NetworkImage(chatAvatar) : null,
+            child: chatAvatar.isEmpty ? const Icon(Icons.person, size: 16) : null,
           ),
           const SizedBox(width: 8),
         ],
@@ -280,12 +300,11 @@ Widget buildOfferMessage(
             message: message,
             isSentByMe: isSent,
             isHelper: isHelper,
-            onAccept: () => controller.acceptOffer(message.id),
-            onReject: () => controller.rejectOffer(message.id),
-            onCancel: () => controller.cancelOffer(message.id),
-            onEdit: () {
+            onAccept: onAccept,
+            onReject: onReject,
+            onCancel: onCancel,
+            onEdit: onEdit ?? () {
               if (message.offerData == null) return;
-              // Show edit offer bottom sheet
             },
           ),
         ),
@@ -302,7 +321,7 @@ void _saveImage(String url) {
   );
 }
 
-Widget _buildImageGrid(List<String> images) {
+Widget _buildImageGrid(BuildContext context, List<String> images) {
   final count = images.length.clamp(1, 4);
 
   if (count == 1) {
@@ -319,8 +338,8 @@ Widget _buildImageGrid(List<String> images) {
           errorBuilder: (_, __, ___) => Container(
             width: 200,
             height: 250,
-            color: Colors.grey[300],
-            child: const Icon(Icons.broken_image),
+            color: context.inputFillColor,
+            child: Icon(Icons.broken_image, color: context.textHintColor),
           ),
         ),
       ),
@@ -346,8 +365,8 @@ Widget _buildImageGrid(List<String> images) {
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Container(
                           height: 150,
-                          color: Colors.grey[300],
-                          child: const Icon(Icons.broken_image, size: 20),
+                          color: context.inputFillColor,
+                          child: Icon(Icons.broken_image, size: 20, color: context.textHintColor),
                         ),
                       ),
                     ),
@@ -375,8 +394,8 @@ Widget _buildImageGrid(List<String> images) {
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
                               height: 100,
-                              color: Colors.grey[300],
-                              child: const Icon(Icons.broken_image, size: 20),
+                              color: context.inputFillColor,
+                              child: Icon(Icons.broken_image, size: 20, color: context.textHintColor),
                             ),
                           ),
                         ),
@@ -404,8 +423,8 @@ Widget _buildImageGrid(List<String> images) {
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
                               height: 100,
-                              color: Colors.grey[300],
-                              child: const Icon(Icons.broken_image, size: 20),
+                              color: context.inputFillColor,
+                              child: Icon(Icons.broken_image, size: 20, color: context.textHintColor),
                             ),
                           ),
                         ),

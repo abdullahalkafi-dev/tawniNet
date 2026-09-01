@@ -1,331 +1,328 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
-import 'package:awnneaapp/app/core/values/app_styles.dart' show AppStyles;
+import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/data/models/home_models.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import '../controllers/find_helper_controller.dart';
-import '../../home/controllers/home_controller.dart';
 
 class FindHelperView extends GetView<FindHelperController> {
   const FindHelperView({super.key});
 
-  String _getCategorySvg(String id) {
-    switch (id) {
-      case '1':
-        return 'assets/svgs/carrying_icon.svg';
-      case '2':
-        return 'assets/svgs/cleaning_icon.svg';
-      case '3':
-        return 'assets/svgs/electrician_icon.svg';
-      case '4':
-        return 'assets/svgs/barber_icon.svg';
-      case '5':
-        return 'assets/svgs/floor_icon.svg';
-      case '6':
-        return 'assets/svgs/shifting2_icon.svg';
-      case '7':
-        return 'assets/svgs/garden_icon.svg';
-      case '8':
-        return 'assets/svgs/shifting_icon.svg';
-      default:
-        return 'assets/svgs/cleaning_icon.svg';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final homeController = Get.find<HomeController>();
-
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Find Helpers',
-          style: AppStyles.h2.copyWith(color: Colors.black),
+          'location_find_helpers'.tr,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 18),
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Services Category',
-              style: AppStyles.h2.copyWith(fontSize: 18),
-            ),
-            const SizedBox(height: 16),
-            _buildCategoryGrid(homeController),
-            const SizedBox(height: 24),
-            Text('Sort By', style: AppStyles.h2.copyWith(fontSize: 18)),
-            const SizedBox(height: 12),
-            _buildSortOptions(),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Distance', style: AppStyles.h2.copyWith(fontSize: 18)),
-                Text(
-                  '50km',
-                  style: AppStyles.bodyMedium.copyWith(color: Colors.grey),
-                ),
-              ],
-            ),
-            _buildDistanceSlider(),
-            const SizedBox(height: 24),
-            Text('Rating', style: AppStyles.h2.copyWith(fontSize: 18)),
-            const SizedBox(height: 12),
-            _buildRatingBar(),
-            const SizedBox(height: 24),
-            _buildAvailableNowToggle(),
-            const SizedBox(height: 40),
-            _buildActionButtons(),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryGrid(HomeController homeController) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final double gap = 12.0;
-        final double itemWidth = (constraints.maxWidth - (gap * 3)) / 4;
-        
-        return Obx(
-          () => Wrap(
-            spacing: gap,
-            runSpacing: 20.0,
-            children: homeController.categories.map((cat) {
-              final index = homeController.categories.indexOf(cat);
-              bool isSelected = controller.selectedCategoryIndex.value == index;
-              return GestureDetector(
-                onTap: () => controller.selectCategory(index),
-                child: SizedBox(
-                  width: itemWidth,
-                  child: Column(
+      body: Column(
+        children: [
+          // Filters section
+          Expanded(
+            flex: 0,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'find_category'.tr,
+                    style: AppStyles.h2Of(context).copyWith(fontSize: 18),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildCategoryChips(context),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        height: itemWidth,
-                        decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFFF0FDF8) : Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isSelected ? AppColors.primary : const Color(0xFFE5E7EB),
-                            width: isSelected ? 1.5 : 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.01),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        alignment: Alignment.center,
-                        child: Container(
-                          width: itemWidth * 0.65,
-                          height: itemWidth * 0.65,
-                          decoration: BoxDecoration(
-                            color: isSelected ? Colors.white : const Color(0xFFF0FDF8),
-                            shape: BoxShape.circle,
-                          ),
-                          alignment: Alignment.center,
-                          child: SvgPicture.asset(
-                            _getCategorySvg(cat.id),
-                            width: 24,
-                            height: 24,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        cat.name,
-                        style: AppStyles.bodyMedium.copyWith(
-                          fontSize: 13,
-                          color: isSelected ? AppColors.primary : const Color(0xFF1F2937),
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      Text('find_distance'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 18)),
+                      Obx(() => Text(
+                        '${controller.distanceValue.value.toInt()}km',
+                        style: AppStyles.bodyMedium.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
+                      )),
                     ],
                   ),
-                ),
-              );
-            }).toList(),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildSortOptions() {
-    final options = ['Nearest', 'Highest Rated', 'Lowest Price'];
-    return Row(
-      children: options.map((opt) {
-        return Obx(() {
-          bool isSelected = controller.sortBy.value == opt;
-          return GestureDetector(
-            onTap: () => controller.setSortBy(opt),
-            child: Container(
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? AppColors.primary.withOpacity(0.1)
-                    : const Color(0xFFF9FAFB),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: isSelected ? AppColors.primary : Colors.grey[100]!,
-                ),
+                  _buildDistanceSlider(context),
+                  const SizedBox(height: 16),
+                  _buildActionButtons(context),
+                  const SizedBox(height: 16),
+                ],
               ),
-              child: Text(
-                opt,
-                style: AppStyles.bodyMedium.copyWith(
-                  fontSize: 12,
-                  color: isSelected ? AppColors.primary : Colors.black,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ),
-          );
-        });
-      }).toList(),
-    );
-  }
-
-  Widget _buildDistanceSlider() {
-    return Obx(
-      () => Column(
-        children: [
-          SliderTheme(
-            data: SliderThemeData(
-              activeTrackColor: AppColors.primary,
-              inactiveTrackColor: Colors.grey[200],
-              thumbColor: Colors.white,
-              overlayColor: AppColors.primary.withOpacity(0.2),
-              valueIndicatorColor: AppColors.primary,
-              valueIndicatorTextStyle: const TextStyle(color: Colors.white),
-            ),
-            child: Slider(
-              value: controller.distanceValue.value,
-              min: 1,
-              max: 50,
-              divisions: 49,
-              label: '${controller.distanceValue.value.toInt()}km',
-              onChanged: (val) => controller.distanceValue.value = val,
             ),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('1km', style: AppStyles.bodyMedium.copyWith(fontSize: 12)),
-              Text(
-                '${controller.distanceValue.value.toInt()}km',
-                style: AppStyles.bodyMedium.copyWith(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
+          // Results section
+          Expanded(
+            child: _buildResultsList(context),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildRatingBar() {
-    return Row(
-      children: List.generate(5, (index) {
-        return Obx(
-          () => IconButton(
-            icon: Icon(
-              index < controller.ratingValue.value
-                  ? Icons.star
-                  : Icons.star_border,
-              color: Colors.amber,
-              size: 32,
-            ),
-            onPressed: () => controller.ratingValue.value = index + 1.0,
-          ),
-        );
-      }),
-    );
-  }
+  Widget _buildCategoryChips(BuildContext context) {
+    return Obx(() {
+      final cats = controller.categories;
+      if (cats.isEmpty) return const SizedBox.shrink();
 
-  Widget _buildAvailableNowToggle() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
           children: [
-            Text('Available Now', style: AppStyles.h2.copyWith(fontSize: 18)),
-            Text(
-              'Only Show helpers online',
-              style: AppStyles.bodyMedium.copyWith(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-            ),
+            // "All" chip
+            _buildChip(context, 'All', 0),
+            ...cats.asMap().entries.map((entry) {
+              return _buildChip(context, entry.value.name, entry.key + 1);
+            }),
           ],
         ),
-        Obx(
-          () => Switch(
-            value: controller.isAvailableNow.value,
-            onChanged: (val) => controller.isAvailableNow.value = val,
-            activeColor: AppColors.primary,
+      );
+    });
+  }
+
+  Widget _buildChip(BuildContext context, String label, int index) {
+    return Obx(() {
+      final isSelected = controller.selectedCategoryIndex.value == index;
+      return GestureDetector(
+        onTap: () => controller.selectCategory(index),
+        child: Container(
+          margin: const EdgeInsets.only(right: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : context.cardColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : context.borderSecondary,
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              color: isSelected ? Colors.white : context.textPrimaryColor,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildDistanceSlider(BuildContext context) {
+    return Obx(() => Column(
+      children: [
+        SliderTheme(
+          data: SliderThemeData(
+            activeTrackColor: AppColors.primary,
+            inactiveTrackColor: context.isDarkMode ? AppColors.darkBorder : Colors.grey[200],
+            thumbColor: Colors.white,
+            overlayColor: AppColors.primary.withValues(alpha: 0.2),
+          ),
+          child: Slider(
+            value: controller.distanceValue.value,
+            min: 1,
+            max: 50,
+            divisions: 49,
+            label: '${controller.distanceValue.value.toInt()}km',
+            onChanged: (val) => controller.updateDistance(val),
+            onChangeEnd: (_) => controller.applyFilters(),
           ),
         ),
       ],
-    );
+    ));
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(BuildContext context) {
     return Row(
       children: [
         Expanded(
           child: SizedBox(
-            height: 55,
-            child: ElevatedButton(
+            height: 45,
+            child: OutlinedButton(
               onPressed: controller.clearFilters,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF3F4F6),
-                foregroundColor: Colors.black,
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: context.borderSecondary),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text('Clear All'),
+              child: Text('find_clear_all'.tr, style: TextStyle(color: context.textPrimaryColor)),
             ),
           ),
         ),
         const SizedBox(width: 16),
         Expanded(
           child: SizedBox(
-            height: 55,
+            height: 45,
             child: ElevatedButton(
-              onPressed: () => Get.back(),
+              onPressed: controller.applyFilters,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text('Apply Filters'),
+              child: Text('find_apply_filters'.tr),
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildResultsList(BuildContext context) {
+    return Obx(() {
+      if (controller.isLoading.value) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if (controller.helpers.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.search_off, size: 64, color: context.textHintColor),
+              const SizedBox(height: 16),
+              Text(
+                'find_no_helpers'.tr,
+                style: AppStyles.bodyLargeOf(context).copyWith(color: context.textSecondaryColor),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'find_try_adjusting'.tr,
+                style: AppStyles.bodyMediumOf(context).copyWith(color: context.textHintColor),
+              ),
+            ],
+          ),
+        );
+      }
+
+      return RefreshIndicator(
+        onRefresh: controller.refreshData,
+        child: ListView.separated(
+          controller: controller.scrollController,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          itemCount: controller.helpers.length + (controller.isLoadingMore.value ? 1 : 0),
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            if (index == controller.helpers.length) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+            return _buildHelperCard(context, controller.helpers[index]);
+          },
+        ),
+      );
+    });
+  }
+
+  Widget _buildHelperCard(BuildContext context, HelperJob helper) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: context.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.borderSubtle),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              helper.helperImage,
+              height: 50,
+              width: 50,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                width: 50,
+                height: 50,
+                color: context.inputFillLight,
+                child: Icon(Icons.person, color: context.textHintColor),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  helper.helperName,
+                  style: AppStyles.bodyLargeOf(context).copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: context.isDarkMode
+                            ? AppColors.primary.withOpacity(0.15)
+                            : const Color(0xFFE5F7F5),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        helper.category,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(Icons.location_on_outlined, size: 14, color: Colors.orange[400]),
+                    const SizedBox(width: 2),
+                    Expanded(
+                      child: Text(
+                        helper.distance,
+                        style: TextStyle(fontSize: 12, color: context.textHintColor),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            height: 34,
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+              child: Text('btn_chat'.tr, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

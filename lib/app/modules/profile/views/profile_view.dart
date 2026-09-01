@@ -1,6 +1,9 @@
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
+import 'package:awnneaapp/app/core/localization/locale_service.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
+import 'package:awnneaapp/app/services/auth_service.dart';
+import 'package:awnneaapp/app/services/theme_service.dart';
 import 'package:awnneaapp/app/modules/messages/controllers/messages_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -13,140 +16,171 @@ class ProfileView extends GetView<ProfileController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         title: Text(
-          'Profile & Settings',
-          style: AppStyles.h1.copyWith(fontSize: 18, color: Colors.black),
+          'profile_title'.tr,
+          style: AppStyles.h1Of(context).copyWith(fontSize: 18),
         ),
         centerTitle: false,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Column(
-          children: [
-            _buildProfileHeader(),
-            const SizedBox(height: 40),
-            _buildProfileOption(
-              context,
-              Icons.person_outline,
-              'Edit Profile',
-              onTap: () => Get.toNamed(Routes.editProfile),
-            ),
-            _buildProfileOption(
-              context,
-              Icons.notifications_none,
-              'Notification',
-              onTap: () => Get.toNamed(Routes.notificationSettings),
-            ),
-            _buildProfileOption(
-              context,
-              Icons.payment,
-              'Payment',
-              onTap: () => _showPaymentBottomSheet(context),
-            ),
-            _buildProfileOption(
-              context,
-              Icons.lock_outline,
-              'Privacy Policy',
-              onTap: () => _showPrivacyPolicyBottomSheet(context),
-            ),
-            _buildProfileOption(
-              context,
-              Icons.help_outline,
-              'About US',
-              onTap: () => _showAboutUsBottomSheet(context),
-            ),
-            _buildProfileOption(
-              context,
-              Icons.headset_mic_outlined,
-              'Help & Support',
-              onTap: () => _showHelpSupportBottomSheet(context),
-            ),
-            _buildProfileOption(
-              context,
-              Icons.logout,
-              'Logout',
-              isLogout: true,
-              onTap: () => Get.offAllNamed(Routes.login),
-            ),
-            const SizedBox(height: 40),
-          ],
+      body: RefreshIndicator(
+        onRefresh: controller.refreshData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            children: [
+              _buildProfileHeader(context),
+              const SizedBox(height: 40),
+              _buildProfileOption(
+                context,
+                Icons.person_outline,
+                'profile_edit'.tr,
+                onTap: () => Get.toNamed(Routes.editProfile),
+              ),
+              _buildProfileOption(
+                context,
+                Icons.notifications_none,
+                'profile_notification'.tr,
+                onTap: () => Get.toNamed(Routes.notificationSettings),
+              ),
+              _buildProfileOption(
+                context,
+                Icons.brightness_6_outlined,
+                'Theme Mode',
+                trailingText: Get.find<ThemeService>().themeModeName,
+                onTap: () => _showThemeModeBottomSheet(context),
+              ),
+              _buildProfileOption(
+                context,
+                Icons.payment,
+                'profile_payment'.tr,
+                onTap: () => _showPaymentBottomSheet(context),
+              ),
+              Obx(
+                () => _buildProfileOption(
+                  context,
+                  Icons.language,
+                  'profile_language'.tr,
+                  trailingText: Get.find<LocaleService>().currentLanguageName,
+                  onTap: () => _showLanguageBottomSheet(context),
+                ),
+              ),
+              _buildProfileOption(
+                context,
+                Icons.lock_outline,
+                'profile_privacy'.tr,
+                onTap: () => _showPrivacyPolicyBottomSheet(context),
+              ),
+              _buildProfileOption(
+                context,
+                Icons.help_outline,
+                'profile_about'.tr,
+                onTap: () => _showAboutUsBottomSheet(context),
+              ),
+              _buildProfileOption(
+                context,
+                Icons.headset_mic_outlined,
+                'profile_help'.tr,
+                onTap: () => _showHelpSupportBottomSheet(context),
+              ),
+              _buildProfileOption(
+                context,
+                Icons.logout,
+                'profile_logout'.tr,
+                isLogout: true,
+                onTap: () => _showLogoutDialog(context),
+              ),
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildProfileHeader() {
-    return Center(
-      child: Column(
-        children: [
-          GestureDetector(
-            onTap: () => Get.toNamed(Routes.editProfile),
-            child: Stack(
-              children: [
-                Container(
-                  width: 130,
-                  height: 130,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 4),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: ClipOval(
-                    child: Image.network(
-                      'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          color: const Color(0xFFF3F4F6),
-                          padding: const EdgeInsets.all(32),
-                          child: SvgPicture.asset(
-                            'assets/svgs/profile_icon.svg',
-                            colorFilter: const ColorFilter.mode(
-                              Color(0xFF9CA3AF),
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: 5,
-                  right: 5,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF5AB9A7),
+  Widget _buildProfileHeader(BuildContext context) {
+    return Obx(() {
+      final user = Get.find<AuthService>().currentUser.value;
+      final name = user?.name ?? 'User';
+      final email = user?.email ?? '';
+      final avatar = user?.avatar;
+
+      return Center(
+        child: Column(
+          children: [
+            GestureDetector(
+              onTap: () => Get.toNamed(Routes.editProfile),
+              child: Stack(
+                children: [
+                  Container(
+                    width: 130,
+                    height: 130,
+                    decoration: BoxDecoration(
                       shape: BoxShape.circle,
+                      border: Border.all(color: context.cardColor, width: 4),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
                     ),
-                    child: const Icon(
-                      Icons.edit,
-                      color: Colors.white,
-                      size: 18,
+                    child: ClipOval(
+                      child: avatar != null && avatar.isNotEmpty
+                          ? Image.network(
+                              avatar,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return _buildFallbackAvatar(context);
+                              },
+                            )
+                          : _buildFallbackAvatar(context),
                     ),
                   ),
-                ),
-              ],
+                  Positioned(
+                    bottom: 5,
+                    right: 5,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF5AB9A7),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.edit,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Text('Sarah Johnson', style: AppStyles.h1.copyWith(fontSize: 24)),
-          Text(
-            'Sarahjohnson@gmail.com',
-            style: AppStyles.bodyMedium.copyWith(color: Colors.grey),
-          ),
-        ],
+            const SizedBox(height: 20),
+            Text(name, style: AppStyles.h1Of(context).copyWith(fontSize: 24)),
+            if (email.isNotEmpty)
+              Text(
+                email,
+                style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor),
+              ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildFallbackAvatar(BuildContext context) {
+    return Container(
+      color: context.inputFillLight,
+      padding: const EdgeInsets.all(32),
+      child: SvgPicture.asset(
+        'assets/svgs/profile_icon.svg',
+        colorFilter: ColorFilter.mode(
+          context.textHintColor,
+          BlendMode.srcIn,
+        ),
       ),
     );
   }
@@ -156,44 +190,60 @@ class ProfileView extends GetView<ProfileController> {
     IconData icon,
     String title, {
     required VoidCallback onTap,
+    String? trailingText,
     bool isLogout = false,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: context.borderSubtle),
       ),
       child: ListTile(
         onTap: onTap,
         leading: Icon(
           icon,
-          color: isLogout ? Colors.redAccent : Colors.black87,
+          color: isLogout ? Colors.redAccent : context.textPrimaryColor,
         ),
         title: Text(
           title,
-          style: AppStyles.bodyLarge.copyWith(
+          style: AppStyles.bodyLargeOf(context).copyWith(
             fontWeight: FontWeight.w600,
-            color: isLogout ? Colors.redAccent : Colors.black87,
+            color: isLogout ? Colors.redAccent : context.textPrimaryColor,
           ),
         ),
-        trailing: const Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-          color: Colors.grey,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (trailingText != null)
+              Text(
+                trailingText,
+                style: AppStyles.bodyMedium.copyWith(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: context.textHintColor,
+            ),
+          ],
         ),
       ),
     );
   }
 
-  void _showPaymentBottomSheet(BuildContext context) {
+  void _showThemeModeBottomSheet(BuildContext context) {
+    final themeService = Get.find<ThemeService>();
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: BoxDecoration(
+          color: context.cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -204,33 +254,331 @@ class ProfileView extends GetView<ProfileController> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: context.borderSecondary,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
             const SizedBox(height: 20),
             Text(
-              'Payment Methods',
-              style: AppStyles.h2.copyWith(
+              'Select Theme Mode',
+              style: AppStyles.h2Of(context).copyWith(
                 fontSize: 20,
-                color: const Color(0xFF1F2937),
+              ),
+            ),
+            const SizedBox(height: 20),
+            _buildThemeOptionTile(
+              context,
+              title: 'System Default',
+              subtitle: 'Follow your device system setting',
+              mode: ThemeMode.system,
+              currentMode: themeService.themeMode.value,
+              onTap: () {
+                themeService.setThemeMode(ThemeMode.system);
+                Get.back();
+              },
+            ),
+            _buildThemeOptionTile(
+              context,
+              title: 'Light Mode',
+              subtitle: 'Clean white background and dark text',
+              mode: ThemeMode.light,
+              currentMode: themeService.themeMode.value,
+              onTap: () {
+                themeService.setThemeMode(ThemeMode.light);
+                Get.back();
+              },
+            ),
+            _buildThemeOptionTile(
+              context,
+              title: 'Dark Mode',
+              subtitle: 'Deep charcoal background and light text',
+              mode: ThemeMode.dark,
+              currentMode: themeService.themeMode.value,
+              onTap: () {
+                themeService.setThemeMode(ThemeMode.dark);
+                Get.back();
+              },
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThemeOptionTile(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required ThemeMode mode,
+    required ThemeMode currentMode,
+    required VoidCallback onTap,
+  }) {
+    final isSelected = mode == currentMode;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: context.inputFillColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isSelected ? AppColors.primary : context.borderSubtle,
+          width: isSelected ? 1.5 : 1.0,
+        ),
+      ),
+      child: ListTile(
+        onTap: onTap,
+        title: Text(
+          title,
+          style: AppStyles.bodyLargeOf(context).copyWith(
+            fontWeight: FontWeight.bold,
+            color: isSelected ? AppColors.primary : context.textPrimaryColor,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: AppStyles.bodyMedium.copyWith(
+            fontSize: 12,
+            color: context.textSecondaryColor,
+          ),
+        ),
+        trailing: isSelected
+            ? const Icon(Icons.check_circle, color: AppColors.primary)
+            : Icon(Icons.circle_outlined, color: context.textHintColor),
+      ),
+    );
+  }
+
+  void _showLanguageBottomSheet(BuildContext context) {
+    final localeService = Get.find<LocaleService>();
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: context.cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: context.borderSecondary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'profile_language'.tr,
+              style: AppStyles.h2Of(context).copyWith(
+                fontSize: 20,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Obx(() {
+              final isAr = localeService.isArabic;
+              return Column(
+                children: [
+                  _buildLanguageOptionTile(
+                    context,
+                    title: 'English',
+                    subtitle: 'English (US)',
+                    flag: '🇺🇸',
+                    isSelected: !isAr,
+                    onTap: () {
+                      localeService.setLocale(const Locale('en', 'US'));
+                      Get.back();
+                    },
+                  ),
+                  _buildLanguageOptionTile(
+                    context,
+                    title: 'العربية',
+                    subtitle: 'Moroccan Arabic (الدارجة)',
+                    flag: '🇲🇦',
+                    isSelected: isAr,
+                    onTap: () {
+                      localeService.setLocale(const Locale('ar', 'MA'));
+                      Get.back();
+                    },
+                  ),
+                ],
+              );
+            }),
+            const SizedBox(height: 10),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageOptionTile(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required String flag,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: context.inputFillColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isSelected ? AppColors.primary : context.borderSubtle,
+          width: isSelected ? 1.5 : 1.0,
+        ),
+      ),
+      child: ListTile(
+        onTap: onTap,
+        leading: Text(
+          flag,
+          style: const TextStyle(fontSize: 24),
+        ),
+        title: Text(
+          title,
+          style: AppStyles.bodyLargeOf(context).copyWith(
+            fontWeight: FontWeight.bold,
+            color: isSelected ? AppColors.primary : context.textPrimaryColor,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: AppStyles.bodyMedium.copyWith(
+            fontSize: 12,
+            color: context.textSecondaryColor,
+          ),
+        ),
+        trailing: isSelected
+            ? const Icon(Icons.check_circle, color: AppColors.primary)
+            : Icon(Icons.circle_outlined, color: context.textHintColor),
+      ),
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: context.cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: context.borderSecondary,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.redAccent.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.power_settings_new, color: Colors.redAccent, size: 30),
+            ),
+            const SizedBox(height: 16),
+            Text('profile_logout_account'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 20)),
+            const SizedBox(height: 8),
+            Text(
+              'profile_logout_confirm'.tr,
+              style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Get.back(),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.primary),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: Text('btn_cancel'.tr, style: AppStyles.buttonText.copyWith(color: AppColors.primary)),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      Get.back();
+                      final authService = Get.find<AuthService>();
+                      await authService.logout();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: Text('profile_logout'.tr, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showPaymentBottomSheet(BuildContext context) {
+    Get.bottomSheet(
+      Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: context.cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: context.borderSecondary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'profile_payment_methods'.tr,
+              style: AppStyles.h2Of(context).copyWith(
+                fontSize: 20,
               ),
             ),
             const SizedBox(height: 20),
             _buildPaymentCardTile(
+              context,
               'Visa ending in 4242',
               'Expires 12/28',
               Icons.credit_card,
               true,
             ),
             _buildPaymentCardTile(
+              context,
               'Mastercard ending in 9876',
               'Expires 05/27',
               Icons.credit_card,
               false,
             ),
-            _buildPaymentCardTile('Apple Pay', 'Connected', Icons.apple, false),
+            _buildPaymentCardTile(context, 'Apple Pay', 'Connected', Icons.apple, false),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
@@ -238,9 +586,9 @@ class ProfileView extends GetView<ProfileController> {
               child: ElevatedButton.icon(
                 onPressed: () {},
                 icon: const Icon(Icons.add, size: 20),
-                label: const Text(
-                  'Add New Card',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                label: Text(
+                  'profile_add_card'.tr,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF5AB9A7),
@@ -259,6 +607,7 @@ class ProfileView extends GetView<ProfileController> {
   }
 
   Widget _buildPaymentCardTile(
+    BuildContext context,
     String name,
     String details,
     IconData icon,
@@ -268,13 +617,13 @@ class ProfileView extends GetView<ProfileController> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: context.inputFillColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF3F4F6)),
+        border: Border.all(color: context.borderSubtle),
       ),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFF1F2937), size: 28),
+          Icon(icon, color: context.textPrimaryColor, size: 28),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -282,14 +631,14 @@ class ProfileView extends GetView<ProfileController> {
               children: [
                 Text(
                   name,
-                  style: const TextStyle(
+                  style: AppStyles.bodyLargeOf(context).copyWith(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),
                 ),
                 Text(
                   details,
-                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  style: TextStyle(color: context.textSecondaryColor, fontSize: 12),
                 ),
               ],
             ),
@@ -298,13 +647,13 @@ class ProfileView extends GetView<ProfileController> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: const Color(0xFFE5F7F5),
+                color: context.isDarkMode ? AppColors.primary.withOpacity(0.15) : const Color(0xFFE5F7F5),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Text(
-                'Default',
+              child: Text(
+                'profile_default'.tr,
                 style: TextStyle(
-                  color: Color(0xFF5AB9A7),
+                  color: context.isDarkMode ? AppColors.primary : const Color(0xFF5AB9A7),
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                 ),
@@ -320,9 +669,9 @@ class ProfileView extends GetView<ProfileController> {
       Container(
         height: context.height * 0.7,
         padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: BoxDecoration(
+          color: context.cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -332,17 +681,16 @@ class ProfileView extends GetView<ProfileController> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: context.borderSecondary,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
             const SizedBox(height: 20),
             Text(
-              'Privacy Policy',
-              style: AppStyles.h2.copyWith(
+              'profile_privacy'.tr,
+              style: AppStyles.h2Of(context).copyWith(
                 fontSize: 20,
-                color: const Color(0xFF1F2937),
               ),
             ),
             const SizedBox(height: 16),
@@ -352,57 +700,54 @@ class ProfileView extends GetView<ProfileController> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Last Updated: May 2026',
-                      style: AppStyles.bodyMedium.copyWith(color: Colors.grey),
+                      'profile_privacy_updated'.tr,
+                      style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      '1. Information We Collect',
-                      style: TextStyle(
+                    Text(
+                      'profile_privacy_collect'.tr,
+                      style: AppStyles.bodyLargeOf(context).copyWith(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
-                        color: Color(0xFF1F2937),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'We collect information you provide directly to us when creating or modifying your account, requesting on-demand services, contacting support, or otherwise communicating with us. This info includes name, email, phone number, profile photo, payment method, and details of services requested.',
-                      style: AppStyles.bodyMedium.copyWith(
-                        color: const Color(0xFF4B5563),
+                      'profile_privacy_collect_desc'.tr,
+                      style: AppStyles.bodyMediumOf(context).copyWith(
+                        color: context.textSecondaryColor,
                         height: 1.5,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      '2. How We Use the Information',
-                      style: TextStyle(
+                    Text(
+                      'profile_privacy_how'.tr,
+                      style: AppStyles.bodyLargeOf(context).copyWith(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
-                        color: Color(0xFF1F2937),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'We use the information we collect to provide, maintain, and improve our Services, including facilitating payments, sending receipts, providing products and services you request, and enabling communications between you and helpers.',
-                      style: AppStyles.bodyMedium.copyWith(
-                        color: const Color(0xFF4B5563),
+                      'profile_privacy_how_desc'.tr,
+                      style: AppStyles.bodyMediumOf(context).copyWith(
+                        color: context.textSecondaryColor,
                         height: 1.5,
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
-                      '3. Data Sharing & Security',
-                      style: TextStyle(
+                    Text(
+                      'profile_privacy_sharing'.tr,
+                      style: AppStyles.bodyLargeOf(context).copyWith(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
-                        color: Color(0xFF1F2937),
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'We do not sell your personal data. We share details with workers to facilitate service delivery. We utilize standard industry firewalls and SSL encryption to safeguard data privacy.',
-                      style: AppStyles.bodyMedium.copyWith(
-                        color: const Color(0xFF4B5563),
+                      'profile_privacy_sharing_desc'.tr,
+                      style: AppStyles.bodyMediumOf(context).copyWith(
+                        color: context.textSecondaryColor,
                         height: 1.5,
                       ),
                     ),
@@ -424,9 +769,9 @@ class ProfileView extends GetView<ProfileController> {
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'Accept & Close',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                child: Text(
+                  'profile_accept_close'.tr,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -441,9 +786,9 @@ class ProfileView extends GetView<ProfileController> {
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: BoxDecoration(
+          color: context.cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -452,7 +797,7 @@ class ProfileView extends GetView<ProfileController> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: context.borderSecondary,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -464,33 +809,32 @@ class ProfileView extends GetView<ProfileController> {
             ),
             const SizedBox(height: 12),
             Text(
-              'About Awnnea',
-              style: AppStyles.h2.copyWith(
+              'profile_about_title'.tr,
+              style: AppStyles.h2Of(context).copyWith(
                 fontSize: 20,
-                color: const Color(0xFF1F2937),
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Version 1.0.0 (Build 120)',
-              style: AppStyles.bodyMedium.copyWith(color: Colors.grey),
+              'profile_version'.tr,
+              style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
             ),
             const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'Awnnea is the #1 on-demand household helper platform. We connect verified professionals with users seeking high-quality repairs, cleaning, shifting, and shifting services. Founded on trust, reliability, and modern efficiency.',
+                'profile_about_desc'.tr,
                 textAlign: TextAlign.center,
-                style: AppStyles.bodyMedium.copyWith(
-                  color: const Color(0xFF4B5563),
+                style: AppStyles.bodyMediumOf(context).copyWith(
+                  color: context.textSecondaryColor,
                   height: 1.5,
                 ),
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              '© 2026 Awnnea Inc. All rights reserved.',
-              style: TextStyle(color: Colors.grey, fontSize: 11),
+            Text(
+              'profile_copyright'.tr,
+              style: TextStyle(color: context.textHintColor, fontSize: 11),
             ),
             const SizedBox(height: 10),
           ],
@@ -503,9 +847,9 @@ class ProfileView extends GetView<ProfileController> {
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: BoxDecoration(
+          color: context.cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -516,23 +860,23 @@ class ProfileView extends GetView<ProfileController> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: context.borderSecondary,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
             const SizedBox(height: 20),
             Text(
-              'Help & Support',
-              style: AppStyles.h2.copyWith(
+              'profile_help'.tr,
+              style: AppStyles.h2Of(context).copyWith(
                 fontSize: 20,
-                color: const Color(0xFF1F2937),
               ),
             ),
             const SizedBox(height: 20),
             _buildSupportTile(
-              'Contact via Live Chat',
-              'Typical reply under 5 mins',
+              context,
+              'profile_contact_chat'.tr,
+              'profile_chat_reply'.tr,
               Icons.chat_bubble_outline,
               () {
                 Get.back();
@@ -551,7 +895,8 @@ class ProfileView extends GetView<ProfileController> {
               },
             ),
             _buildSupportTile(
-              'Email Support',
+              context,
+              'profile_email_support'.tr,
               'support@awnnea.com',
               Icons.email_outlined,
               () {
@@ -559,7 +904,8 @@ class ProfileView extends GetView<ProfileController> {
               },
             ),
             _buildSupportTile(
-              'Call Hotline',
+              context,
+              'profile_call_hotline'.tr,
               '+1 (800) 555-0199',
               Icons.phone_outlined,
               () {
@@ -574,6 +920,7 @@ class ProfileView extends GetView<ProfileController> {
   }
 
   Widget _buildSupportTile(
+    BuildContext context,
     String title,
     String subtitle,
     IconData icon,
@@ -582,25 +929,25 @@ class ProfileView extends GetView<ProfileController> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
+        color: context.inputFillColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF3F4F6)),
+        border: Border.all(color: context.borderSubtle),
       ),
       child: ListTile(
         onTap: onTap,
         leading: Icon(icon, color: const Color(0xFF5AB9A7)),
         title: Text(
           title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+          style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold, fontSize: 14),
         ),
         subtitle: Text(
           subtitle,
-          style: const TextStyle(color: Colors.grey, fontSize: 12),
+          style: TextStyle(color: context.textSecondaryColor, fontSize: 12),
         ),
-        trailing: const Icon(
+        trailing: Icon(
           Icons.arrow_forward_ios,
           size: 14,
-          color: Colors.grey,
+          color: context.textHintColor,
         ),
       ),
     );

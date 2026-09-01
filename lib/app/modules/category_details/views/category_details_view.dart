@@ -1,30 +1,118 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/data/models/home_models.dart';
+import 'package:awnneaapp/app/modules/messages/controllers/messages_controller.dart';
+import 'package:awnneaapp/app/routes/app_routes.dart';
+import 'package:awnneaapp/app/services/api_client.dart';
+import 'package:awnneaapp/app/services/auth_service.dart';
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-import '../../home/controllers/home_controller.dart';
 
-class CategoryDetailsView extends StatelessWidget {
+class CategoryDetailsView extends StatefulWidget {
   const CategoryDetailsView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final homeController = Get.find<HomeController>();
-    final String categoryName = Get.arguments ?? 'Electrician';
+  State<CategoryDetailsView> createState() => _CategoryDetailsViewState();
+}
 
+class _CategoryDetailsViewState extends State<CategoryDetailsView> {
+  late final Category category;
+  final helpers = <HelperJob>[].obs;
+  final isLoading = false.obs;
+
+  @override
+  void initState() {
+    super.initState();
+    category = Get.arguments as Category;
+    _fetchCategoryHelpers();
+  }
+
+  Future<void> _fetchCategoryHelpers() async {
+    isLoading.value = true;
+    try {
+      final api = Get.find<ApiClient>();
+      final authService = Get.find<AuthService>();
+      final user = authService.currentUser.value;
+
+      final queryParams = <String, dynamic>{
+        'limit': 50,
+        'category': category.id,
+      };
+
+      if (user?.latitude != null && user?.longitude != null) {
+        queryParams['lat'] = user!.latitude;
+        queryParams['lon'] = user.longitude;
+      }
+
+      final response = await api.get(
+        ApiConstants.helpersSearch,
+        queryParameters: queryParams,
+      );
+
+      if (response.success && response.data != null) {
+        final data = response.data as Map<String, dynamic>;
+        final helpersList = data['helpers'] as List? ?? [];
+
+        final fetched = helpersList.map((h) {
+          final serviceType = h['serviceType'];
+          String cat = 'General';
+          if (serviceType is Map) {
+            cat = serviceType['name'] as String? ?? 'General';
+          }
+
+          String avatar = 'https://i.pravatar.cc/150';
+          if (h['avatar'] != null && (h['avatar'] as String).isNotEmpty) {
+            avatar = h['avatar'];
+          }
+
+          return HelperJob(
+            id: h['_id'] ?? '',
+            helperName: h['name'] ?? 'Helper',
+            helperImage: avatar,
+            postedByUserId: h['_id'] ?? '',
+            timeAgo: _formatDate(h['createdAt']),
+            category: cat,
+            title: h['bio'] ?? 'Available for hire',
+            description: h['bio'] ?? 'Professional helper in your area',
+            distance: h['address'] ?? 'Nearby',
+          );
+        }).toList();
+
+        helpers.assignAll(fetched);
+      }
+    } catch (_) {
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return 'Recently';
+    try {
+      final date = DateTime.parse(dateStr);
+      final diff = DateTime.now().difference(date);
+      if (diff.inDays > 30) return '${(diff.inDays / 30).floor()}mo ago';
+      if (diff.inDays > 0) return '${diff.inDays}d ago';
+      if (diff.inHours > 0) return '${diff.inHours}h ago';
+      return 'Recently';
+    } catch (_) {
+      return 'Recently';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Text(
-          categoryName,
-          style: AppStyles.h2.copyWith(color: Colors.black),
+          category.name,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 18),
         ),
         centerTitle: true,
       ),
@@ -32,18 +120,46 @@ class CategoryDetailsView extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            _buildSearchBar(),
+            _buildSearchBar(context),
             const SizedBox(height: 20),
             Expanded(
-              child: ListView.separated(
-                itemCount: homeController.popularServices.length,
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 16),
-                itemBuilder: (context, index) {
-                  final service = homeController.popularServices[index];
-                  return _buildServiceCard(service);
-                },
-              ),
+              child: Obx(() {
+                if (isLoading.value) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (helpers.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search_off,
+                          size: 60,
+                          color: context.textHintColor,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No helpers found in this category',
+                          style: AppStyles.bodyMediumOf(context).copyWith(
+                            color: context.textSecondaryColor,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return ListView.separated(
+                  itemCount: helpers.length,
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 16),
+                  itemBuilder: (context, index) {
+                    return _buildServiceCard(context, helpers[index]);
+                  },
+                );
+              }),
             ),
           ],
         ),
@@ -51,18 +167,20 @@ class CategoryDetailsView extends StatelessWidget {
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.inputFillColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: context.borderSubtle),
       ),
       child: TextField(
+        style: TextStyle(color: context.textPrimaryColor),
         decoration: InputDecoration(
-          icon: const Icon(Icons.search, color: Colors.grey),
-          hintText: 'Search Services...',
+          icon: Icon(Icons.search, color: context.textHintColor),
+          hintText: 'Search ${category.name} helpers...',
+          hintStyle: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
         ),
@@ -70,13 +188,13 @@ class CategoryDetailsView extends StatelessWidget {
     );
   }
 
-  Widget _buildServiceCard(dynamic service) {
+  Widget _buildServiceCard(BuildContext context, HelperJob service) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: context.borderSubtle),
       ),
       child: Column(
         children: [
@@ -85,7 +203,7 @@ class CategoryDetailsView extends StatelessWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: Image.network(
-                  service.image,
+                  service.helperImage,
                   height: 60,
                   width: 60,
                   fit: BoxFit.cover,
@@ -93,11 +211,14 @@ class CategoryDetailsView extends StatelessWidget {
                     return Container(
                       width: 60,
                       height: 60,
-                      color: const Color(0xFFF3F4F6),
+                      color: context.inputFillLight,
                       padding: const EdgeInsets.all(12),
                       child: SvgPicture.asset(
                         'assets/svgs/profile_icon.svg',
-                        colorFilter: const ColorFilter.mode(Color(0xFF9CA3AF), BlendMode.srcIn),
+                        colorFilter: ColorFilter.mode(
+                          context.textHintColor,
+                          BlendMode.srcIn,
+                        ),
                       ),
                     );
                   },
@@ -108,65 +229,29 @@ class CategoryDetailsView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          service.name,
-                          style: AppStyles.bodyLarge.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.amber.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.star,
-                                color: Colors.amber,
-                                size: 14,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${service.rating} (${service.reviews})',
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                    Text(
+                      service.helperName,
+                      style: AppStyles.bodyLargeOf(context).copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       service.category,
-                      style: AppStyles.bodyMedium.copyWith(fontSize: 12),
+                      style: AppStyles.bodyMedium.copyWith(
+                        fontSize: 12,
+                        color: context.textSecondaryColor,
+                      ),
                     ),
                     const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Text(
-                          service.distance,
-                          style: AppStyles.bodyMedium.copyWith(fontSize: 12),
-                        ),
-                        const Text(' • '),
-                        Text(
-                          '\$${service.pricePerHour.toStringAsFixed(0)}/hr',
-                          style: AppStyles.bodyLarge.copyWith(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
+                    Text(
+                      service.distance,
+                      style: AppStyles.bodyMedium.copyWith(
+                        fontSize: 12,
+                        color: context.textHintColor,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
@@ -180,17 +265,24 @@ class CategoryDetailsView extends StatelessWidget {
                 child: SizedBox(
                   height: 40,
                   child: OutlinedButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      Get.toNamed(
+                        Routes.helperProfile,
+                        arguments: service.postedByUserId,
+                      );
+                    },
                     style: OutlinedButton.styleFrom(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      side: const BorderSide(color: Color(0xFFF3F4F6)),
-                      backgroundColor: const Color(0xFFF9FAFB),
+                      side: BorderSide(color: context.borderSubtle),
+                      backgroundColor: context.inputFillLight,
                     ),
                     child: Text(
                       'View Profile',
-                      style: AppStyles.bodyMedium.copyWith(color: Colors.teal),
+                      style: AppStyles.bodyMedium.copyWith(
+                        color: context.isDarkMode ? AppColors.primary : Colors.teal,
+                      ),
                     ),
                   ),
                 ),
@@ -200,14 +292,34 @@ class CategoryDetailsView extends StatelessWidget {
                 child: SizedBox(
                   height: 40,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () async {
+                      final messagesController =
+                          Get.find<MessagesController>();
+                      final conversation = await messagesController
+                          .startConversation(service.postedByUserId);
+                      if (conversation != null) {
+                        final other = conversation.otherParticipant;
+                        Get.toNamed(
+                          Routes.chatDetail,
+                          arguments: ChatSummary(
+                            id: conversation.id,
+                            name: other?.name ?? service.helperName,
+                            image: other?.avatar ?? '',
+                          ),
+                        );
+                      }
+                    },
                     style: ElevatedButton.styleFrom(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      backgroundColor: AppColors.primary.withOpacity(0.6),
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
                     ),
-                    child: const Text('Chat', style: TextStyle(fontSize: 14)),
+                    child: const Text(
+                      'Chat',
+                      style: TextStyle(fontSize: 14),
+                    ),
                   ),
                 ),
               ),

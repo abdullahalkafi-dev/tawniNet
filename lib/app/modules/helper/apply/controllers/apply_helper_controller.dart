@@ -9,6 +9,9 @@ import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
+import 'package:awnneaapp/app/core/utils/morocco_postal_helper.dart';
 
 class ApplyHelperController extends GetxController {
   late final ApiClient _api;
@@ -40,6 +43,10 @@ class ApplyHelperController extends GetxController {
   final documentFileName = RxnString();
   final documentFileSize = RxnString();
 
+  // Didit KYC state
+  final isStartingKyc = false.obs;
+  final activeDiditSessionId = RxnString();
+
   // Loading states
   final isLoading = false.obs;
   final isLoadingCategories = false.obs;
@@ -65,7 +72,22 @@ class ApplyHelperController extends GetxController {
       final user = authService.currentUser.value;
       if (user != null) {
         fullNameController.text = user.name;
+        phoneController.text = user.phone ?? '';
         emailController.text = user.email ?? '';
+        if (user.city != null && user.city!.isNotEmpty) {
+          final match = RegExp(r'\b\d{5}\b').firstMatch(user.city!);
+          cityController.text = match != null ? match.group(0)! : user.city!;
+        } else if (user.address != null && user.address!.isNotEmpty) {
+          final match = RegExp(r'\b\d{5}\b').firstMatch(user.address!);
+          if (match != null) {
+            cityController.text = match.group(0)!;
+          }
+        }
+        if (user.bio != null) bioController.text = user.bio!;
+        if (user.age != null) ageController.text = user.age.toString();
+        if (user.pricePerHour != null) priceController.text = user.pricePerHour.toString();
+        if (user.experience != null) experienceController.text = user.experience.toString();
+        if (user.serviceRadius != null) serviceRadiusController.text = user.serviceRadius.toString();
       }
     } catch (_) {}
   }
@@ -178,11 +200,9 @@ class ApplyHelperController extends GetxController {
       documentPath.value = file.path;
       documentFileName.value = file.name;
 
-      // Get file size
       final size = await File(file.path).length();
       documentFileSize.value = _formatFileSize(size);
 
-      // Upload immediately
       final key = await _uploadFile(file.path, 'document');
       if (key != null) {
         documentKey.value = key;
@@ -203,7 +223,6 @@ class ApplyHelperController extends GetxController {
 
   Future<String?> _uploadFile(String filePath, String type) async {
     try {
-      final file = File(filePath);
       final fileName = filePath.split('/').last;
 
       final formData = dio.FormData.fromMap({
@@ -237,6 +256,47 @@ class ApplyHelperController extends GetxController {
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
+  // ─── Didit Automated KYC Launcher ───────────────────────
+
+  Future<void> launchDiditKyc() async {
+    isStartingKyc.value = true;
+    try {
+      final authService = Get.find<AuthService>();
+      final sessionData = await authService.createDiditSession();
+      final sessionUrl = sessionData['url'] as String?;
+      final sessionId = sessionData['sessionId'] as String?;
+
+      if (sessionId != null) {
+        activeDiditSessionId.value = sessionId;
+      }
+
+      if (sessionUrl != null && await canLaunchUrl(Uri.parse(sessionUrl))) {
+        await launchUrl(
+          Uri.parse(sessionUrl),
+          mode: LaunchMode.externalApplication,
+        );
+      } else {
+        throw Exception('Could not open verification browser session');
+      }
+    } catch (e) {
+      _showError(e);
+    } finally {
+      if (!isClosed) {
+        isStartingKyc.value = false;
+      }
+    }
+  }
+
+  Future<void> syncKycStatus() async {
+    final sessionId = activeDiditSessionId.value;
+    if (sessionId == null || sessionId.isEmpty) return;
+
+    try {
+      final authService = Get.find<AuthService>();
+      await authService.syncDiditSession(sessionId);
+    } catch (_) {}
+  }
+
   // ─── Submit Application ─────────────────────────────────
 
   Future<void> submitApplication() async {
@@ -244,8 +304,17 @@ class ApplyHelperController extends GetxController {
       _showError('Please enter your age');
       return;
     }
-    if (cityController.text.isEmpty) {
-      _showError('Please enter your city');
+    final zipCode = cityController.text.trim();
+    if (zipCode.isEmpty) {
+      _showError('Please enter your 5-digit Moroccan Zip Code');
+      return;
+    }
+    if (!MoroccoPostalHelper.isValidPostalCode(zipCode)) {
+      _showError('Please enter a valid 5-digit Moroccan postal code (10000 to 95000)');
+      return;
+    }
+    if (emailController.text.trim().isNotEmpty && !GetUtils.isEmail(emailController.text.trim())) {
+      _showError('Please enter a valid email address');
       return;
     }
     if (selectedServiceType.value == null) {
@@ -280,6 +349,10 @@ class ApplyHelperController extends GetxController {
             'avatar': profilePhotoKey.value,
           if (phoneController.text.isNotEmpty)
             'phone': phoneController.text.trim(),
+          if (emailController.text.trim().isNotEmpty)
+            'email': emailController.text.trim(),
+          if (bioController.text.trim().isNotEmpty)
+            'bio': bioController.text.trim(),
         },
       );
 
@@ -296,7 +369,7 @@ class ApplyHelperController extends GetxController {
       }
     } catch (e) {
       if (isClosed) return;
-      _showError(e.toString().replaceFirst('Exception: ', ''));
+      _showError(e);
     } finally {
       if (!isClosed) {
         isLoading.value = false;
@@ -315,15 +388,8 @@ class ApplyHelperController extends GetxController {
     await authService.logout();
   }
 
-  void _showError(String message) {
-    Get.snackbar(
-      'Error',
-      message,
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.red.shade100,
-      colorText: Colors.red.shade900,
-      margin: const EdgeInsets.all(16),
-    );
+  void _showError(dynamic message) {
+    AppSnackbar.showError(message);
   }
 
   @override

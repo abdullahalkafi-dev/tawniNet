@@ -1,4 +1,5 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
+import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
@@ -29,48 +30,34 @@ class HomeView extends GetView<HomeController> {
           currentIndex: controller.currentIndex.value,
           onTap: controller.changeIndex,
           type: BottomNavigationBarType.fixed,
+          backgroundColor: context.surfaceColor,
           selectedItemColor: AppColors.primary,
-          unselectedItemColor: Colors.grey,
+          unselectedItemColor: context.textHintColor,
           showUnselectedLabels: true,
-          items: const [
+          items: [
             BottomNavigationBarItem(
               icon: Icon(Icons.home_outlined),
               activeIcon: Icon(Icons.home),
-              label: 'Home',
+              label: 'home_tab'.tr,
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.calendar_today_outlined),
               activeIcon: Icon(Icons.calendar_today),
-              label: 'Booking',
+              label: 'nav_booking'.tr,
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.message_outlined),
               activeIcon: Icon(Icons.message),
-              label: 'Messages',
+              label: 'nav_messages'.tr,
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline),
               activeIcon: Icon(Icons.person),
-              label: 'Profile',
+              label: 'nav_profile'.tr,
             ),
           ],
         ),
       ),
     );
-  }
-
-  String _getTitle(int index) {
-    switch (index) {
-      case 0:
-        return 'Home';
-      case 1:
-        return 'Booking';
-      case 2:
-        return 'Messages';
-      case 3:
-        return 'Profile';
-      default:
-        return 'Home';
-    }
   }
 }

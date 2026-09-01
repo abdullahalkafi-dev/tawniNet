@@ -13,17 +13,14 @@ class HelperCancelDetailsView extends StatelessWidget {
     final job = Get.arguments as Map;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Cancel Details',
-          style: AppStyles.h2.copyWith(fontSize: 20, color: Colors.black),
+          'cancel_details_title'.tr,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 20),
         ),
         centerTitle: true,
       ),
@@ -36,7 +33,9 @@ class HelperCancelDetailsView extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.05),
+                color: context.isDarkMode
+                    ? AppColors.error.withOpacity(0.15)
+                    : AppColors.error.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.error.withOpacity(0.2)),
               ),
@@ -55,7 +54,7 @@ class HelperCancelDetailsView extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'Job Cancelled',
+                        'cancel_job_cancelled'.tr,
                         style: AppStyles.bodyLarge.copyWith(
                           color: AppColors.error,
                           fontWeight: FontWeight.bold,
@@ -65,7 +64,7 @@ class HelperCancelDetailsView extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'This job was cancelled on ${job['cancelledDate'] ?? 'March 12, 2026'}',
+                    '${'cancel_job_cancelled_on'.tr}${job['cancelledDate'] ?? 'March 12, 2026'}',
                     style: AppStyles.bodyMedium.copyWith(color: AppColors.error, fontSize: 13),
                   ),
                 ],
@@ -85,8 +84,8 @@ class HelperCancelDetailsView extends StatelessWidget {
                       return Container(
                         width: 50,
                         height: 50,
-                        color: const Color(0xFFF3F4F6),
-                        child: const Icon(Icons.person, color: Colors.grey),
+                        color: context.inputFillLight,
+                        child: Icon(Icons.person, color: context.textHintColor),
                       );
                     },
                   ),
@@ -95,12 +94,12 @@ class HelperCancelDetailsView extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(job['clientName'] ?? '', style: AppStyles.h2.copyWith(fontSize: 16)),
+                    Text(job['clientName'] ?? '', style: AppStyles.h2Of(context).copyWith(fontSize: 16)),
                     Row(
                       children: [
-                        Icon(Icons.location_on, size: 14, color: AppColors.textHint),
+                        Icon(Icons.location_on, size: 14, color: Colors.orange[400]),
                         const SizedBox(width: 4),
-                        Text(job['location'] ?? '', style: AppStyles.bodyMedium.copyWith(fontSize: 13)),
+                        Text(job['location'] ?? '', style: AppStyles.bodyMedium.copyWith(fontSize: 13, color: context.textSecondaryColor)),
                       ],
                     ),
                   ],
@@ -108,10 +107,10 @@ class HelperCancelDetailsView extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
-            _buildInfoCard('Cancellation Details', [
-              _buildDetailRow('Cancelled by', job['cancelledBy'] ?? ''),
+            _buildInfoCard(context, 'cancel_cancellation_details'.tr, [
+              _buildDetailRow(context, 'cancel_cancelled_by'.tr, job['cancelledBy'] ?? ''),
               const SizedBox(height: 8),
-              Text('Reason for cancellation', style: AppStyles.bodyMedium.copyWith(fontSize: 13)),
+              Text('cancel_reason'.tr, style: AppStyles.bodyMedium.copyWith(fontSize: 13, color: context.textHintColor)),
               const SizedBox(height: 4),
               Text(
                 job['reason'] ?? '',
@@ -119,41 +118,41 @@ class HelperCancelDetailsView extends StatelessWidget {
               ),
             ]),
             const SizedBox(height: 16),
-            _buildInfoCard('Job Information', [
+            _buildInfoCard(context, 'cancel_job_info'.tr, [
               Row(
                 children: [
-                  Icon(Icons.calendar_today, size: 16, color: AppColors.textSecondary),
+                  Icon(Icons.calendar_today, size: 16, color: context.textSecondaryColor),
                   const SizedBox(width: 8),
-                  Text('Sunday, Feb 11, 2026', style: AppStyles.bodyMedium.copyWith(fontSize: 13)),
+                  Text(job['bookingDate']?.toString() ?? 'N/A', style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 13)),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.access_time_filled, size: 16, color: AppColors.textSecondary),
+                  Icon(Icons.access_time_filled, size: 16, color: context.textSecondaryColor),
                   const SizedBox(width: 8),
-                  Text('10:00 AM - 12:00 PM', style: AppStyles.bodyMedium.copyWith(fontSize: 13)),
+                  Text(job['preferredTime']?.toString() ?? 'N/A', style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 13)),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.attach_money, size: 16, color: AppColors.textSecondary),
+                  Icon(Icons.attach_money, size: 16, color: context.textSecondaryColor),
                   const SizedBox(width: 8),
-                  Text('Service Fee MAD ${job['serviceFee'] ?? 85}', style: AppStyles.bodyMedium.copyWith(fontSize: 13)),
+                  Text('${'cancel_service_fee'.tr}MAD ${job['budget'] ?? job['serviceFee'] ?? 0}', style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 13)),
                 ],
               ),
             ]),
             const SizedBox(height: 16),
-            _buildInfoCard('Service Description', [
+            _buildInfoCard(context, 'cancel_service_description'.tr, [
               Text(
-                job['description'] ?? 'Lorem ipsum dolor sit amet consectetur...',
-                style: AppStyles.bodyMedium.copyWith(height: 1.5),
+                job['description']?.toString() ?? 'No description provided.',
+                style: AppStyles.bodyMediumOf(context).copyWith(height: 1.5, color: context.textSecondaryColor),
               ),
             ]),
             const SizedBox(height: 24),
             CustomButton(
-              text: 'Contact Support',
+              text: 'cancel_contact_support'.tr,
               onPressed: () => Get.toNamed(Routes.customerService),
             ),
           ],
@@ -162,19 +161,19 @@ class HelperCancelDetailsView extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoCard(String title, List<Widget> children) {
+  Widget _buildInfoCard(BuildContext context, String title, List<Widget> children) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF3F4F6)),
+        border: Border.all(color: context.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: AppStyles.h2.copyWith(fontSize: 16)),
+          Text(title, style: AppStyles.h2Of(context).copyWith(fontSize: 16)),
           const SizedBox(height: 12),
           ...children,
         ],
@@ -182,12 +181,12 @@ class HelperCancelDetailsView extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(BuildContext context, String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: AppStyles.bodyMedium.copyWith(fontSize: 14)),
-        Text(value, style: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold, fontSize: 14)),
+        Text(label, style: AppStyles.bodyMedium.copyWith(fontSize: 14, color: context.textSecondaryColor)),
+        Text(value, style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold, fontSize: 14)),
       ],
     );
   }

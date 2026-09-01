@@ -1,4 +1,5 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
+import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/data/models/message_model.dart';
 import 'package:flutter/material.dart';
 
@@ -32,7 +33,7 @@ class OfferCardWidget extends StatelessWidget {
     return Container(
       width: 280,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: _getStatusColor(offer.status).withOpacity(0.3),
@@ -103,8 +104,8 @@ class OfferCardWidget extends StatelessWidget {
                         errorBuilder: (_, __, ___) => Container(
                           width: 80,
                           height: 80,
-                          color: Colors.grey[200],
-                          child: const Icon(Icons.image, color: Colors.grey),
+                          color: context.inputFillColor,
+                          child: Icon(Icons.image, color: context.textHintColor),
                         ),
                       ),
                     ),
@@ -121,10 +122,9 @@ class OfferCardWidget extends StatelessWidget {
               children: [
                 Text(
                   offer.title,
-                  style: const TextStyle(
+                  style: AppStyles.bodyLargeOf(context).copyWith(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
                   ),
                 ),
                 if (offer.description.isNotEmpty) ...[
@@ -133,7 +133,7 @@ class OfferCardWidget extends StatelessWidget {
                     offer.description,
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: context.textSecondaryColor,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -157,7 +157,7 @@ class OfferCardWidget extends StatelessWidget {
                       offer.priceType == 'hourly' ? '/hour' : '(fixed)',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[500],
+                        color: context.textHintColor,
                       ),
                     ),
                   ],
@@ -169,7 +169,7 @@ class OfferCardWidget extends StatelessWidget {
                 if (offer.date.isNotEmpty || offer.startTime.isNotEmpty || offer.endTime.isNotEmpty)
                   Row(
                     children: [
-                      Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
+                      Icon(Icons.access_time, size: 14, color: context.textHintColor),
                       const SizedBox(width: 4),
                       Text(
                         [
@@ -177,7 +177,7 @@ class OfferCardWidget extends StatelessWidget {
                           if (offer.startTime.isNotEmpty || offer.endTime.isNotEmpty)
                             '${offer.startTime} - ${offer.endTime}',
                         ].join('  '),
-                        style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                        style: TextStyle(fontSize: 12, color: context.textHintColor),
                       ),
                     ],
                   ),
@@ -192,12 +192,12 @@ class OfferCardWidget extends StatelessWidget {
                           ? Icons.money
                           : Icons.credit_card,
                       size: 14,
-                      color: Colors.grey[500],
+                      color: context.textHintColor,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       offer.paymentMethod == 'cash' ? 'Cash' : 'Online',
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                      style: TextStyle(fontSize: 12, color: context.textHintColor),
                     ),
                   ],
                 ),
@@ -211,7 +211,7 @@ class OfferCardWidget extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 border: Border(
-                  top: BorderSide(color: Colors.grey.withOpacity(0.2)),
+                  top: BorderSide(color: context.borderSubtle),
                 ),
               ),
               child: _buildActionButtons(offer.status),

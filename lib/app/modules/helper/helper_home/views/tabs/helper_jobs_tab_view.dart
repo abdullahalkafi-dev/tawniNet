@@ -12,42 +12,39 @@ class HelperJobsTabView extends GetView<HelperJobsController> {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: Colors.white,
         appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
           title: Text(
-            'My Job',
-            style: AppStyles.h1.copyWith(fontSize: 24, color: const Color(0xFF1F2A37)),
+            'helper_my_job'.tr,
+            style: AppStyles.h1Of(context).copyWith(fontSize: 24),
           ),
           bottom: TabBar(
             indicatorColor: AppColors.primary,
             indicatorWeight: 3,
             labelColor: AppColors.primary,
-            unselectedLabelColor: Colors.grey,
+            unselectedLabelColor: context.textHintColor,
             labelStyle: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
-            tabs: const [
-              Tab(text: 'Active Job'),
-              Tab(text: 'Completed'),
-              Tab(text: 'Cancelled'),
+            tabs: [
+              Tab(text: 'helper_active_job'.tr),
+              Tab(text: 'helper_completed'.tr),
+              Tab(text: 'helper_cancelled'.tr),
             ],
           ),
         ),
         body: TabBarView(
           children: [
-            _buildJobList(controller.activeJobs, 'active'),
-            _buildJobList(controller.completedJobs, 'completed'),
-            _buildJobList(controller.cancelledJobs, 'cancelled'),
+            _buildJobList(context, controller.activeJobs, 'active'),
+            _buildJobList(context, controller.completedJobs, 'completed'),
+            _buildJobList(context, controller.cancelledJobs, 'cancelled'),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildJobList(List jobs, String type) {
+  Widget _buildJobList(BuildContext context, List jobs, String type) {
     return Obx(() {
       if (jobs.isEmpty) {
-        return const Center(child: Text('No jobs found'));
+        return Center(child: Text('helper_no_jobs'.tr, style: TextStyle(color: context.textHintColor)));
       }
       return ListView.separated(
         padding: const EdgeInsets.all(20),
@@ -60,9 +57,9 @@ class HelperJobsTabView extends GetView<HelperJobsController> {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.cardColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey[100]!),
+                border: Border.all(color: context.borderSubtle),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.02),
@@ -84,8 +81,8 @@ class HelperJobsTabView extends GetView<HelperJobsController> {
                         return Container(
                           width: 60,
                           height: 60,
-                          color: const Color(0xFFF3F4F6),
-                          child: const Icon(Icons.person, color: Colors.grey),
+                          color: context.inputFillLight,
+                          child: Icon(Icons.person, color: context.textHintColor),
                         );
                       },
                     ),
@@ -99,15 +96,15 @@ class HelperJobsTabView extends GetView<HelperJobsController> {
                           children: [
                             Text(
                               job['clientName'] ?? '',
-                              style: AppStyles.h2.copyWith(fontSize: 16),
+                              style: AppStyles.h2Of(context).copyWith(fontSize: 16),
                             ),
                             Row(
                               children: [
-                                Icon(Icons.location_on, size: 14, color: AppColors.textHint),
+                                Icon(Icons.location_on, size: 14, color: Colors.orange[400]),
                                 const SizedBox(width: 4),
                                 Text(
                                   job['location'] ?? '',
-                                  style: AppStyles.bodyMedium.copyWith(fontSize: 13),
+                                  style: AppStyles.bodyMedium.copyWith(fontSize: 13, color: context.textSecondaryColor),
                                 ),
                               ],
                             ),
@@ -119,7 +116,7 @@ class HelperJobsTabView extends GetView<HelperJobsController> {
                           bottom: 0,
                           right: 0,
                           child: Text(
-                            'View',
+                            'btn_view'.tr,
                             style: AppStyles.bodyLarge.copyWith(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w600,

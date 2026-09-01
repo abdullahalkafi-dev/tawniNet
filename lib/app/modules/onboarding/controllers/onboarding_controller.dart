@@ -1,7 +1,7 @@
 import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../routes/app_pages.dart';
+import '../../../core/localization/locale_service.dart';
 
 class OnboardingController extends GetxController {
   final pageController = PageController();
@@ -24,5 +24,9 @@ class OnboardingController extends GetxController {
 
   void skip() {
     Get.offAllNamed(Routes.roleSelection);
+  }
+
+  void toggleLanguage() {
+    Get.find<LocaleService>().toggleLocale();
   }
 }

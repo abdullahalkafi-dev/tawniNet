@@ -7,6 +7,7 @@ abstract class Routes {
   static const signup = _Paths.signup;
   static const forgotPassword = _Paths.forgotPassword;
   static const otpVerification = _Paths.otpVerification;
+  static const otp = _Paths.otpVerification;
   static const resetPassword = _Paths.resetPassword;
   static const home = _Paths.home;
   static const search = _Paths.search;

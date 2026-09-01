@@ -10,17 +10,14 @@ class CheckoutView extends GetView<CheckoutController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Checkout',
-          style: AppStyles.h2.copyWith(color: Colors.black),
+          'checkout_title'.tr,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 18),
         ),
         centerTitle: true,
       ),
@@ -28,26 +25,26 @@ class CheckoutView extends GetView<CheckoutController> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            _buildSummaryCard(),
+            _buildSummaryCard(context),
             const SizedBox(height: 24),
-            _buildPaymentMethodTile('PayPal', 'Connected', true),
+            _buildPaymentMethodTile(context, 'checkout_paypal'.tr, 'checkout_connected'.tr, true),
             const SizedBox(height: 16),
-            _buildPaymentMethodTile('PayPal', 'Connected', false),
+            _buildPaymentMethodTile(context, 'checkout_paypal'.tr, 'checkout_connected'.tr, false),
             const SizedBox(height: 16),
-            _buildAddMethodTile(),
+            _buildAddMethodTile(context),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSummaryCard() {
+  Widget _buildSummaryCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[100]!),
+        border: Border.all(color: context.borderSubtle),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -63,14 +60,14 @@ class CheckoutView extends GetView<CheckoutController> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Home Cleaning Service',
-                style: AppStyles.bodyLarge.copyWith(
+                'checkout_service_name'.tr,
+                style: AppStyles.bodyLargeOf(context).copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
               Text(
                 '35 MAD',
-                style: AppStyles.bodyLarge.copyWith(
+                style: AppStyles.bodyLargeOf(context).copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -78,30 +75,30 @@ class CheckoutView extends GetView<CheckoutController> {
           ),
           const SizedBox(height: 12),
           Text(
-            'Include Service:',
-            style: AppStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold),
+            'checkout_include_service'.tr,
+            style: AppStyles.bodyMediumOf(context).copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 4),
           Text(
             'Lorem ipsum dolor sit amet consectetur. Elit ac gravida augue suspendisse in scelerisque pellentesque diam elementum. Lorem quam vitae mus metus tortor turpis at. Cras accumsan pharetra odio euismod metus leo neque duis. More',
-            style: AppStyles.bodyMedium.copyWith(
+            style: AppStyles.bodyMediumOf(context).copyWith(
               fontSize: 13,
-              color: Colors.grey[600],
+              color: context.textSecondaryColor,
             ),
           ),
-          const Divider(height: 32),
+          Divider(height: 32, color: context.borderSubtle),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Total',
-                style: AppStyles.bodyLarge.copyWith(
+                'checkout_total'.tr,
+                style: AppStyles.bodyLargeOf(context).copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
               Text(
                 '36.10 MAD',
-                style: AppStyles.bodyLarge.copyWith(
+                style: AppStyles.bodyLargeOf(context).copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -112,12 +109,12 @@ class CheckoutView extends GetView<CheckoutController> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Delivery Time',
-                style: AppStyles.bodyMedium.copyWith(color: Colors.grey),
+                'checkout_delivery_time'.tr,
+                style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
               ),
               Text(
-                '2 hour',
-                style: AppStyles.bodyMedium.copyWith(
+                'checkout_hour'.tr,
+                style: AppStyles.bodyMediumOf(context).copyWith(
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -135,17 +132,17 @@ class CheckoutView extends GetView<CheckoutController> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Text(
-                'Confirm & Pay',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              child: Text(
+                'checkout_confirm_pay'.tr,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
           ),
           const SizedBox(height: 12),
-          const Center(
+          Center(
             child: Text(
-              'Secure Payment',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
+              'checkout_secure'.tr,
+              style: TextStyle(color: context.textHintColor, fontSize: 12),
             ),
           ),
         ],
@@ -153,13 +150,13 @@ class CheckoutView extends GetView<CheckoutController> {
     );
   }
 
-  Widget _buildPaymentMethodTile(String name, String status, bool isSelected) {
+  Widget _buildPaymentMethodTile(BuildContext context, String name, String status, bool isSelected) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: context.borderSubtle),
       ),
       child: Row(
         children: [
@@ -167,7 +164,7 @@ class CheckoutView extends GetView<CheckoutController> {
           const SizedBox(width: 12),
           Text(
             name,
-            style: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+            style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold),
           ),
           const Spacer(),
           Text(
@@ -182,23 +179,23 @@ class CheckoutView extends GetView<CheckoutController> {
     );
   }
 
-  Widget _buildAddMethodTile() {
+  Widget _buildAddMethodTile(BuildContext context) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!, style: BorderStyle.solid),
+        border: Border.all(color: context.borderSubtle, style: BorderStyle.solid),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.add, color: Colors.black),
+          Icon(Icons.add, color: context.textPrimaryColor),
           const SizedBox(width: 8),
           Text(
-            'Add New Method',
-            style: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+            'checkout_add_method'.tr,
+            style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold),
           ),
         ],
       ),

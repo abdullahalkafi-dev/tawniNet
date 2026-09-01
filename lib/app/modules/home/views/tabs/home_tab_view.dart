@@ -4,6 +4,7 @@ import 'package:awnneaapp/app/modules/home/views/widgets/nearby_helpers.dart';
 import 'package:awnneaapp/app/modules/home/views/widgets/popular_services_section.dart';
 import 'package:awnneaapp/app/modules/home/views/widgets/quick_actions.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
+import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/home_controller.dart';
@@ -14,7 +15,10 @@ class HomeTabView extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
+    return RefreshIndicator(
+      onRefresh: controller.refreshData,
+      child: SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -22,30 +26,33 @@ class HomeTabView extends GetView<HomeController> {
           const SizedBox(height: 10),
           const HomeHeader(),
           const SizedBox(height: 24),
-          RichText(
-            text: TextSpan(
-              style: AppStyles.h1.copyWith(
-                fontSize: 32,
-                color: const Color(0xFF1F2937),
-              ),
-              children: [
-                const TextSpan(text: 'Hello, '),
-                TextSpan(
-                  text: 'Alex👋',
-                  style: TextStyle(color: Colors.orange[400]),
+          Obx(() {
+            final user = Get.find<AuthService>().currentUser.value;
+            final name = user?.name.split(' ').first ?? 'User';
+            return RichText(
+              text: TextSpan(
+                style: AppStyles.h1Of(context).copyWith(
+                  fontSize: 32,
                 ),
-              ],
-            ),
-          ),
+                children: [
+                  TextSpan(text: 'home_hello'.tr),
+                  TextSpan(
+                    text: '$name👋',
+                    style: TextStyle(color: Colors.orange[400]),
+                  ),
+                ],
+              ),
+            );
+          }),
           const SizedBox(height: 8),
           Text(
-            'Find the best helper around you.',
-            style: AppStyles.bodyMedium.copyWith(fontSize: 16),
+            'home_find_helper'.tr,
+            style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 16),
           ),
           const SizedBox(height: 24),
           const QuickActions(),
           const SizedBox(height: 24),
-          _buildSearchBar(),
+          _buildSearchBar(context),
           const SizedBox(height: 24),
           const CategoriesSection(),
           const SizedBox(height: 24),
@@ -55,18 +62,19 @@ class HomeTabView extends GetView<HomeController> {
           const SizedBox(height: 30),
         ],
       ),
+      ),
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(BuildContext context) {
     return GestureDetector(
       onTap: () => Get.toNamed(Routes.search),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[200]!),
+          border: Border.all(color: context.borderSubtle),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.03),
@@ -79,9 +87,9 @@ class HomeTabView extends GetView<HomeController> {
           child: TextField(
             readOnly: true,
             decoration: InputDecoration(
-              icon: const Icon(Icons.search, color: Colors.grey),
-              hintText: 'Search for a service...',
-              hintStyle: AppStyles.bodyMedium.copyWith(color: Colors.grey),
+              icon: Icon(Icons.search, color: context.textHintColor),
+              hintText: 'home_search'.tr,
+              hintStyle: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(vertical: 16),
             ),

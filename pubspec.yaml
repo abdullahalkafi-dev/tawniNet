@@ -44,15 +44,13 @@ dependencies:
   flutter_secure_storage: ^9.0.0
   socket_io_client: ^3.0.2
   video_player: ^2.9.3
-  ffmpeg_kit_flutter: ^6.0.3
+  video_compress: ^3.1.4
   path_provider: ^2.1.2
+  url_launcher: ^6.2.5
 
   # Location
   geolocator: ^13.0.1
   permission_handler: ^11.3.1
-
-  # Google Sign-In
-  google_sign_in: ^6.2.1
 
 dev_dependencies:
   flutter_test:

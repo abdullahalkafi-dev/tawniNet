@@ -7,6 +7,11 @@ class CustomButton extends StatelessWidget {
   final VoidCallback onPressed;
   final bool isOutlined;
   final Widget? icon;
+  final bool isLoading;
+  final Color? backgroundColor;
+  final Color? textColor;
+  final double? width;
+  final double? height;
 
   const CustomButton({
     super.key,
@@ -14,62 +19,94 @@ class CustomButton extends StatelessWidget {
     required this.onPressed,
     this.isOutlined = false,
     this.icon,
+    this.isLoading = false,
+    this.backgroundColor,
+    this.textColor,
+    this.width,
+    this.height,
   });
 
   @override
   Widget build(BuildContext context) {
+    final effectiveHeight = height ?? 55.0;
+    final effectiveWidth = width ?? double.infinity;
+
     if (isOutlined) {
       return SizedBox(
-        width: double.infinity,
-        height: 55,
+        width: effectiveWidth,
+        height: effectiveHeight,
         child: OutlinedButton(
-          onPressed: onPressed,
+          onPressed: isLoading ? null : onPressed,
           style: OutlinedButton.styleFrom(
-            side: const BorderSide(color: AppColors.primary),
+            side: BorderSide(color: backgroundColor ?? AppColors.primary),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (icon != null) ...[
-                SizedBox(width: 24, height: 24, child: icon!),
-                const SizedBox(width: 8),
-              ],
-              Text(
-                text,
-                style: AppStyles.buttonText.copyWith(color: AppColors.primary),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
+          child: isLoading
+              ? SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    color: textColor ?? AppColors.primary,
+                    strokeWidth: 2.5,
+                  ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (icon != null) ...[
+                      SizedBox(width: 24, height: 24, child: icon!),
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      text,
+                      style: AppStyles.buttonText.copyWith(
+                        color: textColor ?? AppColors.primary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
         ),
       );
     }
+
     return SizedBox(
-      width: double.infinity,
-      height: 55,
+      width: effectiveWidth,
+      height: effectiveHeight,
       child: ElevatedButton(
-        onPressed: onPressed,
+        onPressed: isLoading ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: backgroundColor ?? AppColors.primary,
+          disabledBackgroundColor: (backgroundColor ?? AppColors.primary).withOpacity(0.6),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (icon != null) ...[
-              SizedBox(width: 24, height: 24, child: icon!),
-              const SizedBox(width: 8),
-            ],
-            Flexible(
-              child: Text(
-                text,
-                style: AppStyles.buttonText,
-                overflow: TextOverflow.ellipsis,
+        child: isLoading
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2.5,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (icon != null) ...[
+                    SizedBox(width: 24, height: 24, child: icon!),
+                    const SizedBox(width: 8),
+                  ],
+                  Flexible(
+                    child: Text(
+                      text,
+                      style: AppStyles.buttonText.copyWith(
+                        color: textColor ?? Colors.white,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
-        ),
       ),
     );
   }

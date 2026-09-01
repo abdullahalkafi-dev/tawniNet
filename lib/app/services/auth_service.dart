@@ -3,8 +3,16 @@ import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/storage_service.dart';
 import 'package:awnneaapp/app/services/role_service.dart';
 import 'package:awnneaapp/app/services/socket_service.dart';
+import 'package:awnneaapp/app/services/refetch_service.dart';
+import 'package:awnneaapp/app/modules/messages/controllers/messages_controller.dart';
 import 'package:awnneaapp/app/data/models/auth_model.dart';
+import 'package:awnneaapp/app/modules/home/controllers/home_controller.dart';
+import 'package:awnneaapp/app/modules/helper/helper_home/controllers/helper_home_controller.dart';
+import 'package:awnneaapp/app/modules/helper/helper_jobs/controllers/helper_jobs_controller.dart';
+import 'package:awnneaapp/app/modules/profile/controllers/profile_controller.dart';
+import 'package:awnneaapp/app/modules/booking/controllers/booking_controller.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
+import 'package:awnneaapp/app/core/utils/morocco_phone_helper.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
 
 class AuthService extends GetxService {
@@ -52,7 +60,190 @@ class AuthService extends GetxService {
     return this;
   }
 
-  // ─── Register ───────────────────────────────────────────
+  // ─── Phone Registration (Morocco WhatsApp OTP) ─────────
+
+  Future<Map<String, dynamic>> registerWithPhone({
+    required String phone,
+    required String password,
+    required String name,
+  }) async {
+    final normalizedPhone = MoroccoPhoneHelper.normalize(phone);
+    final role = _roleService.role;
+    final response = await _api.post(
+      ApiConstants.phoneRegister,
+      data: {
+        'phone': normalizedPhone,
+        'password': password,
+        'name': name,
+        'role': role,
+      },
+    );
+
+    if (response.success) {
+      return {
+        'status': response.data?['status'] ?? 'unverified',
+        'phone': response.data?['phone'] ?? normalizedPhone,
+      };
+    }
+
+    throw Exception(response.message ?? 'Registration failed');
+  }
+
+  // ─── Verify Phone OTP (6 Digits) ────────────────────────
+
+  Future<void> verifyPhoneOtp({
+    required String phone,
+    required String otp,
+  }) async {
+    final normalizedPhone = MoroccoPhoneHelper.normalize(phone);
+    final response = await _api.post(
+      ApiConstants.verifyPhoneOtp,
+      data: {
+        'phone': normalizedPhone,
+        'otp': otp,
+      },
+    );
+
+    if (response.success && response.data != null) {
+      await _handleAuthResponse(response.data);
+    } else {
+      throw Exception(response.message ?? 'WhatsApp OTP verification failed');
+    }
+  }
+
+  // ─── Resend WhatsApp OTP ────────────────────────────────
+
+  Future<void> resendPhoneOtp({required String phone}) async {
+    final normalizedPhone = MoroccoPhoneHelper.normalize(phone);
+    final response = await _api.post(
+      ApiConstants.resendWhatsappOtp,
+      data: {'phone': normalizedPhone},
+    );
+
+    if (!response.success) {
+      throw Exception(response.message ?? 'Failed to resend WhatsApp code');
+    }
+  }
+
+  // ─── Phone Login (Daily Login) ──────────────────────────
+
+  Future<String> loginWithPhone({
+    required String phone,
+    required String password,
+  }) async {
+    final normalizedPhone = MoroccoPhoneHelper.normalize(phone);
+    final response = await _api.post(
+      ApiConstants.phoneLogin,
+      data: {
+        'phone': normalizedPhone,
+        'password': password,
+      },
+    );
+
+    if (response.success && response.data != null) {
+      // Check if unverified
+      if (response.data['status'] == 'unverified' || response.data['isPhoneVerified'] == false) {
+        return 'unverified';
+      }
+      await _handleAuthResponse(response.data);
+      return currentUser.value?.role ?? 'user';
+    }
+
+    throw Exception(response.message ?? 'Login failed');
+  }
+
+  // ─── Forgot Password (Phone) ────────────────────────────
+
+  Future<void> forgotPasswordPhone({required String phone}) async {
+    final normalizedPhone = MoroccoPhoneHelper.normalize(phone);
+    final response = await _api.post(
+      ApiConstants.forgotPasswordPhone,
+      data: {'phone': normalizedPhone},
+    );
+
+    if (!response.success) {
+      throw Exception(response.message ?? 'Failed to send WhatsApp reset code');
+    }
+  }
+
+  // ─── Verify Reset OTP (Phone) ───────────────────────────
+
+  Future<String> verifyResetOtpPhone({
+    required String phone,
+    required String otp,
+  }) async {
+    final normalizedPhone = MoroccoPhoneHelper.normalize(phone);
+    final response = await _api.post(
+      ApiConstants.verifyResetOtpPhone,
+      data: {
+        'phone': normalizedPhone,
+        'otp': otp,
+      },
+    );
+
+    if (response.success && response.data != null) {
+      return response.data['resetToken'] ?? '';
+    }
+
+    throw Exception(response.message ?? 'Reset OTP verification failed');
+  }
+
+  // ─── Reset Password (Phone) ─────────────────────────────
+
+  Future<void> resetPasswordPhone({
+    required String resetToken,
+    required String newPassword,
+  }) async {
+    final response = await _api.post(
+      ApiConstants.resetPasswordPhone,
+      data: {
+        'resetToken': resetToken,
+        'newPassword': newPassword,
+      },
+    );
+
+    if (!response.success) {
+      throw Exception(response.message ?? 'Password reset failed');
+    }
+  }
+
+  // ─── Didit Automated KYC Integration ────────────────────
+
+  Future<Map<String, dynamic>> createDiditSession() async {
+    final response = await _api.post(ApiConstants.diditSession);
+    if (response.success && response.data != null) {
+      return Map<String, dynamic>.from(response.data);
+    }
+    throw Exception(response.message ?? 'Failed to start KYC verification');
+  }
+
+  Future<Map<String, dynamic>> syncDiditSession(String sessionId) async {
+    final response = await _api.post(
+      ApiConstants.diditSync,
+      data: {'sessionId': sessionId},
+    );
+    if (response.success && response.data != null) {
+      await getMe(); // Refresh local profile
+      return Map<String, dynamic>.from(response.data);
+    }
+    throw Exception(response.message ?? 'Failed to sync verification decision');
+  }
+
+  // ─── Submit Rejection Appeal ─────────────────────────────
+
+  Future<void> submitAppeal(String message) async {
+    final response = await _api.post(
+      ApiConstants.helperAppeal,
+      data: {'message': message},
+    );
+    if (response.success) {
+      await getMe(); // Refresh local profile with pending_appeal
+      return;
+    }
+    throw Exception(response.message ?? 'Failed to submit appeal');
+  }
+
+  // ─── Legacy Email Register & Login Fallbacks ─────────────
 
   Future<Map<String, dynamic>> register({
     required String email,
@@ -80,15 +271,10 @@ class AuthService extends GetxService {
     throw Exception(response.message ?? 'Registration failed');
   }
 
-  // ─── Verify OTP ─────────────────────────────────────────
-
   Future<void> verifyOtp({required String email, required String otp}) async {
     final response = await _api.post(
       ApiConstants.verifyOtp,
-      data: {
-        'email': email,
-        'otp': otp,
-      },
+      data: {'email': email, 'otp': otp},
     );
 
     if (response.success && response.data != null) {
@@ -98,20 +284,15 @@ class AuthService extends GetxService {
     }
   }
 
-  // ─── Resend OTP ─────────────────────────────────────────
-
   Future<void> resendOtp({required String email}) async {
     final response = await _api.post(
       ApiConstants.resendOtp,
       data: {'email': email},
     );
-
     if (!response.success) {
       throw Exception(response.message ?? 'Failed to resend OTP');
     }
   }
-
-  // ─── Login ──────────────────────────────────────────────
 
   Future<String> login({
     required String email,
@@ -119,10 +300,7 @@ class AuthService extends GetxService {
   }) async {
     final response = await _api.post(
       ApiConstants.login,
-      data: {
-        'email': email,
-        'password': password,
-      },
+      data: {'email': email, 'password': password},
     );
 
     if (response.success && response.data != null) {
@@ -133,48 +311,15 @@ class AuthService extends GetxService {
     throw Exception(response.message ?? 'Login failed');
   }
 
-  // ─── Google Login ───────────────────────────────────────
-
-  Future<String> googleLogin({
-    required String email,
-    required String name,
-    required String googleId,
-    String? avatar,
-  }) async {
-    final role = _roleService.role;
-    final response = await _api.post(
-      ApiConstants.googleLogin,
-      data: {
-        'email': email,
-        'name': name,
-        'googleId': googleId,
-        if (avatar != null) 'avatar': avatar,
-        'role': role,
-      },
-    );
-
-    if (response.success && response.data != null) {
-      await _handleAuthResponse(response.data);
-      return currentUser.value?.role ?? 'user';
-    }
-
-    throw Exception(response.message ?? 'Google login failed');
-  }
-
-  // ─── Forgot Password ────────────────────────────────────
-
   Future<void> forgotPassword({required String email}) async {
     final response = await _api.post(
       ApiConstants.forgotPassword,
       data: {'email': email},
     );
-
     if (!response.success) {
       throw Exception(response.message ?? 'Failed to send reset OTP');
     }
   }
-
-  // ─── Verify Reset OTP ───────────────────────────────────
 
   Future<String> verifyResetOtp({
     required String email,
@@ -182,10 +327,7 @@ class AuthService extends GetxService {
   }) async {
     final response = await _api.post(
       ApiConstants.verifyResetOtp,
-      data: {
-        'email': email,
-        'otp': otp,
-      },
+      data: {'email': email, 'otp': otp},
     );
 
     if (response.success && response.data != null) {
@@ -195,18 +337,13 @@ class AuthService extends GetxService {
     throw Exception(response.message ?? 'Reset OTP verification failed');
   }
 
-  // ─── Reset Password ─────────────────────────────────────
-
   Future<void> resetPassword({
     required String resetToken,
     required String newPassword,
   }) async {
     final response = await _api.post(
       ApiConstants.resetPassword,
-      data: {
-        'resetToken': resetToken,
-        'newPassword': newPassword,
-      },
+      data: {'resetToken': resetToken, 'newPassword': newPassword},
     );
 
     if (!response.success) {
@@ -232,17 +369,70 @@ class AuthService extends GetxService {
   // ─── Logout ─────────────────────────────────────────────
 
   Future<void> logout() async {
-    // Disconnect socket first
+    // 1. Disconnect socket
     try {
-      final socketService = Get.find<SocketService>();
-      socketService.disconnect();
+      if (Get.isRegistered<SocketService>()) {
+        Get.find<SocketService>().disconnect();
+      }
     } catch (_) {}
 
+    // 2. Clear messages and refetch listeners
+    try {
+      if (Get.isRegistered<MessagesController>()) {
+        Get.find<MessagesController>().clear();
+      }
+    } catch (_) {}
+
+    try {
+      if (Get.isRegistered<RefetchService>()) {
+        Get.find<RefetchService>().clear();
+      }
+    } catch (_) {}
+
+    // 3. Clear ProfileController data and delete instance
+    try {
+      if (Get.isRegistered<ProfileController>()) {
+        Get.find<ProfileController>().clear();
+        Get.delete<ProfileController>(force: true);
+      }
+    } catch (_) {}
+
+    // 4. Delete Helper-specific controllers
+    try {
+      if (Get.isRegistered<HelperHomeController>()) {
+        Get.delete<HelperHomeController>(force: true);
+      }
+    } catch (_) {}
+
+    try {
+      if (Get.isRegistered<HelperJobsController>()) {
+        Get.delete<HelperJobsController>(force: true);
+      }
+    } catch (_) {}
+
+    // 5. Delete Client-specific controllers
+    try {
+      if (Get.isRegistered<HomeController>()) {
+        Get.delete<HomeController>(force: true);
+      }
+    } catch (_) {}
+
+    try {
+      if (Get.isRegistered<BookingController>()) {
+        Get.delete<BookingController>(force: true);
+      }
+    } catch (_) {}
+
+    // 6. Reset auth state
     currentUser.value = null;
     isLoggedIn.value = false;
     isEmailVerified.value = false;
     _roleService.clearRole();
-    await _storage.clearAll();
+
+    // 7. Clear user tokens & JSON without wiping language/theme settings
+    await _storage.clearAuthData();
+
+    // 8. Route to role selection cleanly
     Get.offAllNamed(Routes.roleSelection);
   }
 

@@ -55,6 +55,15 @@ class MessagesController extends GetxController {
     super.onClose();
   }
 
+  /// Clear all state on logout
+  void clear() {
+    conversations.clear();
+    onlineUserIds.clear();
+    searchQuery.value = '';
+    isSearching.value = false;
+    isLoading.value = false;
+  }
+
   void _setupPresenceListener() {
     _presenceSub = _socketService.onPresenceUpdate.listen((data) {
       final userId = data['userId'] as String? ?? '';
@@ -90,6 +99,9 @@ class MessagesController extends GetxController {
 
   /// Fetch all conversations from API.
   Future<void> fetchConversations() async {
+    if (!_authService.isLoggedIn.value) {
+      return;
+    }
     isLoading.value = true;
     try {
       final response = await _api.get<List<ChatConversation>>(

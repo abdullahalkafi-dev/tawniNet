@@ -11,17 +11,14 @@ class ActiveJobDetailsView extends StatelessWidget {
     final job = Get.arguments as Map;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Job Details',
-          style: AppStyles.h2.copyWith(fontSize: 20, color: Colors.black),
+          'job_details_title'.tr,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 20),
         ),
         centerTitle: true,
       ),
@@ -30,11 +27,11 @@ class ActiveJobDetailsView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildJobInfoTable(job),
+            _buildJobInfoTable(context, job),
             const SizedBox(height: 16),
-            _buildJobDescriptionWithPhotos(job),
+            _buildJobDescriptionWithPhotos(context, job),
             const SizedBox(height: 16),
-            _buildJobStatusTimeline(),
+            _buildJobStatusTimeline(context),
             const SizedBox(height: 24),
             GestureDetector(
               onTap: () => _showCancelDialog(context, job),
@@ -46,9 +43,9 @@ class ActiveJobDetailsView extends StatelessWidget {
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: Text(
-                  'Cancel Booking',
+                  'booking_cancel_booking'.tr,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: AppColors.error,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -58,83 +55,84 @@ class ActiveJobDetailsView extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'If cancellations happen repeatedly, your account may be temporarily suspended.',
-              style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: AppColors.textHint),
+              'booking_cancel_warning'.tr,
+              style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: context.textHintColor),
               textAlign: TextAlign.center,
             ),
           ],
         ),
       ),
-      bottomNavigationBar: _buildInputBar(),
+      bottomNavigationBar: _buildInputBar(context, job),
     );
   }
 
-  Widget _buildJobInfoTable(Map job) {
+  Widget _buildJobInfoTable(BuildContext context, Map job) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF3F4F6)),
+        border: Border.all(color: context.borderSubtle),
       ),
       child: Column(
         children: [
-          _buildInfoRow('Order By', job['orderBy'] ?? job['clientName']),
-          _buildInfoRow('Job Type', job['jobType']),
-          _buildInfoRow('Booking Date', job['bookingDate']),
-          _buildInfoRow('Preferred Time', job['preferredTime']),
-          _buildInfoRow('Location', job['location']),
-          _buildInfoRow('Budget', 'MAD ${job['budget']}'),
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(job['distance'] ?? '', style: AppStyles.bodyMedium.copyWith(fontSize: 12)),
+          _buildInfoRow(context, 'label_order_by'.tr, job['orderBy'] ?? job['clientName'] ?? ''),
+          _buildInfoRow(context, 'label_job_type'.tr, job['jobType'] ?? ''),
+          _buildInfoRow(context, 'label_booking_date'.tr, job['bookingDate'] ?? ''),
+          _buildInfoRow(context, 'label_preferred_time'.tr, job['preferredTime'] ?? ''),
+          _buildInfoRow(context, 'label_location'.tr, job['location'] ?? ''),
+          _buildInfoRow(context, 'label_budget'.tr, 'MAD ${job['budget'] ?? ''}'),
+          if (job['distance'] != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(job['distance'], style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: context.textHintColor)),
+              ),
             ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(BuildContext context, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: AppStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
-          Text(value, style: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(label, style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor)),
+          Text(value, style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold, fontSize: 14)),
         ],
       ),
     );
   }
 
-  Widget _buildJobDescriptionWithPhotos(Map job) {
+  Widget _buildJobDescriptionWithPhotos(BuildContext context, Map job) {
     final photos = job['photos'] as List? ?? [];
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF3F4F6)),
+        border: Border.all(color: context.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Job Description', style: AppStyles.h2.copyWith(fontSize: 16)),
+          Text('label_job_description'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 16)),
           const SizedBox(height: 12),
-          Text('Tasks Required:', style: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold, fontSize: 14)),
+          Text('label_tasks_required'.tr, style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold, fontSize: 14)),
           const SizedBox(height: 8),
           Text(
             job['description'] ?? '',
-            style: AppStyles.bodyMedium.copyWith(height: 1.5),
+            style: AppStyles.bodyMediumOf(context).copyWith(height: 1.5, color: context.textSecondaryColor),
           ),
           if (photos.isNotEmpty) ...[
             const SizedBox(height: 16),
-            Text('Photos', style: AppStyles.h2.copyWith(fontSize: 16)),
+            Text('label_photos'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 16)),
             const SizedBox(height: 12),
             Row(
               children: List.generate(photos.length.clamp(0, 3), (index) {
@@ -151,8 +149,8 @@ class ActiveJobDetailsView extends StatelessWidget {
                         return Container(
                           width: 100,
                           height: 100,
-                          color: const Color(0xFFF3F4F6),
-                          child: const Icon(Icons.image, color: Colors.grey),
+                          color: context.inputFillLight,
+                          child: Icon(Icons.image, color: context.textHintColor),
                         );
                       },
                     ),
@@ -166,27 +164,27 @@ class ActiveJobDetailsView extends StatelessWidget {
     );
   }
 
-  Widget _buildJobStatusTimeline() {
+  Widget _buildJobStatusTimeline(BuildContext context) {
     final steps = [
-      {'label': 'Job Submitted', 'date': 'March 10, 2024 at 2:30 PM', 'completed': true},
-      {'label': 'Worker Matched', 'date': 'March 11, 2024 at 9:15 AM', 'completed': true},
-      {'label': 'In Progress', 'date': 'Started March 15, 2024 at 10:00 AM', 'completed': true, 'active': true},
-      {'label': 'Completed', 'date': 'Pending', 'completed': false},
-      {'label': 'Payment Processed', 'date': 'Pending', 'completed': false},
+      {'label': 'status_submitted'.tr, 'date': 'March 10, 2024 at 2:30 PM', 'completed': true},
+      {'label': 'status_worker_matched'.tr, 'date': 'March 11, 2024 at 9:15 AM', 'completed': true},
+      {'label': 'status_in_progress'.tr, 'date': 'Started March 15, 2024 at 10:00 AM', 'completed': true, 'active': true},
+      {'label': 'status_completed'.tr, 'date': 'Pending', 'completed': false},
+      {'label': 'status_payment_processed'.tr, 'date': 'Pending', 'completed': false},
     ];
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF3F4F6)),
+        border: Border.all(color: context.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Job Status', style: AppStyles.h2.copyWith(fontSize: 16)),
+          Text('label_job_status'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 16)),
           const SizedBox(height: 16),
           ...steps.asMap().entries.map((entry) {
             final step = entry.value;
@@ -203,7 +201,7 @@ class ActiveJobDetailsView extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: (step['completed'] as bool)
                             ? (isActive ? AppColors.primary : AppColors.primary)
-                            : const Color(0xFFE5E7EB),
+                            : (context.isDarkMode ? AppColors.darkBorder : const Color(0xFFE5E7EB)),
                         shape: BoxShape.circle,
                       ),
                       child: (step['completed'] as bool)
@@ -211,7 +209,7 @@ class ActiveJobDetailsView extends StatelessWidget {
                           : null,
                     ),
                     if (!isLast)
-                      Container(width: 2, height: 30, color: const Color(0xFFE5E7EB)),
+                      Container(width: 2, height: 30, color: (context.isDarkMode ? AppColors.darkBorder : const Color(0xFFE5E7EB))),
                   ],
                 ),
                 const SizedBox(width: 12),
@@ -221,15 +219,15 @@ class ActiveJobDetailsView extends StatelessWidget {
                     children: [
                       Text(
                         step['label'] as String,
-                        style: AppStyles.bodyLarge.copyWith(
+                        style: AppStyles.bodyLargeOf(context).copyWith(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: (step['completed'] as bool) ? Colors.black : AppColors.textHint,
+                          color: (step['completed'] as bool) ? context.textPrimaryColor : context.textHintColor,
                         ),
                       ),
                       Text(
                         step['date'] as String,
-                        style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: AppColors.textHint),
+                        style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: context.textHintColor),
                       ),
                       SizedBox(height: isLast ? 0 : 12),
                     ],
@@ -248,9 +246,9 @@ class ActiveJobDetailsView extends StatelessWidget {
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: BoxDecoration(
+          color: context.cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -261,34 +259,37 @@ class ActiveJobDetailsView extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: context.borderSecondary,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
             const SizedBox(height: 20),
-            Text('Cancel Reason', style: AppStyles.h2.copyWith(fontSize: 20)),
+            Text('job_cancel_reason'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 20)),
             const SizedBox(height: 8),
             Text(
-              'Due to unforeseen circumstances, we are unable to proceed with this order at the moment.',
-              style: AppStyles.bodyMedium.copyWith(fontSize: 14),
+              'job_cancel_reason_default'.tr,
+              style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 14),
             ),
             const SizedBox(height: 16),
-            Text('Cancel Reason', style: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600)),
+            Text('job_cancel_reason'.tr, style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             TextField(
               controller: reasonController,
               maxLines: 3,
+              style: TextStyle(color: context.textPrimaryColor),
               decoration: InputDecoration(
-                hintText: 'Enter the reason for cancellation',
-                hintStyle: AppStyles.bodyMedium.copyWith(color: AppColors.textHint),
+                hintText: 'job_cancel_reason_hint'.tr,
+                hintStyle: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+                filled: true,
+                fillColor: context.inputFillColor,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+                  borderSide: BorderSide(color: context.borderSubtle),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFD1D5DB)),
+                  borderSide: BorderSide(color: context.borderSubtle),
                 ),
               ),
             ),
@@ -303,7 +304,7 @@ class ActiveJobDetailsView extends StatelessWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: Text('Cancel', style: AppStyles.buttonText.copyWith(color: AppColors.primary)),
+                    child: Text('btn_cancel'.tr, style: AppStyles.buttonText.copyWith(color: AppColors.primary)),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -311,16 +312,13 @@ class ActiveJobDetailsView extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () {
                       Get.back();
-                      Get.back();
-                      Get.snackbar('Cancelled', 'Job has been cancelled',
-                          snackPosition: SnackPosition.BOTTOM);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: const Text('Confirm', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: Text('btn_confirm'.tr, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -332,11 +330,11 @@ class ActiveJobDetailsView extends StatelessWidget {
     );
   }
 
-  Widget _buildInputBar() {
+  Widget _buildInputBar(BuildContext context, Map job) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         boxShadow: [
           BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2)),
         ],
@@ -344,16 +342,17 @@ class ActiveJobDetailsView extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF3F4F6),
+          color: context.inputFillLight,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           children: [
             const Icon(Icons.image_outlined, color: AppColors.primary),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: TextField(
-                decoration: InputDecoration(hintText: 'Type a message...', border: InputBorder.none),
+                style: TextStyle(color: context.textPrimaryColor),
+                decoration: InputDecoration(hintText: 'label_type_message'.tr, hintStyle: TextStyle(color: context.textHintColor), border: InputBorder.none),
               ),
             ),
             IconButton(

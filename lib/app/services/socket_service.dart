@@ -27,6 +27,7 @@ class SocketService extends GetxService {
   Stream<Map<String, dynamic>> get onMessagesRead => _readController.stream;
   Stream<Map<String, dynamic>> get onPresenceUpdate => _presenceController.stream;
   Stream<Map<String, dynamic>> get onOfferUpdate => _offerUpdateController.stream;
+  IO.Socket? get socket => _socket;
 
   /// Connect to the socket server with JWT token.
   void connect(String token) {

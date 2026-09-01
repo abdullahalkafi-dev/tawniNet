@@ -1,4 +1,5 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
+import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/helper_home_controller.dart';
@@ -26,29 +27,30 @@ class HelperHomeView extends GetView<HelperHomeController> {
           currentIndex: controller.currentIndex.value,
           onTap: controller.changeIndex,
           type: BottomNavigationBarType.fixed,
+          backgroundColor: context.cardColor,
           selectedItemColor: AppColors.primary,
-          unselectedItemColor: Colors.grey,
+          unselectedItemColor: context.textHintColor,
           showUnselectedLabels: true,
-          items: const [
+          items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home),
-              label: 'Home',
+              icon: const Icon(Icons.home_outlined),
+              activeIcon: const Icon(Icons.home),
+              label: 'helper_home_tab'.tr,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.work_outline),
-              activeIcon: Icon(Icons.work),
-              label: 'Jobs',
+              icon: const Icon(Icons.work_outline),
+              activeIcon: const Icon(Icons.work),
+              label: 'helper_jobs_tab'.tr,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.message_outlined),
-              activeIcon: Icon(Icons.message),
-              label: 'Messages',
+              icon: const Icon(Icons.message_outlined),
+              activeIcon: const Icon(Icons.message),
+              label: 'helper_messages_tab'.tr,
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profile',
+              icon: const Icon(Icons.person_outline),
+              activeIcon: const Icon(Icons.person),
+              label: 'helper_profile_tab'.tr,
             ),
           ],
         ),

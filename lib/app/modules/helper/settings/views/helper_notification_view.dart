@@ -9,17 +9,14 @@ class HelperNotificationView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Notification',
-          style: AppStyles.h2.copyWith(fontSize: 20, color: Colors.black),
+          'settings_notification'.tr,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 20),
         ),
         centerTitle: true,
       ),
@@ -28,19 +25,19 @@ class HelperNotificationView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSection('Today', [
-              _buildNotificationItem('Payment Done', 'Your payment has been done successfully', AppColors.primary, Icons.notifications),
+            _buildSection(context, 'label_today'.tr, [
+              _buildNotificationItem(context, 'notifications_payment_done'.tr, 'notifications_payment_success'.tr, AppColors.primary, Icons.notifications),
             ]),
             const SizedBox(height: 20),
-            _buildSection('Yesterday', [
-              _buildNotificationItem('Order Confirmed', 'Your order has been confirmed', Colors.orange, Icons.notifications),
-              _buildNotificationItem('Credit Card Connected', 'Credit Card has been Linked', AppColors.primary, Icons.notifications),
+            _buildSection(context, 'label_yesterday'.tr, [
+              _buildNotificationItem(context, 'notifications_order_confirmed'.tr, 'notifications_order_success'.tr, Colors.orange, Icons.notifications),
+              _buildNotificationItem(context, 'notifications_credit_connected'.tr, 'notifications_credit_linked'.tr, AppColors.primary, Icons.notifications),
             ]),
             const SizedBox(height: 20),
-            _buildSection('28 Jan 2026', [
-              _buildNotificationItem('Account Setup Successful', 'Your order has been confirmed', Colors.orange, Icons.notifications),
-              _buildNotificationItem('Payment Done', 'Your payment has been done successfully', AppColors.primary, Icons.notifications),
-              _buildNotificationItem('Order Confirmed', 'Your order has been confirmed', Colors.orange, Icons.notifications),
+            _buildSection(context, '28 Jan 2026', [
+              _buildNotificationItem(context, 'notifications_account_setup'.tr, 'notifications_order_success'.tr, Colors.orange, Icons.notifications),
+              _buildNotificationItem(context, 'notifications_payment_done'.tr, 'notifications_payment_success'.tr, AppColors.primary, Icons.notifications),
+              _buildNotificationItem(context, 'notifications_order_confirmed'.tr, 'notifications_order_success'.tr, Colors.orange, Icons.notifications),
             ]),
           ],
         ),
@@ -48,25 +45,25 @@ class HelperNotificationView extends StatelessWidget {
     );
   }
 
-  Widget _buildSection(String title, List<Widget> items) {
+  Widget _buildSection(BuildContext context, String title, List<Widget> items) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: AppStyles.bodyMedium.copyWith(color: AppColors.textSecondary, fontSize: 14)),
+        Text(title, style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor, fontSize: 14)),
         const SizedBox(height: 12),
         ...items,
       ],
     );
   }
 
-  Widget _buildNotificationItem(String title, String message, Color color, IconData icon) {
+  Widget _buildNotificationItem(BuildContext context, String title, String message, Color color, IconData icon) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF3F4F6)),
+        border: Border.all(color: context.borderSubtle),
       ),
       child: Row(
         children: [
@@ -83,9 +80,9 @@ class HelperNotificationView extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold, fontSize: 14)),
+                Text(title, style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold, fontSize: 14)),
                 const SizedBox(height: 4),
-                Text(message, style: AppStyles.bodyMedium.copyWith(fontSize: 13)),
+                Text(message, style: AppStyles.bodyMedium.copyWith(fontSize: 13, color: context.textSecondaryColor)),
               ],
             ),
           ),

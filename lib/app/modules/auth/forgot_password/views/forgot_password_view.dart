@@ -3,7 +3,9 @@ import 'package:get/get.dart';
 import '../controllers/forgot_password_controller.dart';
 import '../../../../core/values/app_styles.dart';
 import '../../../../core/widgets/custom_button.dart';
-import '../../../../core/widgets/custom_text_field.dart';
+import '../../../../core/widgets/morocco_phone_field.dart';
+
+import '../../../../core/widgets/theme_toggle_icon_button.dart';
 
 class ForgotPasswordView extends GetView<ForgotPasswordController> {
   const ForgotPasswordView({super.key});
@@ -16,33 +18,47 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => Get.back(),
         ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: ThemeToggleIconButton(),
+          ),
+        ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 28),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 20),
               Text(
-                'Forget Password',
-                style: AppStyles.h1.copyWith(fontSize: 32),
+                'auth_forget_password'.tr,
+                style: AppStyles.h1Of(context).copyWith(fontSize: 32),
               ),
               const SizedBox(height: 8),
               Text(
-                'Please enter your email to reset password',
-                style: AppStyles.bodyMedium.copyWith(fontSize: 16),
+                'Enter your registered Moroccan mobile number to receive a WhatsApp verification code.',
+                textAlign: TextAlign.center,
+                style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 16),
               ),
               const SizedBox(height: 40),
-              CustomTextField(
-                label: 'Email',
-                hint: 'Email',
-                controller: controller.emailController,
+
+              // Moroccan Phone Input with Flag Badge
+              MoroccoPhoneField(
+                label: 'auth_phone'.tr.isNotEmpty && 'auth_phone'.tr != 'auth_phone'
+                    ? 'auth_phone'.tr
+                    : 'Moroccan Mobile Phone',
+                controller: controller.phoneController,
               ),
+
               const SizedBox(height: 40),
-              CustomButton(
-                text: 'Reset Password',
-                onPressed: controller.resetPassword,
+              Obx(
+                () => CustomButton(
+                  text: 'Send WhatsApp Code',
+                  onPressed: controller.sendResetOtp,
+                  isLoading: controller.isLoading.value,
+                ),
               ),
             ],
           ),

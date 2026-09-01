@@ -11,46 +11,63 @@ class HelperProfileView extends GetView<HelperProfileController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Helper details',
-          style: AppStyles.h2.copyWith(color: Colors.black),
+          'helper_details'.tr,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 18),
         ),
         centerTitle: true,
       ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.only(left: 20, right: 20, bottom: 100),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildProfileHeader(),
-                const SizedBox(height: 24),
-                _buildStats(),
-                const SizedBox(height: 32),
-                _buildAboutMe(),
-                const SizedBox(height: 32),
-                _buildPhotos(),
-                const SizedBox(height: 32),
-                _buildReviews(),
-              ],
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final helper = controller.helper.value;
+        if (helper == null) {
+          return Center(
+            child: Text(
+              'Helper not found',
+              style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
             ),
-          ),
-          _buildBottomChat(),
-        ],
-      ),
+          );
+        }
+
+        return Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.only(
+                left: 20,
+                right: 20,
+                bottom: 100,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildProfileHeader(context, helper),
+                  const SizedBox(height: 24),
+                  _buildStats(context, helper),
+                  const SizedBox(height: 32),
+                  _buildAboutMe(context, helper),
+                  const SizedBox(height: 32),
+                  _buildPhotos(context, helper),
+                  const SizedBox(height: 32),
+                  _buildReviews(context),
+                ],
+              ),
+            ),
+            _buildBottomChat(context),
+          ],
+        );
+      }),
     );
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildProfileHeader(BuildContext context, dynamic helper) {
     return Center(
       child: Column(
         children: [
@@ -63,7 +80,7 @@ class HelperProfileView extends GetView<HelperProfileController> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(50),
               child: Image.network(
-                'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
+                helper.avatar ?? '',
                 width: 100,
                 height: 100,
                 fit: BoxFit.cover,
@@ -71,11 +88,14 @@ class HelperProfileView extends GetView<HelperProfileController> {
                   return Container(
                     width: 100,
                     height: 100,
-                    color: const Color(0xFFF3F4F6),
+                    color: context.inputFillLight,
                     padding: const EdgeInsets.all(20),
                     child: SvgPicture.asset(
                       'assets/svgs/profile_icon.svg',
-                      colorFilter: const ColorFilter.mode(Color(0xFF9CA3AF), BlendMode.srcIn),
+                      colorFilter: ColorFilter.mode(
+                        context.textHintColor,
+                        BlendMode.srcIn,
+                      ),
                     ),
                   );
                 },
@@ -83,50 +103,74 @@ class HelperProfileView extends GetView<HelperProfileController> {
             ),
           ),
           const SizedBox(height: 16),
-          Text('Sophia Carter', style: AppStyles.h1.copyWith(fontSize: 24)),
           Text(
-            'Cleaner',
-            style: AppStyles.bodyMedium.copyWith(color: Colors.grey),
+            helper.name ?? 'Helper',
+            style: AppStyles.h1Of(context).copyWith(fontSize: 24),
+          ),
+          Text(
+            helper.categoryName ?? 'General',
+            style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor),
           ),
           const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.location_on, color: Colors.orange, size: 16),
-              const SizedBox(width: 4),
-              Text(
-                'Downtown Area . 0.5 mi away',
-                style: AppStyles.bodyMedium.copyWith(
-                  fontSize: 12,
-                  color: Colors.grey,
+          if (helper.address != null && helper.address!.isNotEmpty)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.location_on,
+                  color: Colors.orange,
+                  size: 16,
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    helper.address!,
+                    style: AppStyles.bodyMedium.copyWith(
+                      fontSize: 12,
+                      color: context.textSecondaryColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildStats() {
+  Widget _buildStats(BuildContext context, dynamic helper) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _buildStatItem('3 Yrs', 'Experience'),
-        _buildStatItem('120+', 'Jobs Done'),
-        _buildStatItem('4.9 ⭐', 'Rating'),
+        _buildStatItem(
+          context,
+          helper.experience != null ? '${helper.experience} Yrs' : 'N/A',
+          'Experience',
+        ),
+        _buildStatItem(
+          context,
+          helper.pricePerHour != null ? '${helper.pricePerHour!.toInt()} MAD' : 'N/A',
+          'Price/hr',
+        ),
+        _buildStatItem(
+          context,
+          helper.serviceRadius != null ? '${helper.serviceRadius} km' : 'N/A',
+          'Service Radius',
+        ),
       ],
     );
   }
 
-  Widget _buildStatItem(String value, String label) {
+  Widget _buildStatItem(BuildContext context, String value, String label) {
     return Container(
       width: Get.width * 0.28,
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[100]!),
+        border: Border.all(color: context.borderSubtle),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -139,7 +183,7 @@ class HelperProfileView extends GetView<HelperProfileController> {
         children: [
           Text(
             value,
-            style: AppStyles.bodyLarge.copyWith(
+            style: AppStyles.bodyLargeOf(context).copyWith(
               fontWeight: FontWeight.bold,
               fontSize: 18,
             ),
@@ -149,7 +193,7 @@ class HelperProfileView extends GetView<HelperProfileController> {
             label,
             style: AppStyles.bodyMedium.copyWith(
               fontSize: 12,
-              color: Colors.grey,
+              color: context.textSecondaryColor,
             ),
           ),
         ],
@@ -157,295 +201,137 @@ class HelperProfileView extends GetView<HelperProfileController> {
     );
   }
 
-  Widget _buildAboutMe() {
-    const fullText =
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.';
-    const truncatedText =
-        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam. ';
+  Widget _buildAboutMe(BuildContext context, dynamic helper) {
+    final bio = helper.bio;
+    final hasBio = bio != null && bio.isNotEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('About me', style: AppStyles.h2.copyWith(fontSize: 20)),
+        Text(
+          'label_about_me'.tr,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 20),
+        ),
         const SizedBox(height: 12),
-        Obx(
-          () => RichText(
-            text: TextSpan(
-              style: AppStyles.bodyMedium.copyWith(
-                height: 1.5,
-                color: Colors.grey[600],
-              ),
-              children: [
-                TextSpan(
-                  text: controller.isAboutMeExpanded.value ? fullText : truncatedText,
-                ),
-                WidgetSpan(
-                  alignment: PlaceholderAlignment.middle,
-                  child: GestureDetector(
-                    onTap: controller.toggleAboutMeExpanded,
-                    child: Text(
-                      controller.isAboutMeExpanded.value ? ' Read less' : 'Read more...',
-                      style: AppStyles.bodyMedium.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+        Text(
+          hasBio ? bio : 'No bio available',
+          style: AppStyles.bodyMediumOf(context).copyWith(
+            height: 1.5,
+            color: hasBio ? context.textSecondaryColor : context.textHintColor,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPhotos(BuildContext context, dynamic helper) {
+    final photos = helper.profilePhotos ?? [];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'label_photos'.tr,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 20),
+        ),
+        const SizedBox(height: 16),
+        if (photos.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            decoration: BoxDecoration(
+              color: context.inputFillColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: context.borderSubtle),
             ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPhotos() {
-    final images = [
-      'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=200',
-      'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=200',
-      'https://images.unsplash.com/photo-1527515545081-5db817172677?auto=format&fit=crop&q=80&w=200',
-      'https://images.unsplash.com/photo-1527515545081-5db817172677?auto=format&fit=crop&q=80&w=200',
-    ];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Photos', style: AppStyles.h2.copyWith(fontSize: 20)),
-        const SizedBox(height: 16),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1.2,
-          ),
-          itemCount: images.length,
-          itemBuilder: (context, index) {
-            final fallbackImages = [
-              'assets/images/onboarding_1.png',
-              'assets/images/onboarding_2.png',
-              'assets/images/onboarding_3.png',
-              'assets/images/select_role.png',
-            ];
-            return ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.network(
-                images[index],
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Image.asset(
-                    fallbackImages[index % fallbackImages.length],
-                    fit: BoxFit.cover,
-                  );
-                },
+            child: Center(
+              child: Text(
+                'No photos yet',
+                style: AppStyles.bodyMedium.copyWith(
+                  color: context.textHintColor,
+                ),
               ),
-            );
-          },
-        ),
+            ),
+          )
+        else
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1.2,
+            ),
+            itemCount: photos.length,
+            itemBuilder: (context, index) {
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.network(
+                  photos[index],
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: context.inputFillLight,
+                      child: Icon(Icons.broken_image, color: context.textHintColor),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
       ],
     );
   }
 
-  Widget _buildReviews() {
+  Widget _buildReviews(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Reviews', style: AppStyles.h2.copyWith(fontSize: 20)),
+        Text(
+          'label_reviews'.tr,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 20),
+        ),
         const SizedBox(height: 16),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Column(
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 32),
+          decoration: BoxDecoration(
+            color: context.inputFillColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: context.borderSubtle),
+          ),
+          child: Center(
+            child: Column(
               children: [
-                RichText(
-                  text: TextSpan(
-                    style: AppStyles.h1.copyWith(
-                      fontSize: 40,
-                      color: Colors.black,
-                    ),
-                    children: [
-                      const TextSpan(text: '4.9'),
-                      TextSpan(
-                        text: ' OUT OF 5',
-                        style: AppStyles.bodyMedium.copyWith(
-                          fontSize: 10,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
+                Icon(
+                  Icons.rate_review_outlined,
+                  size: 40,
+                  color: context.textHintColor,
                 ),
-                Row(
-                  children: List.generate(
-                    5,
-                    (index) => const Icon(
-                      Icons.star,
-                      color: AppColors.primary,
-                      size: 16,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 12),
                 Text(
-                  '175 Reviews',
-                  style: AppStyles.bodyMedium.copyWith(
-                    fontSize: 10,
-                    color: Colors.grey,
+                  'No reviews yet',
+                  style: AppStyles.bodyMediumOf(context).copyWith(
+                    color: context.textSecondaryColor,
+                    fontSize: 16,
                   ),
                 ),
               ],
             ),
-            const SizedBox(width: 24),
-            Expanded(
-              child: Column(
-                children: [
-                  _buildRatingProgress(5, 0.8, '80%'),
-                  _buildRatingProgress(4, 0.12, '12%'),
-                  _buildRatingProgress(3, 0.05, '5%'),
-                  _buildRatingProgress(2, 0.03, '3%'),
-                  _buildRatingProgress(1, 0, '0%'),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 32),
-        _buildReviewItem(
-          'Rihana',
-          '45m ago',
-          'I\'m very happy with order, it was delivered on and good quality. Recommended!',
-        ),
-        _buildReviewItem(
-          'Jhon',
-          '30m ago',
-          'I love it. Awesome customer service!! Helped me out with adding an additional item to my order. Thanks again!',
-        ),
-        _buildReviewItem(
-          'Rihana',
-          '50m ago',
-          'I\'m very happy with order, it was delivered on and good quality. Recommended!',
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildRatingProgress(int star, double progress, String percent) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          Text('$star', style: AppStyles.bodyMedium.copyWith(fontSize: 10)),
-          const SizedBox(width: 4),
-          const Icon(Icons.star, color: AppColors.primary, size: 12),
-          const SizedBox(width: 8),
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor: Colors.grey[100],
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  Color(0xFF1F3A5F),
-                ),
-                minHeight: 6,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            percent,
-            style: AppStyles.bodyMedium.copyWith(
-              fontSize: 10,
-              color: Colors.grey,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReviewItem(String name, String time, String content) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: Colors.purple[100],
-                child: Text(
-                  name[0],
-                  style: const TextStyle(
-                    color: Colors.purple,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          name,
-                          style: AppStyles.bodyLarge.copyWith(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                        Text(
-                          time,
-                          style: AppStyles.bodyMedium.copyWith(
-                            fontSize: 10,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: List.generate(
-                        5,
-                        (index) => const Icon(
-                          Icons.star,
-                          color: AppColors.primary,
-                          size: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            content,
-            style: AppStyles.bodyMedium.copyWith(
-              fontSize: 13,
-              color: Colors.grey[700],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomChat() {
+  Widget _buildBottomChat(BuildContext context) {
     return Align(
       alignment: Alignment.bottomCenter,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cardColor,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
@@ -457,7 +343,7 @@ class HelperProfileView extends GetView<HelperProfileController> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: const Color(0xFFF3F4F6),
+            color: context.inputFillLight,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -470,15 +356,18 @@ class HelperProfileView extends GetView<HelperProfileController> {
               Expanded(
                 child: TextField(
                   controller: controller.messageController,
-                  decoration: const InputDecoration(
-                    hintText: 'Type a message...',
+                  style: TextStyle(color: context.textPrimaryColor),
+                  decoration: InputDecoration(
+                    hintText: 'label_type_message'.tr,
+                    hintStyle: TextStyle(color: context.textHintColor),
                     border: InputBorder.none,
                   ),
+                  onSubmitted: (_) => controller.sendMessageAndOpenChat(),
                 ),
               ),
               IconButton(
                 icon: const Icon(Icons.send, color: AppColors.primary),
-                onPressed: controller.sendMessage,
+                onPressed: controller.sendMessageAndOpenChat,
               ),
             ],
           ),

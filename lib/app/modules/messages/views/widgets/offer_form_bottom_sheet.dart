@@ -1,4 +1,5 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
+import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/data/models/message_model.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
@@ -69,9 +70,9 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
   Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: context.cardColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
         children: [
@@ -81,7 +82,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: context.borderSecondary,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -93,21 +94,21 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
               children: [
                 Text(
                   widget.editOffer != null ? 'Edit Offer' : 'Create Offer',
-                  style: const TextStyle(
+                  style: AppStyles.h2Of(context).copyWith(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: Icon(Icons.close, color: context.textPrimaryColor),
                   onPressed: () => Navigator.pop(context),
                 ),
               ],
             ),
           ),
 
-          const Divider(height: 1),
+          Divider(height: 1, color: context.borderSubtle),
 
           // Form
           Expanded(
@@ -117,42 +118,45 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Title
-                  _buildLabel('Service Title'),
+                  _buildLabel(context, 'Service Title'),
                   TextField(
                     controller: _titleController,
-                    decoration: _buildInputDecoration('e.g., House Cleaning'),
+                    style: TextStyle(color: context.textPrimaryColor),
+                    decoration: _buildInputDecoration(context, 'e.g., House Cleaning'),
                     maxLength: 200,
                   ),
                   const SizedBox(height: 16),
 
                   // Description
-                  _buildLabel('Description'),
+                  _buildLabel(context, 'Description'),
                   TextField(
                     controller: _descController,
-                    decoration: _buildInputDecoration('Describe your service'),
+                    style: TextStyle(color: context.textPrimaryColor),
+                    decoration: _buildInputDecoration(context, 'Describe your service'),
                     maxLines: 3,
                     maxLength: 2000,
                   ),
                   const SizedBox(height: 16),
 
                   // Price
-                  _buildLabel('Price (MAD)'),
+                  _buildLabel(context, 'Price (MAD)'),
                   TextField(
                     controller: _priceController,
-                    decoration: _buildInputDecoration('0'),
+                    style: TextStyle(color: context.textPrimaryColor),
+                    decoration: _buildInputDecoration(context, '0'),
                     keyboardType: TextInputType.number,
                   ),
                   const SizedBox(height: 16),
 
                   // Price Type
-                  _buildLabel('Price Type'),
+                  _buildLabel(context, 'Price Type'),
                   Row(
                     children: [
-                      _buildChoiceChip('Fixed', 'fixed', _priceType, (val) {
+                      _buildChoiceChip(context, 'Fixed', 'fixed', _priceType, (val) {
                         setState(() => _priceType = val);
                       }),
                       const SizedBox(width: 8),
-                      _buildChoiceChip('Hourly', 'hourly', _priceType, (val) {
+                      _buildChoiceChip(context, 'Hourly', 'hourly', _priceType, (val) {
                         setState(() => _priceType = val);
                       }),
                     ],
@@ -160,32 +164,32 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                   const SizedBox(height: 16),
 
                   // Date
-                  _buildDateField('Date', _dateController),
+                  _buildDateField(context, 'Date', _dateController),
                   const SizedBox(height: 16),
 
                   // Time Range
                   Row(
                     children: [
                       Expanded(
-                        child: _buildTimeField('Start Time', _startTimeController),
+                        child: _buildTimeField(context, 'Start Time', _startTimeController),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: _buildTimeField('End Time', _endTimeController),
+                        child: _buildTimeField(context, 'End Time', _endTimeController),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
 
                   // Payment Method
-                  _buildLabel('Payment Method'),
+                  _buildLabel(context, 'Payment Method'),
                   Row(
                     children: [
-                      _buildChoiceChip('Cash', 'cash', _paymentMethod, (val) {
+                      _buildChoiceChip(context, 'Cash', 'cash', _paymentMethod, (val) {
                         setState(() => _paymentMethod = val);
                       }),
                       const SizedBox(width: 8),
-                      _buildChoiceChip('Online', 'online', _paymentMethod, (val) {
+                      _buildChoiceChip(context, 'Online', 'online', _paymentMethod, (val) {
                         setState(() => _paymentMethod = val);
                       }),
                     ],
@@ -193,7 +197,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                   const SizedBox(height: 16),
 
                   // Images
-                  _buildLabel('Images (max 4)'),
+                  _buildLabel(context, 'Images (max 4)'),
                   SizedBox(
                     height: 80,
                     child: ListView(
@@ -245,13 +249,13 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                               width: 80,
                               height: 80,
                               decoration: BoxDecoration(
-                                color: Colors.grey[100],
+                                color: context.inputFillColor,
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.grey[300]!),
+                                border: Border.all(color: context.borderSubtle),
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.add_photo_alternate_outlined,
-                                color: Colors.grey,
+                                color: context.textHintColor,
                               ),
                             ),
                           ),
@@ -267,7 +271,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: context.cardColor,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),
@@ -303,25 +307,25 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
     );
   }
 
-  Widget _buildLabel(String text) {
+  Widget _buildLabel(BuildContext context, String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w600,
-          color: Colors.black87,
+          color: context.textPrimaryColor,
         ),
       ),
     );
   }
 
-  Widget _buildDateField(String label, TextEditingController controller) {
+  Widget _buildDateField(BuildContext context, String label, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildLabel(label),
+        _buildLabel(context, label),
         GestureDetector(
           onTap: () async {
             final now = DateTime.now();
@@ -340,8 +344,9 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
           child: AbsorbPointer(
             child: TextField(
               controller: controller,
-              decoration: _buildInputDecoration('Select date').copyWith(
-                suffixIcon: const Icon(Icons.calendar_today, size: 20),
+              style: TextStyle(color: context.textPrimaryColor),
+              decoration: _buildInputDecoration(context, 'Select date').copyWith(
+                suffixIcon: Icon(Icons.calendar_today, size: 20, color: context.textHintColor),
                 hintText: 'Select date',
               ),
             ),
@@ -351,11 +356,11 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
     );
   }
 
-  Widget _buildTimeField(String label, TextEditingController controller) {
+  Widget _buildTimeField(BuildContext context, String label, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildLabel(label),
+        _buildLabel(context, label),
         GestureDetector(
           onTap: () async {
             final now = TimeOfDay.now();
@@ -373,8 +378,9 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
           child: AbsorbPointer(
             child: TextField(
               controller: controller,
-              decoration: _buildInputDecoration('Select time').copyWith(
-                suffixIcon: const Icon(Icons.access_time, size: 20),
+              style: TextStyle(color: context.textPrimaryColor),
+              decoration: _buildInputDecoration(context, 'Select time').copyWith(
+                suffixIcon: Icon(Icons.access_time, size: 20, color: context.textHintColor),
                 hintText: 'Select time',
               ),
             ),
@@ -396,21 +402,26 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
     return null;
   }
 
-  InputDecoration _buildInputDecoration(String hint) {
+  InputDecoration _buildInputDecoration(BuildContext context, String hint) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(color: Colors.grey[400]),
+      hintStyle: TextStyle(color: context.textHintColor),
       filled: true,
-      fillColor: const Color(0xFFF5F5F5),
+      fillColor: context.inputFillColor,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
-        borderSide: BorderSide.none,
+        borderSide: BorderSide(color: context.borderSubtle),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: context.borderSubtle),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
     );
   }
 
   Widget _buildChoiceChip(
+    BuildContext context,
     String label,
     String value,
     String groupValue,
@@ -422,16 +433,16 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.grey[100],
+          color: isSelected ? AppColors.primary : context.inputFillColor,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.grey[300]!,
+            color: isSelected ? AppColors.primary : context.borderSecondary,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.black87,
+            color: isSelected ? Colors.white : context.textPrimaryColor,
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),

@@ -5,7 +5,9 @@ import '../../../../core/values/app_colors.dart';
 import '../../../../core/values/app_styles.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import '../../../../core/widgets/morocco_phone_field.dart';
+import '../../../../core/widgets/theme_toggle_icon_button.dart';
+import '../../../../core/widgets/app_back_button.dart';
 
 class LoginView extends GetView<LoginController> {
   const LoginView({super.key});
@@ -15,28 +17,44 @@ class LoginView extends GetView<LoginController> {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 30),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 60),
-              Text('Login', style: AppStyles.h1.copyWith(fontSize: 36)),
-              const SizedBox(height: 8),
-              Text(
-                'Sign in to my account',
-                style: AppStyles.bodyMedium.copyWith(fontSize: 18),
-              ),
-              const SizedBox(height: 40),
-              CustomTextField(
-                label: 'Email',
-                hint: 'Email',
-                controller: controller.emailController,
+              const SizedBox(height: 12),
+              // Top Bar with Minimal Back Button & Theme Switcher
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  AppBackButton(
+                    onPressed: () => Get.offAllNamed('/role-selection'),
+                  ),
+                  const ThemeToggleIconButton(),
+                ],
               ),
               const SizedBox(height: 24),
+              Text('auth_login'.tr, style: AppStyles.h1Of(context).copyWith(fontSize: 34)),
+              const SizedBox(height: 8),
+              Text(
+                'auth_login_subtitle'.tr,
+                style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 15),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 36),
+
+              // Moroccan Phone Input with Flag Badge
+              MoroccoPhoneField(
+                label: 'auth_phone'.tr.isNotEmpty && 'auth_phone'.tr != 'auth_phone'
+                    ? 'auth_phone'.tr
+                    : 'Moroccan Mobile Phone',
+                controller: controller.phoneController,
+              ),
+
+              const SizedBox(height: 20),
               Obx(
                 () => CustomTextField(
-                  label: 'Password',
-                  hint: 'Password',
+                  label: 'auth_password'.tr,
+                  hint: 'auth_password'.tr,
                   isPassword: true,
                   isVisible: controller.isPasswordVisible.value,
                   onToggleVisibility: controller.togglePasswordVisibility,
@@ -57,35 +75,37 @@ class LoginView extends GetView<LoginController> {
                           activeColor: AppColors.primary,
                         ),
                       ),
-                      Text('Remember Me', style: AppStyles.bodyMedium),
+                      Text('auth_remember_me'.tr, style: AppStyles.bodyMediumOf(context)),
                     ],
                   ),
                   TextButton(
                     onPressed: controller.goToForgotPassword,
                     child: Text(
-                      'Forgot Password',
+                      'auth_forgot_password'.tr,
                       style: AppStyles.bodyMedium.copyWith(
-                        color: const Color(0xFF4B5563),
+                        color: context.textSecondaryColor,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 30),
-              CustomButton(text: 'Login', onPressed: controller.login),
-              const SizedBox(height: 30),
-              _buildDivider(),
-              const SizedBox(height: 30),
-              _buildGoogleButton(),
-              const SizedBox(height: 40),
+              const SizedBox(height: 28),
+              Obx(
+                () => CustomButton(
+                  text: 'auth_login'.tr,
+                  onPressed: controller.login,
+                  isLoading: controller.isLoading.value,
+                ),
+              ),
+              const SizedBox(height: 36),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text("Don't have an account? ", style: AppStyles.bodyMedium),
+                  Text("auth_no_account".tr + ' ', style: AppStyles.bodyMediumOf(context)),
                   GestureDetector(
                     onTap: controller.goToSignup,
                     child: Text(
-                      'Sign Up',
+                      'auth_signup'.tr,
                       style: AppStyles.bodyMedium.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.bold,
@@ -99,31 +119,6 @@ class LoginView extends GetView<LoginController> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Row(
-      children: [
-        const Expanded(child: Divider()),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Text(
-            'OR',
-            style: AppStyles.bodyMedium.copyWith(color: Colors.grey),
-          ),
-        ),
-        const Expanded(child: Divider()),
-      ],
-    );
-  }
-
-  Widget _buildGoogleButton() {
-    return CustomButton(
-      text: 'Continue with Google',
-      onPressed: controller.loginWithGoogle,
-      isOutlined: true,
-      icon: SvgPicture.asset('assets/svgs/google.svg', height: 24),
     );
   }
 }

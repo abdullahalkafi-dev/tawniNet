@@ -20,9 +20,8 @@ class NearbyHelpers extends GetView<HomeController> {
           children: [
             Text(
               'Nearby Helpers',
-              style: AppStyles.h2.copyWith(
+              style: AppStyles.h2Of(context).copyWith(
                 fontSize: 18,
-                color: const Color(0xFF1F2937),
               ),
             ),
             TextButton(
@@ -46,7 +45,7 @@ class NearbyHelpers extends GetView<HomeController> {
             itemCount: controller.nearbyJobs.length,
             separatorBuilder: (context, index) => const SizedBox(height: 16),
             itemBuilder: (context, index) {
-              return _buildHelperCard(controller.nearbyJobs[index]);
+              return _buildHelperCard(context, controller.nearbyJobs[index]);
             },
           ),
         ),
@@ -54,15 +53,15 @@ class NearbyHelpers extends GetView<HomeController> {
     );
   }
 
-  Widget _buildHelperCard(HelperJob job) {
+  Widget _buildHelperCard(BuildContext context, HelperJob job) {
     return GestureDetector(
       onTap: () => controller.onJobSelected(job),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[150] ?? const Color(0xFFF3F4F6)),
+          border: Border.all(color: context.borderSubtle),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.01),
@@ -87,11 +86,11 @@ class NearbyHelpers extends GetView<HomeController> {
                       return Container(
                         width: 40,
                         height: 40,
-                        color: const Color(0xFFF3F4F6),
+                        color: context.inputFillLight,
                         padding: const EdgeInsets.all(8),
                         child: SvgPicture.asset(
                           'assets/svgs/profile_icon.svg',
-                          colorFilter: const ColorFilter.mode(Color(0xFF9CA3AF), BlendMode.srcIn),
+                          colorFilter: ColorFilter.mode(context.textHintColor, BlendMode.srcIn),
                         ),
                       );
                     },
@@ -104,9 +103,8 @@ class NearbyHelpers extends GetView<HomeController> {
                     children: [
                       Text(
                         job.helperName,
-                        style: AppStyles.bodyLarge.copyWith(
+                        style: AppStyles.bodyLargeOf(context).copyWith(
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFF1F2937),
                           fontSize: 15,
                         ),
                       ),
@@ -115,7 +113,7 @@ class NearbyHelpers extends GetView<HomeController> {
                         job.timeAgo,
                         style: AppStyles.bodyMedium.copyWith(
                           fontSize: 11,
-                          color: const Color(0xFF9CA3AF),
+                          color: context.textHintColor,
                         ),
                       ),
                     ],
@@ -127,13 +125,15 @@ class NearbyHelpers extends GetView<HomeController> {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE5F7F5),
+                    color: context.isDarkMode
+                        ? AppColors.primary.withOpacity(0.15)
+                        : const Color(0xFFE5F7F5),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     job.category,
                     style: AppStyles.bodyMedium.copyWith(
-                      color: const Color(0xFF5AB9A7),
+                      color: context.isDarkMode ? AppColors.primary : const Color(0xFF5AB9A7),
                       fontWeight: FontWeight.bold,
                       fontSize: 11,
                     ),
@@ -144,18 +144,16 @@ class NearbyHelpers extends GetView<HomeController> {
             const SizedBox(height: 14),
             Text(
               job.title,
-              style: AppStyles.bodyLarge.copyWith(
+              style: AppStyles.bodyLargeOf(context).copyWith(
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF1F2937),
                 fontSize: 15,
               ),
             ),
             const SizedBox(height: 6),
             RichText(
               text: TextSpan(
-                style: AppStyles.bodyMedium.copyWith(
+                style: AppStyles.bodyMediumOf(context).copyWith(
                   fontSize: 13,
-                  color: const Color(0xFF4B5563),
                   height: 1.4,
                 ),
                 children: [
@@ -177,24 +175,29 @@ class NearbyHelpers extends GetView<HomeController> {
             ),
             const SizedBox(height: 14),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.location_on_outlined,
-                      color: Colors.orange,
-                      size: 16,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      job.distance,
-                      style: AppStyles.bodyMedium.copyWith(
-                        fontSize: 12,
-                        color: const Color(0xFF6B7280),
+                Expanded(
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.location_on_outlined,
+                        color: Colors.orange,
+                        size: 16,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          job.distance,
+                          style: AppStyles.bodyMedium.copyWith(
+                            fontSize: 12,
+                            color: const Color(0xFF6B7280),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 SizedBox(
                   height: 32,

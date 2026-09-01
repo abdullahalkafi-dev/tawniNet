@@ -1,4 +1,3 @@
-import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -9,17 +8,14 @@ class NotificationsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Notification',
-          style: AppStyles.h2.copyWith(color: Colors.black, fontSize: 20),
+          'notif_title'.tr,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 20),
         ),
         centerTitle: true,
       ),
@@ -28,42 +24,48 @@ class NotificationsView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle('Today'),
+            _buildSectionTitle(context, 'label_today'.tr),
             _buildNotificationCard(
-              title: 'Payment Done',
-              subtitle: 'Your payment has been done successfully',
+              context,
+              title: 'notifications_payment_done'.tr,
+              subtitle: 'notifications_payment_success'.tr,
               iconColor: const Color(0xFF5AB9A7),
             ),
             const SizedBox(height: 24),
-            _buildSectionTitle('Yesterday'),
+            _buildSectionTitle(context, 'label_yesterday'.tr),
             _buildNotificationCard(
-              title: 'Order Confirmed',
-              subtitle: 'Your order has been confirmed',
+              context,
+              title: 'notifications_order_confirmed'.tr,
+              subtitle: 'notifications_order_success'.tr,
               iconColor: const Color(0xFFFBBF24),
             ),
             const SizedBox(height: 12),
             _buildNotificationCard(
-              title: 'Credit Card Connected',
-              subtitle: 'Credit Card has been Linked',
+              context,
+              title: 'notifications_credit_connected'.tr,
+              subtitle: 'notifications_credit_linked'.tr,
               iconColor: const Color(0xFF10B981),
             ),
             const SizedBox(height: 24),
-            _buildSectionTitle('28 Jan 2026'),
+            _buildSectionTitle(context, '28 Jan 2026'),
             _buildNotificationCard(
-              title: 'Account Setup Successful',
-              subtitle: 'Your order has been confirmed',
+              context,
+              title: 'notifications_account_setup'.tr,
+              subtitle: 'notifications_order_success'.tr,
               iconColor: const Color(0xFFF97316),
             ),
             const SizedBox(height: 12),
             _buildNotificationCard(
-              title: 'Payment Done',
-              subtitle: 'Your payment has been done successfully',
+              context,
+              title: 'notifications_payment_done'.tr,
+              subtitle: 'notifications_payment_success'.tr,
               iconColor: const Color(0xFF5AB9A7),
             ),
             const SizedBox(height: 12),
             _buildNotificationCard(
-              title: 'Order Confirmed',
-              subtitle: 'Your order has been confirmed',
+              context,
+              title: 'notifications_order_confirmed'.tr,
+              subtitle: 'notifications_order_success'.tr,
               iconColor: const Color(0xFFFBBF24),
             ),
           ],
@@ -72,21 +74,22 @@ class NotificationsView extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Text(
         title,
-        style: AppStyles.bodyLarge.copyWith(
+        style: AppStyles.bodyLargeOf(context).copyWith(
           fontSize: 16,
-          color: const Color(0xFF6B7280),
+          color: context.textSecondaryColor,
           fontWeight: FontWeight.w500,
         ),
       ),
     );
   }
 
-  Widget _buildNotificationCard({
+  Widget _buildNotificationCard(
+    BuildContext context, {
     required String title,
     required String subtitle,
     required Color iconColor,
@@ -94,9 +97,9 @@ class NotificationsView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: context.borderSubtle),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.01),
@@ -126,17 +129,16 @@ class NotificationsView extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: AppStyles.bodyLarge.copyWith(
+                  style: AppStyles.bodyLargeOf(context).copyWith(
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1F2937),
                     fontSize: 15,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: AppStyles.bodyMedium.copyWith(
-                    color: const Color(0xFF6B7280),
+                  style: AppStyles.bodyMediumOf(context).copyWith(
+                    color: context.textSecondaryColor,
                     fontSize: 13,
                   ),
                 ),

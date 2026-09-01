@@ -2,10 +2,13 @@ import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/widgets/custom_button.dart';
 import 'package:awnneaapp/app/data/models/home_models.dart';
+import 'package:awnneaapp/app/modules/messages/views/widgets/image_viewer_screen.dart';
+import 'package:awnneaapp/app/modules/messages/views/widgets/media_downloader.dart';
+import 'package:awnneaapp/app/modules/helper/helper_home/controllers/helper_home_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class HelperJobDetailsView extends StatelessWidget {
+class HelperJobDetailsView extends GetView<HelperHomeController> {
   const HelperJobDetailsView({super.key});
 
   @override
@@ -13,17 +16,14 @@ class HelperJobDetailsView extends StatelessWidget {
     final HelperJob job = Get.arguments;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Text(
           'job_details_title'.tr,
-          style: AppStyles.h2.copyWith(fontSize: 20, color: Colors.black),
+          style: AppStyles.h2Of(context).copyWith(fontSize: 20),
         ),
         centerTitle: true,
       ),
@@ -32,91 +32,105 @@ class HelperJobDetailsView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildJobInfoCard(job),
+            _buildJobInfoCard(context, job),
             const SizedBox(height: 16),
-            _buildCustomerInfo(),
+            _buildCustomerInfo(context, job),
             const SizedBox(height: 16),
-            _buildJobDescriptionWithPhotos(),
+            _buildJobDescriptionWithPhotos(context, job),
             const SizedBox(height: 16),
-            _buildPaymentBreakdown(),
+            _buildPaymentBreakdown(context, job),
             const SizedBox(height: 16),
             CustomButton(
               text: 'job_accept'.tr,
-              onPressed: () {
-                Get.back();
-                Get.snackbar('job_accepted'.tr, 'job_accepted_success'.tr,
-                    snackPosition: SnackPosition.BOTTOM);
-              },
+              onPressed: () => controller.acceptJob(job.id),
             ),
             const SizedBox(height: 16),
-            _buildJobStatusTimeline(),
+            _buildJobStatusTimeline(context, job),
           ],
         ),
       ),
-      bottomNavigationBar: _buildInputBar(),
     );
   }
 
-  Widget _buildJobInfoCard(HelperJob job) {
+  Widget _buildJobInfoCard(BuildContext context, HelperJob job) {
+    final dateStr = job.date != null
+        ? '${job.date!.day}/${job.date!.month}/${job.date!.year}'
+        : 'Not specified';
+    final timeStr = (job.startTime != null && job.startTime!.isNotEmpty)
+        ? (job.endTime != null && job.endTime!.isNotEmpty
+            ? '${job.startTime} - ${job.endTime}'
+            : job.startTime!)
+        : 'Not specified';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF3F4F6)),
+        border: Border.all(color: context.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(job.title, style: AppStyles.h2.copyWith(fontSize: 18)),
+          Text(job.title, style: AppStyles.h2Of(context).copyWith(fontSize: 18)),
           const SizedBox(height: 12),
           Row(
             children: [
-              Icon(Icons.calendar_today, size: 16, color: AppColors.textSecondary),
+              Icon(Icons.calendar_today, size: 16, color: context.textSecondaryColor),
               const SizedBox(width: 8),
-              Flexible(child: Text('job_sunday'.tr, style: AppStyles.bodyMedium.copyWith(fontSize: 13), overflow: TextOverflow.ellipsis)),
+              Flexible(child: Text(dateStr, style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 13), overflow: TextOverflow.ellipsis)),
               const SizedBox(width: 16),
-              Icon(Icons.access_time_filled, size: 16, color: AppColors.textSecondary),
+              Icon(Icons.access_time_filled, size: 16, color: context.textSecondaryColor),
               const SizedBox(width: 8),
-              Flexible(child: Text('job_time_range'.tr, style: AppStyles.bodyMedium.copyWith(fontSize: 13), overflow: TextOverflow.ellipsis)),
+              Flexible(child: Text(timeStr, style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 13), overflow: TextOverflow.ellipsis)),
             ],
           ),
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(Icons.location_on, size: 16, color: AppColors.textSecondary),
+              Icon(Icons.location_on, size: 16, color: Colors.orange[400]),
               const SizedBox(width: 8),
-              Flexible(child: Text('job_address'.tr, style: AppStyles.bodyMedium.copyWith(fontSize: 13), overflow: TextOverflow.ellipsis)),
+              Flexible(
+                child: Text(
+                  job.address ?? 'Not specified',
+                  style: AppStyles.bodyMedium.copyWith(fontSize: 13, color: context.textSecondaryColor),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 2,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 4),
-          Text('job_distance'.tr, style: AppStyles.bodyMedium.copyWith(fontSize: 12)),
+          Text(
+            job.category,
+            style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: AppColors.primary),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildCustomerInfo() {
+  Widget _buildCustomerInfo(BuildContext context, HelperJob job) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF3F4F6)),
+        border: Border.all(color: context.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('job_customer_info'.tr, style: AppStyles.h2.copyWith(fontSize: 16)),
+          Text('job_customer_info'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 16)),
           const SizedBox(height: 12),
           Row(
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(30),
                 child: Image.network(
-                  'https://i.pravatar.cc/150?u=customer1',
+                  job.helperImage,
                   width: 44,
                   height: 44,
                   fit: BoxFit.cover,
@@ -124,122 +138,213 @@ class HelperJobDetailsView extends StatelessWidget {
                     return Container(
                       width: 44,
                       height: 44,
-                      color: const Color(0xFFF3F4F6),
-                      child: const Icon(Icons.person, color: Colors.grey),
+                      color: context.inputFillLight,
+                      child: Icon(Icons.person, color: context.textHintColor),
                     );
                   },
                 ),
               ),
               const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('T-trades', style: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold)),
-                  Text('Homeowner', style: AppStyles.bodyMedium.copyWith(fontSize: 12)),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      job.helperName,
+                      style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      job.category,
+                      style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: AppColors.primary),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(Icons.location_on, size: 14, color: AppColors.textHint),
-              const SizedBox(width: 4),
-              Flexible(child: Text('job_address'.tr, style: AppStyles.bodyMedium.copyWith(fontSize: 13), overflow: TextOverflow.ellipsis)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildJobDescriptionWithPhotos() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF3F4F6)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('label_job_description'.tr, style: AppStyles.h2.copyWith(fontSize: 16)),
-          const SizedBox(height: 12),
-          Text('label_tasks_required'.tr, style: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold, fontSize: 14)),
-          const SizedBox(height: 8),
-          Text(
-            'Lorem ipsum dolor sit amet consectetur. Elit ac gravida augue suspendisse in scelerisque pellentesque diam elementum. Lorem quam vitae mus metus tortor turpis at. Cras accumsan pharetra odio euismod metus leo neque dui. More',
-            style: AppStyles.bodyMedium.copyWith(height: 1.5),
-          ),
-          const SizedBox(height: 16),
-          Text('label_photos'.tr, style: AppStyles.h2.copyWith(fontSize: 16)),
-          const SizedBox(height: 12),
-          Row(
-            children: List.generate(3, (index) {
-              return Padding(
-                padding: EdgeInsets.only(right: index < 2 ? 12 : 0),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    'https://i.pravatar.cc/150?u=photo$index',
-                    width: 100,
-                    height: 100,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 100,
-                        height: 100,
-                        color: const Color(0xFFF3F4F6),
-                        child: const Icon(Icons.image, color: Colors.grey),
-                      );
-                    },
+          if (job.address != null && job.address!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.location_on, size: 14, color: Colors.orange[400]),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    job.address!,
+                    style: AppStyles.bodyMedium.copyWith(fontSize: 13, color: context.textSecondaryColor),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
                   ),
                 ),
-              );
-            }),
-          ),
+              ],
+            ),
+          ],
         ],
       ),
     );
   }
 
-  Widget _buildPaymentBreakdown() {
+  Widget _buildJobDescriptionWithPhotos(BuildContext context, HelperJob job) {
+    final hasDescription = job.description.isNotEmpty &&
+        job.description != 'Professional helper in your area';
+    final hasImages = job.images.isNotEmpty;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF3F4F6)),
+        border: Border.all(color: context.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('job_payment_breakdown'.tr, style: AppStyles.h2.copyWith(fontSize: 16)),
+          Text('label_job_description'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 16)),
+          const SizedBox(height: 12),
+          if (hasDescription) ...[
+            Text(
+              job.description,
+              style: AppStyles.bodyMediumOf(context).copyWith(height: 1.5, color: context.textSecondaryColor),
+            ),
+          ] else
+            Text(
+              'No description provided',
+              style: AppStyles.bodyMedium.copyWith(
+                height: 1.5,
+                color: context.textHintColor,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
           const SizedBox(height: 16),
-          _buildPaymentRow('job_payment'.tr, 'MAD 100.00'),
+          Text('label_photos'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 16)),
+          const SizedBox(height: 12),
+          if (hasImages)
+            SizedBox(
+              height: 100,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: job.images.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  return GestureDetector(
+                    onTap: () {
+                      Get.to(() => ImageViewerScreen(
+                            imageUrls: job.images,
+                            initialIndex: index,
+                          ));
+                    },
+                    onLongPress: () {
+                      final url = job.images[index];
+                      final ext = url.split('.').last.split('?').first;
+                      MediaDownloader.download(
+                        url: url,
+                        fileName:
+                            'job_image_${DateTime.now().millisecondsSinceEpoch}.$ext',
+                      );
+                    },
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        job.images[index],
+                        width: 100,
+                        height: 100,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 100,
+                            height: 100,
+                            color: context.inputFillLight,
+                            child: Icon(Icons.image, color: context.textHintColor),
+                          );
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
+            )
+          else
+            Container(
+              width: double.infinity,
+              height: 100,
+              decoration: BoxDecoration(
+                color: context.inputFillColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: context.borderSubtle),
+              ),
+              child: Center(
+                child: Text(
+                  'No photos',
+                  style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentBreakdown(BuildContext context, HelperJob job) {
+    final budget = job.budget ?? 0;
+    final platformFee = budget * 0.20;
+    final earnings = budget * 0.80;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.borderSubtle),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('job_payment_breakdown'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 16)),
+          const SizedBox(height: 16),
+          _buildPaymentRow(
+            context,
+            'job_payment'.tr,
+            'MAD ${budget.toStringAsFixed(2)}',
+          ),
           const SizedBox(height: 8),
-          _buildPaymentRow('job_platform_fee'.tr, '-MAD 12.00', isNegative: true),
-          const Divider(height: 30),
-          _buildPaymentRow('job_your_earnings'.tr, 'MAD 88.00', isBold: true),
+          _buildPaymentRow(
+            context,
+            'job_platform_fee'.tr,
+            '-MAD ${platformFee.toStringAsFixed(2)}',
+            isNegative: true,
+          ),
+          Divider(height: 30, color: context.borderSubtle),
+          _buildPaymentRow(
+            context,
+            'job_your_earnings'.tr,
+            'MAD ${earnings.toStringAsFixed(2)}',
+            isBold: true,
+          ),
+          const SizedBox(height: 8),
+          _buildPaymentRow(
+            context,
+            'Payment Method',
+            job.paymentMethod?.toUpperCase() ?? 'CASH',
+          ),
           const SizedBox(height: 12),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFFF0FDF4),
+              color: context.isDarkMode ? Colors.green.withOpacity(0.15) : const Color(0xFFF0FDF4),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
               children: [
-                const Icon(Icons.info_outline, size: 16, color: Colors.black),
+                Icon(Icons.info_outline, size: 16, color: context.textPrimaryColor),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'job_payment_note'.tr,
-                    style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: Colors.black),
+                    style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 12),
                   ),
                 ),
               ],
@@ -250,50 +355,76 @@ class HelperJobDetailsView extends StatelessWidget {
     );
   }
 
-  Widget _buildPaymentRow(String label, String value, {bool isNegative = false, bool isBold = false}) {
+  Widget _buildPaymentRow(BuildContext context, String label, String value, {bool isNegative = false, bool isBold = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: AppStyles.bodyLarge.copyWith(
-            fontSize: 14,
-            fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+        Flexible(
+          child: Text(
+            label,
+            style: AppStyles.bodyLargeOf(context).copyWith(
+              fontSize: 14,
+              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
+        const SizedBox(width: 8),
         Text(
           value,
-          style: AppStyles.bodyLarge.copyWith(
+          style: AppStyles.bodyLargeOf(context).copyWith(
             fontSize: 14,
             fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-            color: isNegative ? AppColors.error : (isBold ? Colors.black : AppColors.textPrimary),
+            color: isNegative ? AppColors.error : (isBold ? AppColors.primary : context.textPrimaryColor),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildJobStatusTimeline() {
+  Widget _buildJobStatusTimeline(BuildContext context, HelperJob job) {
+    final isOpen = job.status == 'open' || job.status == null;
+
     final steps = [
-      {'label': 'job_status_submitted'.tr, 'date': 'Jan 8, 2025 at 2:30 PM', 'completed': true},
-      {'label': 'job_status_accepted'.tr, 'date': 'Jan 9, 2025 at 8:15 AM', 'completed': true},
-      {'label': 'status_in_progress'.tr, 'date': 'Pending', 'completed': false},
-      {'label': 'status_completed'.tr, 'date': 'Pending', 'completed': false},
-      {'label': 'status_payment_processed'.tr, 'date': 'Pending', 'completed': false},
+      {
+        'label': 'job_status_submitted'.tr,
+        'date': job.timeAgo,
+        'completed': true,
+      },
+      {
+        'label': 'job_status_accepted'.tr,
+        'date': isOpen ? 'Pending' : 'Accepted',
+        'completed': !isOpen,
+      },
+      {
+        'label': 'status_in_progress'.tr,
+        'date': 'Pending',
+        'completed': false,
+      },
+      {
+        'label': 'status_completed'.tr,
+        'date': job.status == 'completed' ? 'Completed' : 'Pending',
+        'completed': job.status == 'completed',
+      },
+      {
+        'label': 'status_payment_processed'.tr,
+        'date': job.status == 'completed' ? 'Processed' : 'Pending',
+        'completed': job.status == 'completed',
+      },
     ];
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFF3F4F6)),
+        border: Border.all(color: context.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('label_job_status'.tr, style: AppStyles.h2.copyWith(fontSize: 16)),
+          Text('label_job_status'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 16)),
           const SizedBox(height: 16),
           ...steps.asMap().entries.map((entry) {
             final step = entry.value;
@@ -307,7 +438,7 @@ class HelperJobDetailsView extends StatelessWidget {
                       width: 28,
                       height: 28,
                       decoration: BoxDecoration(
-                        color: step['completed'] as bool ? AppColors.primary : const Color(0xFFE5E7EB),
+                        color: step['completed'] as bool ? AppColors.primary : (context.isDarkMode ? AppColors.darkBorder : const Color(0xFFE5E7EB)),
                         shape: BoxShape.circle,
                       ),
                       child: (step['completed'] as bool)
@@ -318,7 +449,7 @@ class HelperJobDetailsView extends StatelessWidget {
                       Container(
                         width: 2,
                         height: 30,
-                        color: const Color(0xFFE5E7EB),
+                        color: (context.isDarkMode ? AppColors.darkBorder : const Color(0xFFE5E7EB)),
                       ),
                   ],
                 ),
@@ -329,17 +460,17 @@ class HelperJobDetailsView extends StatelessWidget {
                     children: [
                       Text(
                         step['label'] as String,
-                        style: AppStyles.bodyLarge.copyWith(
+                        style: AppStyles.bodyLargeOf(context).copyWith(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: (step['completed'] as bool) ? Colors.black : AppColors.textHint,
+                          color: (step['completed'] as bool) ? context.textPrimaryColor : context.textHintColor,
                         ),
                       ),
                       Text(
                         step['date'] as String,
                         style: AppStyles.bodyMedium.copyWith(
                           fontSize: 12,
-                          color: AppColors.textHint,
+                          color: context.textHintColor,
                         ),
                       ),
                       SizedBox(height: isLast ? 0 : 12),
@@ -350,47 +481,6 @@ class HelperJobDetailsView extends StatelessWidget {
             );
           }),
         ],
-      ),
-    );
-  }
-
-  Widget _buildInputBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF3F4F6),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.image_outlined, color: AppColors.primary),
-            const SizedBox(width: 12),
-            Expanded(
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'label_type_message'.tr,
-                  border: InputBorder.none,
-                ),
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.send, color: AppColors.primary),
-              onPressed: () {},
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart' show AppColors;
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/values/app_currency.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/booking_controller.dart';
@@ -13,17 +14,14 @@ class BookingDetailsView extends GetView<BookingController> {
     final Booking booking = Get.arguments;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'My Bookings',
-          style: AppStyles.h2.copyWith(color: Colors.black),
+          'booking_my_bookings'.tr,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 18),
         ),
         centerTitle: true,
       ),
@@ -32,37 +30,37 @@ class BookingDetailsView extends GetView<BookingController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildWorkerCard(booking),
+            _buildWorkerCard(context, booking),
             const SizedBox(height: 24),
-            _buildJobDetailRow('Job Type', booking.jobType),
-            _buildJobDetailRow('Booking Date', booking.date),
-            _buildJobDetailRow('Preferred Time', booking.time),
-            _buildJobDetailRow('Location', booking.location),
-            _buildJobDetailRow('Budget', '\$${booking.budget.toInt()}'),
+            _buildJobDetailRow(context, 'label_job_type'.tr, booking.jobType),
+            _buildJobDetailRow(context, 'label_booking_date'.tr, booking.date),
+            _buildJobDetailRow(context, 'label_preferred_time'.tr, booking.time),
+            _buildJobDetailRow(context, 'label_location'.tr, booking.location),
+            _buildJobDetailRow(context, 'label_budget'.tr, formatMoney(booking.budget)),
             const SizedBox(height: 24),
-            _buildJobDescription(booking),
+            _buildJobDescription(context, booking),
             const SizedBox(height: 24),
-            _buildJobStatusTimeline(booking),
+            _buildJobStatusTimeline(context, booking),
             const SizedBox(height: 40),
             if (booking.status == BookingStatus.inProgress) ...[
-              _buildActionButton('Confirm Rejection', AppColors.primary, () {}),
+              _buildActionButton('booking_confirm_rejection'.tr, AppColors.primary, () {}),
               const SizedBox(height: 16),
               _buildActionButton(
-                'Cancel Booking',
+                'booking_cancel_booking'.tr,
                 Colors.white,
-                () => _showCancelDialog(),
+                () => _showCancelDialog(context),
                 isOutlined: true,
               ),
             ] else if (booking.status == BookingStatus.completed) ...[
-              _buildActionButton('Review', AppColors.primary, () {}),
+              _buildActionButton('btn_review'.tr, AppColors.primary, () {}),
             ],
             const SizedBox(height: 20),
             Center(
               child: Text(
-                'If cancellations happen repeatedly, your account may be temporarily suspended.',
+                'booking_cancel_warning'.tr,
                 style: AppStyles.bodyMedium.copyWith(
                   fontSize: 10,
-                  color: Colors.grey,
+                  color: context.textHintColor,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -73,13 +71,13 @@ class BookingDetailsView extends GetView<BookingController> {
     );
   }
 
-  Widget _buildWorkerCard(Booking booking) {
+  Widget _buildWorkerCard(BuildContext context, Booking booking) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[100]!),
+        border: Border.all(color: context.borderSubtle),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.02),
@@ -101,7 +99,7 @@ class BookingDetailsView extends GetView<BookingController> {
               children: [
                 Text(
                   booking.workerName,
-                  style: AppStyles.h2.copyWith(fontSize: 18),
+                  style: AppStyles.h2Of(context).copyWith(fontSize: 18),
                 ),
                 Text(
                   booking.category,
@@ -127,8 +125,8 @@ class BookingDetailsView extends GetView<BookingController> {
 
   Widget _buildStatusBadge(BookingStatus status) {
     String text = status == BookingStatus.inProgress
-        ? 'Inprogress'
-        : 'Completed';
+        ? 'booking_inprogress'.tr
+        : 'booking_completed'.tr;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
@@ -154,9 +152,9 @@ class BookingDetailsView extends GetView<BookingController> {
         color: AppColors.primary.withOpacity(0.5),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: const Text(
-        'Chat',
-        style: TextStyle(
+      child: Text(
+        'btn_chat'.tr,
+        style: const TextStyle(
           color: Colors.white,
           fontSize: 12,
           fontWeight: FontWeight.bold,
@@ -165,7 +163,7 @@ class BookingDetailsView extends GetView<BookingController> {
     );
   }
 
-  Widget _buildJobDetailRow(String label, String value) {
+  Widget _buildJobDetailRow(BuildContext context, String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -173,47 +171,47 @@ class BookingDetailsView extends GetView<BookingController> {
         children: [
           Text(
             label,
-            style: AppStyles.bodyLarge.copyWith(color: Colors.grey[600]),
+            style: AppStyles.bodyLargeOf(context).copyWith(color: context.textSecondaryColor),
           ),
           Text(
             value,
-            style: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+            style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildJobDescription(Booking booking) {
+  Widget _buildJobDescription(BuildContext context, Booking booking) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[100]!),
+        border: Border.all(color: context.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Job Description', style: AppStyles.h2.copyWith(fontSize: 18)),
+          Text('label_job_description'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 18)),
           const SizedBox(height: 12),
           Text(
-            'Tasks Required:',
-            style: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+            'label_tasks_required'.tr,
+            style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
             booking.description,
-            style: AppStyles.bodyMedium.copyWith(
-              color: Colors.grey[600],
+            style: AppStyles.bodyMediumOf(context).copyWith(
+              color: context.textSecondaryColor,
               height: 1.5,
             ),
           ),
           if (booking.photos.isNotEmpty) ...[
             const SizedBox(height: 16),
             Text(
-              'Photos',
-              style: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+              'label_photos'.tr,
+              style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Row(
@@ -239,40 +237,44 @@ class BookingDetailsView extends GetView<BookingController> {
     );
   }
 
-  Widget _buildJobStatusTimeline(Booking booking) {
+  Widget _buildJobStatusTimeline(BuildContext context, Booking booking) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[100]!),
+        border: Border.all(color: context.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Job Status', style: AppStyles.h2.copyWith(fontSize: 18)),
+          Text('label_job_status'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 18)),
           const SizedBox(height: 20),
           _buildTimelineItem(
-            'Job Submitted',
+            context,
+            'status_submitted'.tr,
             'March 10, 2024 at 2:30 PM',
             true,
             true,
           ),
           _buildTimelineItem(
-            'Worker Matched',
+            context,
+            'status_worker_matched'.tr,
             'March 11, 2024 at 9:15 AM',
             true,
             true,
           ),
           _buildTimelineItem(
-            'In Progress',
+            context,
+            'status_in_progress'.tr,
             'Started March 15, 2024 at 10:00 AM',
             booking.status != BookingStatus.inProgress,
             booking.status == BookingStatus.inProgress,
           ),
-          _buildTimelineItem('Completed', 'Pending', false, false),
+          _buildTimelineItem(context, 'status_completed'.tr, 'Pending', false, false),
           _buildTimelineItem(
-            'Payment Processed',
+            context,
+            'status_payment_processed'.tr,
             'Pending',
             false,
             false,
@@ -284,6 +286,7 @@ class BookingDetailsView extends GetView<BookingController> {
   }
 
   Widget _buildTimelineItem(
+    BuildContext context,
     String title,
     String time,
     bool isCompleted,
@@ -303,7 +306,7 @@ class BookingDetailsView extends GetView<BookingController> {
                     ? AppColors.primary.withOpacity(0.5)
                     : (isInProgress
                           ? AppColors.primary.withOpacity(0.5)
-                          : Colors.grey[200]),
+                          : (context.isDarkMode ? AppColors.darkBorder : Colors.grey[200])),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -312,7 +315,7 @@ class BookingDetailsView extends GetView<BookingController> {
                     : (isInProgress ? Icons.circle : Icons.circle),
                 color: isCompleted
                     ? Colors.white
-                    : (isInProgress ? Colors.white : Colors.grey[400]),
+                    : (isInProgress ? Colors.white : context.textHintColor),
                 size: 16,
               ),
             ),
@@ -322,7 +325,7 @@ class BookingDetailsView extends GetView<BookingController> {
                 height: 40,
                 color: isCompleted
                     ? AppColors.primary.withOpacity(0.5)
-                    : Colors.grey[200],
+                    : (context.isDarkMode ? AppColors.darkBorder : Colors.grey[200]),
               ),
           ],
         ),
@@ -333,18 +336,18 @@ class BookingDetailsView extends GetView<BookingController> {
             children: [
               Text(
                 title,
-                style: AppStyles.bodyLarge.copyWith(
+                style: AppStyles.bodyLargeOf(context).copyWith(
                   fontWeight: FontWeight.bold,
                   color: isCompleted || isInProgress
-                      ? Colors.black
-                      : Colors.grey,
+                      ? context.textPrimaryColor
+                      : context.textHintColor,
                 ),
               ),
               Text(
                 time,
                 style: AppStyles.bodyMedium.copyWith(
                   fontSize: 12,
-                  color: Colors.grey,
+                  color: context.textHintColor,
                 ),
               ),
               const SizedBox(height: 20),
@@ -397,13 +400,13 @@ class BookingDetailsView extends GetView<BookingController> {
     );
   }
 
-  void _showCancelDialog() {
+  void _showCancelDialog(BuildContext context) {
     Get.bottomSheet(
       Container(
         padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        decoration: BoxDecoration(
+          color: context.cardColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -412,16 +415,16 @@ class BookingDetailsView extends GetView<BookingController> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: context.borderSecondary,
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
             const SizedBox(height: 24),
-            Text('Cancel Booking', style: AppStyles.h1.copyWith(fontSize: 24)),
+            Text('booking_cancel_booking'.tr, style: AppStyles.h1Of(context).copyWith(fontSize: 24)),
             const SizedBox(height: 12),
             Text(
-              'Are you sure want to cancel your service booking?',
-              style: AppStyles.bodyLarge.copyWith(color: Colors.grey[600]),
+              'booking_cancel_question'.tr,
+              style: AppStyles.bodyLargeOf(context).copyWith(color: context.textSecondaryColor),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
@@ -431,14 +434,16 @@ class BookingDetailsView extends GetView<BookingController> {
                   child: ElevatedButton(
                     onPressed: () => Get.back(),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFE0F7F6),
+                      backgroundColor: context.isDarkMode
+                          ? AppColors.primary.withOpacity(0.15)
+                          : const Color(0xFFE0F7F6),
                       foregroundColor: AppColors.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: const Text('Cancel'),
+                    child: Text('btn_cancel'.tr),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -446,7 +451,7 @@ class BookingDetailsView extends GetView<BookingController> {
                   child: ElevatedButton(
                     onPressed: () {
                       Get.back();
-                      Get.snackbar('Success', 'Booking cancelled successfully');
+                      Get.snackbar('booking_success'.tr, 'booking_cancel_success'.tr);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary.withOpacity(0.5),
@@ -455,7 +460,7 @@ class BookingDetailsView extends GetView<BookingController> {
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    child: const Text('Yes, Cancel Booking'),
+                    child: Text('booking_yes_cancel'.tr),
                   ),
                 ),
               ],

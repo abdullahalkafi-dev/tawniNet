@@ -19,17 +19,14 @@ class _HelperNotificationSettingsViewState extends State<HelperNotificationSetti
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Notification',
-          style: AppStyles.h2.copyWith(fontSize: 20, color: Colors.black),
+          'settings_notification'.tr,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 20),
         ),
         centerTitle: true,
       ),
@@ -37,26 +34,26 @@ class _HelperNotificationSettingsViewState extends State<HelperNotificationSetti
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            _buildToggleRow('Notification', notificationOn, (val) => setState(() => notificationOn = val)),
-            _buildToggleRow('Sound', soundOn, (val) => setState(() => soundOn = val)),
-            _buildToggleRow('Vibrate', vibrateOn, (val) => setState(() => vibrateOn = val)),
-            _buildToggleRow('New Service Available', newServiceOn, (val) => setState(() => newServiceOn = val)),
+            _buildToggleRow(context, 'notif_title'.tr, notificationOn, (val) => setState(() => notificationOn = val)),
+            _buildToggleRow(context, 'notif_sound'.tr, soundOn, (val) => setState(() => soundOn = val)),
+            _buildToggleRow(context, 'notif_vibrate'.tr, vibrateOn, (val) => setState(() => vibrateOn = val)),
+            _buildToggleRow(context, 'notif_new_service'.tr, newServiceOn, (val) => setState(() => newServiceOn = val)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildToggleRow(String label, bool value, ValueChanged<bool> onChanged) {
+  Widget _buildToggleRow(BuildContext context, String label, bool value, ValueChanged<bool> onChanged) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFF3F4F6))),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: context.borderSubtle)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: AppStyles.bodyLarge.copyWith(fontSize: 16)),
+          Text(label, style: AppStyles.bodyLargeOf(context).copyWith(fontSize: 16)),
           Transform.scale(
             scale: 0.8,
             child: Switch(

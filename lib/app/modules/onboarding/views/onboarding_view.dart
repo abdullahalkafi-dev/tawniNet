@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/onboarding_controller.dart';
+import '../../../core/localization/locale_service.dart';
 import '../../../core/values/app_assets.dart';
 import '../../../core/values/app_colors.dart';
 import '../../../core/values/app_styles.dart';
+import '../../../core/widgets/theme_toggle_icon_button.dart';
 
 class OnboardingView extends GetView<OnboardingController> {
   const OnboardingView({super.key});
@@ -14,36 +16,37 @@ class OnboardingView extends GetView<OnboardingController> {
       body: SafeArea(
         child: Column(
           children: [
-            _buildAppBar(),
+            _buildAppBar(context),
             Expanded(
               child: PageView(
                 controller: controller.pageController,
                 onPageChanged: controller.onPageChanged,
                 children: [
                   _buildPage(
+                    context,
                     image: AppAssets.onboarding1,
-                    title: 'Welcome to ',
-                    highlightText: '3awniNet',
-                    description:
-                        'Find what you need — cleaning, fixing, moving — and let others help!',
+                    title: 'onboarding_welcome'.tr,
+                    highlightText: 'onboarding_brand'.tr,
+                    description: 'onboarding_find_desc'.tr,
                   ),
                   _buildPage(
+                    context,
                     image: AppAssets.onboarding2,
-                    title: 'Hire Nearby ',
-                    highlightText: 'skilled Helpers',
-                    description: 'Verified helpers ready to assist you anytime.',
+                    title: 'onboarding_hire'.tr,
+                    highlightText: 'onboarding_helpers'.tr,
+                    description: 'onboarding_helpers_desc'.tr,
                   ),
                   _buildPage(
+                    context,
                     image: AppAssets.onboarding3,
-                    title: 'Offer your ',
-                    highlightText: 'skills and earn',
-                    description:
-                        'If you have a skill, 3awniNet helps you connect with clients and grow your income',
+                    title: 'onboarding_offer'.tr,
+                    highlightText: 'onboarding_skills'.tr,
+                    description: 'onboarding_skills_desc'.tr,
                   ),
                 ],
               ),
             ),
-            _buildIndicators(),
+            _buildIndicators(context),
             const SizedBox(height: 40),
             _buildBottomButtons(),
             const SizedBox(height: 30),
@@ -53,38 +56,54 @@ class OnboardingView extends GetView<OnboardingController> {
     );
   }
 
-  Widget _buildAppBar() {
+  Widget _buildAppBar(BuildContext context) {
+    final localeService = Get.find<LocaleService>();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                )
-              ],
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.language, size: 20, color: Colors.red), // Flag icon replacement
-                const SizedBox(width: 8),
-                Text('Eng', style: AppStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
-              ],
+          // Language Switcher Pill
+          GestureDetector(
+            onTap: controller.toggleLanguage,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: context.cardColor,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: context.borderSubtle),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  )
+                ],
+              ),
+              child: Obx(() {
+                final isArabic = localeService.currentLocale.value.languageCode == 'ar';
+                return Row(
+                  children: [
+                    Icon(Icons.language, size: 18, color: isArabic ? Colors.green : Colors.red),
+                    const SizedBox(width: 6),
+                    Text(
+                      isArabic ? 'lang_arabic'.tr : 'lang_english'.tr,
+                      style: AppStyles.bodyMediumOf(context).copyWith(fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                  ],
+                );
+              }),
             ),
           ),
+          // Dark/Light Mode Switcher
+          const ThemeToggleIconButton(),
         ],
       ),
     );
   }
 
-  Widget _buildPage({
+  Widget _buildPage(
+    BuildContext context, {
     required String image,
     required String title,
     required String highlightText,
@@ -100,12 +119,12 @@ class OnboardingView extends GetView<OnboardingController> {
           RichText(
             textAlign: TextAlign.center,
             text: TextSpan(
-              style: AppStyles.h2.copyWith(fontSize: 28, color: Colors.black),
+              style: AppStyles.h2.copyWith(fontSize: 28, color: context.textPrimaryColor),
               children: [
                 TextSpan(text: title),
                 TextSpan(
                   text: highlightText,
-                  style: TextStyle(color: AppColors.primary),
+                  style: const TextStyle(color: AppColors.primary),
                 ),
               ],
             ),
@@ -114,14 +133,14 @@ class OnboardingView extends GetView<OnboardingController> {
           Text(
             description,
             textAlign: TextAlign.center,
-            style: AppStyles.bodyMedium.copyWith(fontSize: 16),
+            style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 16),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildIndicators() {
+  Widget _buildIndicators(BuildContext context) {
     return Obx(
       () => Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -136,7 +155,7 @@ class OnboardingView extends GetView<OnboardingController> {
               shape: BoxShape.circle,
               color: controller.currentPage.value == index
                   ? AppColors.primary
-                  : Colors.grey[300],
+                  : (context.isDarkMode ? AppColors.darkBorder : Colors.grey[300]),
             ),
           ),
         ),
@@ -155,7 +174,7 @@ class OnboardingView extends GetView<OnboardingController> {
             height: 55,
             child: ElevatedButton(
               onPressed: controller.next,
-              child: const Text('Get Started'),
+              child: Text('onboarding_get_started'.tr),
             ),
           ),
         );
@@ -168,7 +187,7 @@ class OnboardingView extends GetView<OnboardingController> {
             TextButton(
               onPressed: controller.skip,
               child: Text(
-                'Skip',
+                'onboarding_skip'.tr,
                 style: AppStyles.bodyLarge.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w600,
@@ -178,7 +197,7 @@ class OnboardingView extends GetView<OnboardingController> {
             TextButton(
               onPressed: controller.next,
               child: Text(
-                'Next',
+                'onboarding_next'.tr,
                 style: AppStyles.bodyLarge.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w600,

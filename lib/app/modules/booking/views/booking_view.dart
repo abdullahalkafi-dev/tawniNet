@@ -15,29 +15,25 @@ class BookingView extends GetView<BookingController> {
     return DefaultTabController(
       length: 3,
       child: Scaffold(
-        backgroundColor: Colors.white,
         appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0,
           title: Text(
-            'My Bookings',
-            style: AppStyles.h1.copyWith(
+            'booking_my_bookings'.tr,
+            style: AppStyles.h1Of(context).copyWith(
               fontSize: 24,
-              color: const Color(0xFF1F2A37),
             ),
           ),
           bottom: TabBar(
             indicatorColor: AppColors.primary,
             indicatorWeight: 3,
             labelColor: AppColors.primary,
-            unselectedLabelColor: Colors.grey,
+            unselectedLabelColor: context.textHintColor,
             labelStyle: AppStyles.bodyLarge.copyWith(
               fontWeight: FontWeight.bold,
             ),
-            tabs: const [
-              Tab(text: 'Active Order'),
-              Tab(text: 'Completed'),
-              Tab(text: 'Cancelled'),
+            tabs: [
+              Tab(text: 'booking_active'.tr),
+              Tab(text: 'booking_completed'.tr),
+              Tab(text: 'booking_cancelled'.tr),
             ],
           ),
         ),
@@ -55,20 +51,26 @@ class BookingView extends GetView<BookingController> {
   Widget _buildBookingList(RxList<Booking> bookings) {
     return Obx(() {
       if (bookings.isEmpty) {
-        return const Center(child: Text('No bookings found'));
+        return Center(child: Text('booking_no_bookings'.tr));
       }
-      return ListView.separated(
-        padding: const EdgeInsets.all(20),
-        itemCount: bookings.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 16),
-        itemBuilder: (context, index) {
-          return _buildBookingCard(bookings[index]);
+      return RefreshIndicator(
+        onRefresh: () async {
+          // TODO: Implement booking refresh when API is ready
         },
+        child: ListView.separated(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          itemCount: bookings.length,
+          separatorBuilder: (context, index) => const SizedBox(height: 16),
+          itemBuilder: (context, index) {
+            return _buildBookingCard(context, bookings[index]);
+          },
+        ),
       );
     });
   }
 
-  Widget _buildBookingCard(Booking booking) {
+  Widget _buildBookingCard(BuildContext context, Booking booking) {
     return GestureDetector(
       onTap: () {
         if (booking.status == BookingStatus.cancelled) {
@@ -80,9 +82,9 @@ class BookingView extends GetView<BookingController> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[100]!),
+          border: Border.all(color: context.borderSubtle),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.02),
@@ -106,11 +108,11 @@ class BookingView extends GetView<BookingController> {
                       return Container(
                         width: 80,
                         height: 80,
-                        color: const Color(0xFFF3F4F6),
+                        color: context.inputFillLight,
                         padding: const EdgeInsets.all(18),
                         child: SvgPicture.asset(
                           'assets/svgs/profile_icon.svg',
-                          colorFilter: const ColorFilter.mode(Color(0xFF9CA3AF), BlendMode.srcIn),
+                          colorFilter: ColorFilter.mode(context.textHintColor, BlendMode.srcIn),
                         ),
                       );
                     },
@@ -123,9 +125,8 @@ class BookingView extends GetView<BookingController> {
                     children: [
                       Text(
                         booking.workerName,
-                        style: AppStyles.h2.copyWith(
+                        style: AppStyles.h2Of(context).copyWith(
                           fontSize: 18,
-                          color: Colors.black,
                         ),
                       ),
                       Text(
@@ -148,7 +149,7 @@ class BookingView extends GetView<BookingController> {
               ],
             ),
             const SizedBox(height: 8),
-            const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+            Icon(Icons.keyboard_arrow_down, color: context.textHintColor),
           ],
         ),
       ),
@@ -161,15 +162,15 @@ class BookingView extends GetView<BookingController> {
     
     switch (status) {
       case BookingStatus.inProgress:
-        text = 'Inprogress';
+        text = 'booking_inprogress'.tr;
         color = AppColors.primary.withOpacity(0.5);
         break;
       case BookingStatus.completed:
-        text = 'Completed';
+        text = 'booking_completed'.tr;
         color = AppColors.primary.withOpacity(0.5);
         break;
       case BookingStatus.cancelled:
-        text = 'Cancelled';
+        text = 'booking_cancelled'.tr;
         color = Colors.orange;
         break;
     }
@@ -196,9 +197,9 @@ class BookingView extends GetView<BookingController> {
           color: AppColors.primary.withOpacity(0.5),
           borderRadius: BorderRadius.circular(20),
         ),
-        child: const Text(
-          'Chat',
-          style: TextStyle(
+        child: Text(
+          'btn_chat'.tr,
+          style: const TextStyle(
             color: Colors.white,
             fontSize: 12,
             fontWeight: FontWeight.bold,

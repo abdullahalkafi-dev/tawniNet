@@ -1,5 +1,6 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/values/app_currency.dart';
 import 'package:awnneaapp/app/data/models/home_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -11,21 +12,18 @@ class PopularServicesView extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedFilter = 'All'.obs;
+    final selectedFilter = 'label_all'.tr.obs;
     final searchQuery = ''.obs;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Most popular services',
-          style: AppStyles.h2.copyWith(color: Colors.black, fontSize: 18),
+          'popular_title'.tr,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 18),
         ),
         centerTitle: true,
       ),
@@ -37,16 +35,17 @@ class PopularServicesView extends GetView<HomeController> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.cardColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[200]!),
+                border: Border.all(color: context.borderSubtle),
               ),
               child: TextField(
                 onChanged: (value) => searchQuery.value = value,
+                style: TextStyle(color: context.textPrimaryColor),
                 decoration: InputDecoration(
-                  icon: const Icon(Icons.search, color: Colors.grey),
-                  hintText: 'Search for a Most popular services.....',
-                  hintStyle: AppStyles.bodyMedium.copyWith(color: Colors.grey),
+                  icon: Icon(Icons.search, color: context.textHintColor),
+                  hintText: 'popular_search'.tr,
+                  hintStyle: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -59,10 +58,10 @@ class PopularServicesView extends GetView<HomeController> {
               child: Obx(
                 () => Row(
                   children: [
-                    _buildFilterChip('All', selectedFilter),
-                    _buildFilterChip('Cleaning', selectedFilter),
-                    _buildFilterChip('Repairing', selectedFilter),
-                    _buildFilterChip('Painting', selectedFilter),
+                    _buildFilterChip(context, 'label_all'.tr, selectedFilter),
+                    _buildFilterChip(context, 'label_cleaning'.tr, selectedFilter),
+                    _buildFilterChip(context, 'label_repairing'.tr, selectedFilter),
+                    _buildFilterChip(context, 'label_painting'.tr, selectedFilter),
                   ],
                 ),
               ),
@@ -74,7 +73,7 @@ class PopularServicesView extends GetView<HomeController> {
               ) {
                 // Filter by Category
                 bool matchesCategory = true;
-                if (selectedFilter.value != 'All') {
+                if (selectedFilter.value != 'label_all'.tr) {
                   matchesCategory = service.category.toLowerCase().contains(
                     selectedFilter.value.toLowerCase(),
                   );
@@ -100,8 +99,8 @@ class PopularServicesView extends GetView<HomeController> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 40),
                     child: Text(
-                      'No services found',
-                      style: AppStyles.bodyMedium.copyWith(color: Colors.grey),
+                      'popular_no_services'.tr,
+                      style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
                     ),
                   ),
                 );
@@ -114,7 +113,7 @@ class PopularServicesView extends GetView<HomeController> {
                 separatorBuilder: (context, index) =>
                     const SizedBox(height: 16),
                 itemBuilder: (context, index) {
-                  return _buildServiceCard(filteredServices[index]);
+                  return _buildServiceCard(context, filteredServices[index]);
                 },
               );
             }),
@@ -125,7 +124,7 @@ class PopularServicesView extends GetView<HomeController> {
     );
   }
 
-  Widget _buildFilterChip(String label, RxString selectedFilter) {
+  Widget _buildFilterChip(BuildContext context, String label, RxString selectedFilter) {
     bool isSelected = selectedFilter.value == label;
     return GestureDetector(
       onTap: () => selectedFilter.value = label,
@@ -133,19 +132,21 @@ class PopularServicesView extends GetView<HomeController> {
         margin: const EdgeInsets.only(right: 12),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.white,
+          color: isSelected ? AppColors.primary : context.cardColor,
           borderRadius: BorderRadius.circular(30),
           border: Border.all(
             color: isSelected
                 ? AppColors.primary
-                : const Color(0xFF5AB9A7).withOpacity(0.5),
+                : (context.isDarkMode ? AppColors.darkBorder : const Color(0xFF5AB9A7).withOpacity(0.5)),
             width: 1.2,
           ),
         ),
         child: Text(
           label,
           style: AppStyles.bodyMedium.copyWith(
-            color: isSelected ? Colors.white : const Color(0xFF5AB9A7),
+            color: isSelected
+                ? Colors.white
+                : (context.isDarkMode ? AppColors.darkTextPrimary : const Color(0xFF5AB9A7)),
             fontWeight: FontWeight.bold,
             fontSize: 13,
           ),
@@ -154,13 +155,13 @@ class PopularServicesView extends GetView<HomeController> {
     );
   }
 
-  Widget _buildServiceCard(PopularService service) {
+  Widget _buildServiceCard(BuildContext context, PopularService service) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[150] ?? const Color(0xFFF3F4F6)),
+        border: Border.all(color: context.borderSubtle),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.01),
@@ -184,12 +185,12 @@ class PopularServicesView extends GetView<HomeController> {
                     return Container(
                       width: 60,
                       height: 60,
-                      color: const Color(0xFFF3F4F6),
+                      color: context.inputFillLight,
                       padding: const EdgeInsets.all(12),
                       child: SvgPicture.asset(
                         'assets/svgs/profile_icon.svg',
-                        colorFilter: const ColorFilter.mode(
-                          Color(0xFF9CA3AF),
+                        colorFilter: ColorFilter.mode(
+                          context.textHintColor,
                           BlendMode.srcIn,
                         ),
                       ),
@@ -207,9 +208,8 @@ class PopularServicesView extends GetView<HomeController> {
                       children: [
                         Text(
                           service.name,
-                          style: AppStyles.bodyLarge.copyWith(
+                          style: AppStyles.bodyLargeOf(context).copyWith(
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF1F2937),
                             fontSize: 15,
                           ),
                         ),
@@ -219,7 +219,9 @@ class PopularServicesView extends GetView<HomeController> {
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFEFF6FF),
+                            color: context.isDarkMode
+                                ? const Color(0xFF1E3A8A).withOpacity(0.3)
+                                : const Color(0xFFEFF6FF),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
@@ -232,10 +234,10 @@ class PopularServicesView extends GetView<HomeController> {
                               const SizedBox(width: 4),
                               Text(
                                 '${service.rating}(${service.reviews})',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF1E3A8A),
+                                  color: context.isDarkMode ? const Color(0xFF93C5FD) : const Color(0xFF1E3A8A),
                                 ),
                               ),
                             ],
@@ -256,7 +258,7 @@ class PopularServicesView extends GetView<HomeController> {
                           service.category,
                           style: AppStyles.bodyMedium.copyWith(
                             fontSize: 12,
-                            color: const Color(0xFF6B7280),
+                            color: context.textSecondaryColor,
                           ),
                         ),
                       ],
@@ -264,20 +266,23 @@ class PopularServicesView extends GetView<HomeController> {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Text(
-                          service.distance,
-                          style: AppStyles.bodyMedium.copyWith(
-                            fontSize: 12,
-                            color: const Color(0xFF6B7280),
+                        Flexible(
+                          child: Text(
+                            service.distance,
+                            style: AppStyles.bodyMedium.copyWith(
+                              fontSize: 12,
+                              color: context.textSecondaryColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const Text(' • ', style: TextStyle(color: Colors.grey)),
                         Text(
-                          '\$${service.pricePerHour.toStringAsFixed(0)}/hr',
-                          style: AppStyles.bodyLarge.copyWith(
+                          '${formatMoney(service.pricePerHour)}/hr',
+                          style: AppStyles.bodyLargeOf(context).copyWith(
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
-                            color: const Color(0xFF1F2937),
                           ),
                         ),
                       ],
@@ -300,12 +305,14 @@ class PopularServicesView extends GetView<HomeController> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       side: BorderSide.none,
-                      backgroundColor: const Color(0xFFF2FAF8),
+                      backgroundColor: context.isDarkMode
+                          ? AppColors.primary.withOpacity(0.12)
+                          : const Color(0xFFF2FAF8),
                     ),
                     child: Text(
-                      'View Profile',
+                      'btn_view_profile'.tr,
                       style: AppStyles.bodyMedium.copyWith(
-                        color: const Color(0xFF5AB9A7),
+                        color: context.isDarkMode ? AppColors.primary : const Color(0xFF5AB9A7),
                         fontWeight: FontWeight.bold,
                         fontSize: 13,
                       ),
@@ -327,9 +334,9 @@ class PopularServicesView extends GetView<HomeController> {
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                     ),
-                    child: const Text(
-                      'Chat',
-                      style: TextStyle(
+                    child: Text(
+                      'btn_chat'.tr,
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
                       ),

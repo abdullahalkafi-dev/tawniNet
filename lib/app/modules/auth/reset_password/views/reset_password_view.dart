@@ -5,6 +5,8 @@ import '../../../../core/values/app_styles.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 
+import '../../../../core/widgets/theme_toggle_icon_button.dart';
+
 class ResetPasswordView extends GetView<ResetPasswordController> {
   const ResetPasswordView({super.key});
 
@@ -16,6 +18,12 @@ class ResetPasswordView extends GetView<ResetPasswordController> {
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
           onPressed: () => Get.back(),
         ),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: ThemeToggleIconButton(),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Padding(
@@ -25,20 +33,20 @@ class ResetPasswordView extends GetView<ResetPasswordController> {
             children: [
               const SizedBox(height: 20),
               Text(
-                'Reset Password',
-                style: AppStyles.h1.copyWith(fontSize: 32),
+                'auth_reset_password'.tr,
+                style: AppStyles.h1Of(context).copyWith(fontSize: 32),
               ),
               const SizedBox(height: 8),
               Text(
-                'Create a new password to secure your account',
+                'auth_reset_subtitle'.tr,
                 textAlign: TextAlign.center,
-                style: AppStyles.bodyMedium.copyWith(fontSize: 16),
+                style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 16),
               ),
               const SizedBox(height: 40),
               Obx(
                 () => CustomTextField(
-                  label: 'New Password',
-                  hint: 'Password',
+                  label: 'auth_new_password'.tr,
+                  hint: 'auth_password'.tr,
                   isPassword: true,
                   isVisible: controller.isPasswordVisible.value,
                   onToggleVisibility: controller.togglePasswordVisibility,
@@ -48,8 +56,8 @@ class ResetPasswordView extends GetView<ResetPasswordController> {
               const SizedBox(height: 20),
               Obx(
                 () => CustomTextField(
-                  label: 'Confirm New Password',
-                  hint: 'Confirm Password',
+                  label: 'auth_confirm_new_password'.tr,
+                  hint: 'auth_confirm_password'.tr,
                   isPassword: true,
                   isVisible: controller.isConfirmPasswordVisible.value,
                   onToggleVisibility: controller.toggleConfirmPasswordVisibility,
@@ -58,7 +66,7 @@ class ResetPasswordView extends GetView<ResetPasswordController> {
               ),
               const SizedBox(height: 40),
               CustomButton(
-                text: 'Update Password',
+                text: 'auth_update_password'.tr,
                 onPressed: controller.resetPassword,
               ),
             ],

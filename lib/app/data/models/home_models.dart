@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/api_constants.dart';
 
 class Category {
   final String id;
@@ -9,11 +10,10 @@ class Category {
 
   Category({required this.id, required this.name, this.iconUrl, required this.icon, required this.color});
 
-  /// Rewrites localhost URLs to work on real device
+  /// Returns category icon URL (backend resolves key to full proxy URL)
   String? get resolvedIconUrl {
     if (iconUrl == null || iconUrl!.isEmpty) return null;
-    // Replace localhost with device IP for real device access
-    return iconUrl!.replaceAll('localhost', '192.168.0.198');
+    return iconUrl;
   }
 
   factory Category.fromJson(Map<String, dynamic> json) {
@@ -22,7 +22,7 @@ class Category {
     return Category(
       id: json['_id'] ?? '',
       name: name,
-      iconUrl: json['icon'],
+      iconUrl: ApiConstants.resolveImageUrl(json['icon'] as String?),
       icon: mapping?['icon'] ?? Icons.help_outline,
       color: mapping?['color'] ?? Colors.grey,
     );
@@ -61,6 +61,16 @@ class HelperJob {
   final String? bio;
   final String? address;
 
+  // Job-specific fields from backend
+  final DateTime? date;
+  final String? startTime;
+  final String? endTime;
+  final double? budget;
+  final String? budgetType; // 'hourly' or 'fixed'
+  final String? paymentMethod; // 'online' or 'cash'
+  final String? status; // 'open', 'completed', 'cancelled'
+  final List<String> images;
+
   HelperJob({
     required this.id,
     required this.helperName,
@@ -75,6 +85,14 @@ class HelperJob {
     this.avatar,
     this.bio,
     this.address,
+    this.date,
+    this.startTime,
+    this.endTime,
+    this.budget,
+    this.budgetType,
+    this.paymentMethod,
+    this.status,
+    this.images = const [],
   }) : name = name ?? helperName;
 
   factory HelperJob.fromJson(Map<String, dynamic> json) {
@@ -96,17 +114,31 @@ class HelperJob {
       postedByUserId = json['postedBy']['_id'] ?? '';
       helperName = json['postedBy']['name'] ?? 'Helper';
       if (json['postedBy']['avatar'] != null && (json['postedBy']['avatar'] as String).isNotEmpty) {
-        avatarUrl = json['postedBy']['avatar'];
+        avatarUrl = ApiConstants.resolveImageUrl(json['postedBy']['avatar']) ?? json['postedBy']['avatar'];
       }
     } else {
       if (json['avatar'] != null && (json['avatar'] as String).isNotEmpty) {
-        avatarUrl = json['avatar'];
+        avatarUrl = ApiConstants.resolveImageUrl(json['avatar']) ?? json['avatar'];
       }
       helperName = json['name'] ?? 'Helper';
     }
 
     final bio = json['description'] as String?;
     final address = json['address'] as String?;
+
+    // Parse job-specific fields
+    DateTime? date;
+    if (json['date'] != null && json['date'] is String) {
+      date = DateTime.tryParse(json['date']);
+    }
+
+    List<String> images = [];
+    if (json['images'] != null && json['images'] is List) {
+      images = (json['images'] as List)
+          .whereType<String>()
+          .map((img) => ApiConstants.resolveImageUrl(img) ?? img)
+          .toList();
+    }
 
     return HelperJob(
       id: json['_id'] ?? '',
@@ -122,6 +154,14 @@ class HelperJob {
       avatar: avatarUrl,
       bio: bio,
       address: address,
+      date: date,
+      startTime: json['startTime'] as String?,
+      endTime: json['endTime'] as String?,
+      budget: (json['budget'] as num?)?.toDouble(),
+      budgetType: json['budgetType'] as String?,
+      paymentMethod: json['paymentMethod'] as String?,
+      status: json['status'] as String?,
+      images: images,
     );
   }
 
@@ -160,4 +200,71 @@ class PopularService {
     required this.distance,
     required this.image,
   });
+}
+
+class HelperProfileData {
+  final String id;
+  final String name;
+  final String? avatar;
+  final String? bio;
+  final String categoryName;
+  final String? categoryId;
+  final double? pricePerHour;
+  final int? experience;
+  final int? serviceRadius;
+  final String? address;
+  final String? city;
+  final String? language;
+  final List<String> profilePhotos;
+  final DateTime? createdAt;
+
+  HelperProfileData({
+    required this.id,
+    required this.name,
+    this.avatar,
+    this.bio,
+    this.categoryName = 'General',
+    this.categoryId,
+    this.pricePerHour,
+    this.experience,
+    this.serviceRadius,
+    this.address,
+    this.city,
+    this.language,
+    this.profilePhotos = const [],
+    this.createdAt,
+  });
+
+  factory HelperProfileData.fromJson(Map<String, dynamic> json) {
+    String categoryName = 'General';
+    String? categoryId;
+    if (json['serviceType'] is Map) {
+      categoryName = json['serviceType']['name'] as String? ?? 'General';
+      categoryId = json['serviceType']['_id'] as String?;
+    } else if (json['serviceType'] is String) {
+      categoryName = json['serviceType'];
+    }
+
+    return HelperProfileData(
+      id: json['_id'] ?? '',
+      name: json['name'] ?? 'Helper',
+      avatar: ApiConstants.resolveImageUrl(json['avatar'] as String?),
+      bio: json['bio'] as String?,
+      categoryName: categoryName,
+      categoryId: categoryId,
+      pricePerHour: (json['pricePerHour'] as num?)?.toDouble(),
+      experience: json['experience'] as int?,
+      serviceRadius: json['serviceRadius'] as int?,
+      address: json['address'] as String?,
+      city: json['city'] as String?,
+      language: json['language'] as String?,
+      profilePhotos: (json['profilePhotos'] as List<dynamic>?)
+              ?.map((e) => ApiConstants.resolveImageUrl(e as String) ?? (e as String))
+              .toList() ??
+          [],
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'])
+          : null,
+    );
+  }
 }

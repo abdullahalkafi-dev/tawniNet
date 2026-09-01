@@ -11,6 +11,7 @@ import 'package:awnneaapp/app/modules/messages/views/widgets/video_thumbnail.dar
 import 'package:awnneaapp/app/modules/messages/views/widgets/image_viewer_screen.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/media_downloader.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
+import 'package:awnneaapp/app/services/role_service.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/video_compressor.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
@@ -48,19 +49,16 @@ class _ChatDetailViewState extends State<ChatDetailView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0.5,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Column(
           children: [
             Text(
               chat.name,
-              style: AppStyles.h2.copyWith(color: Colors.black, fontSize: 18),
+              style: AppStyles.h2Of(context).copyWith(fontSize: 18),
             ),
             Obx(() {
               if (chatController.isTyping.value) {
@@ -90,7 +88,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
                 return Center(
                   child: Text(
                     'No messages yet. Say hello!',
-                    style: AppStyles.bodyMedium.copyWith(color: Colors.grey),
+                    style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
                   ),
                 );
               }
@@ -103,7 +101,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
                   final message = chatController.messages[index];
                   final isSent = message.isSentByMe;
 
-                  // Date separator + message (separator above, not instead of message)
+                  // Date separator + message
                   if (index == 0 ||
                       !_isSameDay(
                         chatController.messages[index - 1].createdAt,
@@ -112,24 +110,24 @@ class _ChatDetailViewState extends State<ChatDetailView> {
                     return Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _buildDateSeparator(message.createdAt),
-                        _buildMessageWidget(message, isSent),
+                        _buildDateSeparator(context, message.createdAt),
+                        _buildMessageWidget(context, message, isSent),
                       ],
                     );
                   }
 
-                  return _buildMessageWidget(message, isSent);
+                  return _buildMessageWidget(context, message, isSent);
                 },
               );
             }),
           ),
-          _buildInputBar(),
+          _buildInputBar(context),
         ],
       ),
     );
   }
 
-  Widget _buildDateSeparator(DateTime date) {
+  Widget _buildDateSeparator(BuildContext context, DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final messageDate = DateTime(date.year, date.month, date.day);
@@ -149,13 +147,15 @@ class _ChatDetailViewState extends State<ChatDetailView> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.blue[50],
+            color: context.isDarkMode
+                ? AppColors.primary.withOpacity(0.15)
+                : Colors.blue[50],
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
             label,
             style: AppStyles.bodyMedium.copyWith(
-              color: Colors.blue[300],
+              color: context.isDarkMode ? AppColors.primary : Colors.blue[300],
               fontSize: 12,
             ),
           ),
@@ -164,20 +164,20 @@ class _ChatDetailViewState extends State<ChatDetailView> {
     );
   }
 
-  Widget _buildMessageWidget(ChatMessage message, bool isSent) {
+  Widget _buildMessageWidget(BuildContext context, ChatMessage message, bool isSent) {
     switch (message.type) {
       case 'image':
-        return _buildImageMessage(message, isSent);
+        return _buildImageMessage(context, message, isSent);
       case 'video':
-        return _buildVideoMessage(message, isSent);
+        return _buildVideoMessage(context, message, isSent);
       case 'offer':
-        return _buildOfferMessage(message, isSent);
+        return _buildOfferMessage(context, message, isSent);
       default:
-        return _buildTextMessage(message, isSent);
+        return _buildTextMessage(context, message, isSent);
     }
   }
 
-  Widget _buildTextMessage(ChatMessage message, bool isSent) {
+  Widget _buildTextMessage(BuildContext context, ChatMessage message, bool isSent) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -202,8 +202,8 @@ class _ChatDetailViewState extends State<ChatDetailView> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: isSent
-                    ? AppColors.primary.withOpacity(0.8)
-                    : const Color(0xFFF3F4F6),
+                    ? AppColors.primary.withOpacity(0.85)
+                    : context.inputFillLight,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(16),
                   topRight: const Radius.circular(16),
@@ -219,7 +219,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
                   Text(
                     message.content ?? '',
                     style: TextStyle(
-                      color: isSent ? Colors.white : Colors.black87,
+                      color: isSent ? Colors.white : context.textPrimaryColor,
                       fontSize: 14,
                       height: 1.4,
                     ),
@@ -228,7 +228,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
                   Text(
                     _formatTime(message.createdAt),
                     style: TextStyle(
-                      color: isSent ? Colors.white70 : Colors.grey,
+                      color: isSent ? Colors.white70 : context.textHintColor,
                       fontSize: 10,
                     ),
                   ),
@@ -241,7 +241,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
     );
   }
 
-  Widget _buildImageMessage(ChatMessage message, bool isSent) {
+  Widget _buildImageMessage(BuildContext context, ChatMessage message, bool isSent) {
     final images = message.images;
     if (images.isEmpty) return const SizedBox.shrink();
 
@@ -269,19 +269,19 @@ class _ChatDetailViewState extends State<ChatDetailView> {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: isSent
-                    ? AppColors.primary.withOpacity(0.8)
-                    : const Color(0xFFF3F4F6),
+                    ? AppColors.primary.withOpacity(0.85)
+                    : context.inputFillLight,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  _buildImageGrid(images),
+                  _buildImageGrid(context, images),
                   const SizedBox(height: 4),
                   Text(
                     _formatTime(message.createdAt),
                     style: TextStyle(
-                      color: isSent ? Colors.white70 : Colors.grey,
+                      color: isSent ? Colors.white70 : context.textHintColor,
                       fontSize: 10,
                     ),
                   ),
@@ -302,7 +302,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
     );
   }
 
-  Widget _buildImageGrid(List<String> images) {
+  Widget _buildImageGrid(BuildContext context, List<String> images) {
     final count = images.length.clamp(1, 4);
 
     if (count == 1) {
@@ -319,8 +319,8 @@ class _ChatDetailViewState extends State<ChatDetailView> {
             errorBuilder: (_, __, ___) => Container(
               width: 200,
               height: 250,
-              color: Colors.grey[300],
-              child: const Icon(Icons.broken_image),
+              color: context.inputFillColor,
+              child: Icon(Icons.broken_image, color: context.textHintColor),
             ),
           ),
         ),
@@ -347,8 +347,8 @@ class _ChatDetailViewState extends State<ChatDetailView> {
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Container(
                             height: 150,
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.broken_image, size: 20),
+                            color: context.inputFillColor,
+                            child: Icon(Icons.broken_image, size: 20, color: context.textHintColor),
                           ),
                         ),
                       ),
@@ -377,8 +377,8 @@ class _ChatDetailViewState extends State<ChatDetailView> {
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => Container(
                                 height: 100,
-                                color: Colors.grey[300],
-                                child: const Icon(Icons.broken_image, size: 20),
+                                color: context.inputFillColor,
+                                child: Icon(Icons.broken_image, size: 20, color: context.textHintColor),
                               ),
                             ),
                           ),
@@ -407,8 +407,8 @@ class _ChatDetailViewState extends State<ChatDetailView> {
                               fit: BoxFit.cover,
                               errorBuilder: (_, __, ___) => Container(
                                 height: 100,
-                                color: Colors.grey[300],
-                                child: const Icon(Icons.broken_image, size: 20),
+                                color: context.inputFillColor,
+                                child: Icon(Icons.broken_image, size: 20, color: context.textHintColor),
                               ),
                             ),
                           ),
@@ -422,7 +422,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
     );
   }
 
-  Widget _buildVideoMessage(ChatMessage message, bool isSent) {
+  Widget _buildVideoMessage(BuildContext context, ChatMessage message, bool isSent) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -447,8 +447,8 @@ class _ChatDetailViewState extends State<ChatDetailView> {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: isSent
-                    ? AppColors.primary.withOpacity(0.8)
-                    : const Color(0xFFF3F4F6),
+                    ? AppColors.primary.withOpacity(0.85)
+                    : context.inputFillLight,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -474,7 +474,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
                   Text(
                     _formatTime(message.createdAt),
                     style: TextStyle(
-                      color: isSent ? Colors.white70 : Colors.grey,
+                      color: isSent ? Colors.white70 : context.textHintColor,
                       fontSize: 10,
                     ),
                   ),
@@ -487,7 +487,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
     );
   }
 
-  Widget _buildOfferMessage(ChatMessage message, bool isSent) {
+  Widget _buildOfferMessage(BuildContext context, ChatMessage message, bool isSent) {
     final currentUserId = Get.find<AuthService>().currentUser.value?.id;
     final isHelper = message.senderId == currentUserId;
 
@@ -553,11 +553,11 @@ class _ChatDetailViewState extends State<ChatDetailView> {
     );
   }
 
-  Widget _buildInputBar() {
+  Widget _buildInputBar(BuildContext context) {
     return Container(
       padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -575,26 +575,29 @@ class _ChatDetailViewState extends State<ChatDetailView> {
               icon: const Icon(Icons.image_outlined, color: AppColors.primary),
               onPressed: () => _showMediaOptions(),
             ),
-            // Offer button
-            IconButton(
-              icon: const Icon(Icons.local_offer_outlined, color: AppColors.primary),
-              onPressed: () => _showOfferForm(),
-            ),
+            // Offer button — only visible for helpers
+            if (Get.find<RoleService>().isHelper)
+              IconButton(
+                icon: const Icon(Icons.local_offer_outlined, color: AppColors.primary),
+                onPressed: () => _showOfferForm(),
+              ),
             const SizedBox(width: 8),
             // Text input
             Expanded(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
+                  color: context.inputFillLight,
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: TextField(
                   controller: chatController.messageController,
                   onChanged: chatController.onTextChanged,
+                  style: TextStyle(color: context.textPrimaryColor),
                   maxLines: null,
                   decoration: InputDecoration(
                     hintText: 'label_type_message'.tr,
+                    hintStyle: TextStyle(color: context.textHintColor),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   ),
@@ -623,12 +626,13 @@ class _ChatDetailViewState extends State<ChatDetailView> {
   void _showMediaOptions() {
     showModalBottomSheet(
       context: context,
+      backgroundColor: Theme.of(context).cardColor,
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.photo),
+              leading: const Icon(Icons.photo, color: AppColors.primary),
               title: const Text('Send Image'),
               onTap: () async {
                 Navigator.pop(context);
@@ -636,7 +640,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.videocam),
+              leading: const Icon(Icons.videocam, color: AppColors.primary),
               title: const Text('Send Video'),
               onTap: () async {
                 Navigator.pop(context);
@@ -713,15 +717,12 @@ class _ChatDetailViewState extends State<ChatDetailView> {
     File? compressed;
 
     try {
-      // Show progress dialog IMMEDIATELY (before compression)
       UploadProgressDialog.show(progress: uploadProgress, status: uploadStatus);
       dialogShowing = true;
 
-      // Compress video (dialog visible with "Compressing video...")
       compressed = await VideoCompressor.compress(pickedFile.path);
       final file = compressed ?? File(pickedFile.path);
 
-      // Check compressed file size (400MB limit)
       final fileBytes = await file.length();
       if (fileBytes > 400 * 1024 * 1024) {
         if (dialogShowing && Get.isDialogOpen == true) {
@@ -733,7 +734,6 @@ class _ChatDetailViewState extends State<ChatDetailView> {
         return;
       }
 
-      // Upload with progress
       uploadStatus.value = 'Uploading video...';
       final api = Get.find<ApiClient>();
       final formData = dio.FormData.fromMap({
@@ -749,7 +749,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
       );
 
       if (dialogShowing && Get.isDialogOpen == true) {
-        Get.back(); // Close progress dialog
+        Get.back();
         dialogShowing = false;
       }
 
@@ -764,14 +764,13 @@ class _ChatDetailViewState extends State<ChatDetailView> {
       }
     } catch (e) {
       if (dialogShowing && Get.isDialogOpen == true) {
-        Get.back(); // Close progress dialog if open
+        Get.back();
       }
       if (mounted) {
         Get.snackbar('Error', 'Failed to upload video',
             snackPosition: SnackPosition.BOTTOM);
       }
     } finally {
-      // Clean up compressed temp file
       if (compressed != null) {
         try { await compressed.delete(); } catch (_) {}
       }

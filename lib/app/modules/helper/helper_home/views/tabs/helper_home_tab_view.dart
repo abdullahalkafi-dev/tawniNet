@@ -22,11 +22,11 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 16),
-              _buildHeader(),
+              _buildHeader(context),
               const SizedBox(height: 20),
-              _buildSearchBar(),
+              _buildSearchBar(context),
               const SizedBox(height: 20),
-              _buildJobList(),
+              _buildJobList(context),
             ],
           ),
         ),
@@ -34,7 +34,7 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Row(
       children: [
         Obx(() {
@@ -48,9 +48,9 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
                     width: 60,
                     height: 60,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _buildAvatarPlaceholder(60),
+                    errorBuilder: (_, __, ___) => _buildAvatarPlaceholder(context, 60),
                   )
-                : _buildAvatarPlaceholder(60),
+                : _buildAvatarPlaceholder(context, 60),
           );
         }),
         const SizedBox(width: 12),
@@ -62,7 +62,7 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
                 final user = Get.find<AuthService>().currentUser.value;
                 return Text(
                   user?.name ?? 'Helper',
-                  style: AppStyles.h2.copyWith(fontSize: 20),
+                  style: AppStyles.h2Of(context).copyWith(fontSize: 20),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 );
@@ -71,7 +71,7 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
                 final user = Get.find<AuthService>().currentUser.value;
                 return Text(
                   user?.address ?? 'No location set',
-                  style: AppStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                  style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 );
@@ -79,6 +79,7 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
             ],
           ),
         ),
+        const SizedBox(width: 8),
         GestureDetector(
           onTap: controller.onNotificationTap,
           child: Container(
@@ -87,65 +88,49 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
               border: Border.all(color: AppColors.primary.withOpacity(0.3)),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Stack(
-              children: [
-                Icon(Icons.notifications_outlined, color: AppColors.primary, size: 24),
-                Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            child: const Icon(Icons.notifications_outlined, color: AppColors.primary, size: 24),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(BuildContext context) {
     return Container(
       height: 52,
       margin: const EdgeInsets.symmetric(horizontal: 16),
       child: TextField(
         onChanged: (val) => controller.searchQuery.value = val,
-        style: GoogleFonts.inter(fontSize: 15, color: AppColors.textPrimary),
+        style: GoogleFonts.inter(fontSize: 15, color: context.textPrimaryColor),
         decoration: InputDecoration(
           hintText: 'helper_search_jobs'.tr,
           hintStyle: GoogleFonts.inter(
             fontSize: 15,
-            color: const Color(0xFF9CA3AF),
+            color: context.textHintColor,
             fontWeight: FontWeight.w400,
           ),
           filled: true,
-          fillColor: const Color(0xFFEEF0F3),
+          fillColor: context.inputFillColor,
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(999),
-            borderSide: BorderSide.none,
+            borderSide: BorderSide(color: context.borderSubtle),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(999),
-            borderSide: BorderSide.none,
+            borderSide: BorderSide(color: context.borderSubtle),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(999),
-            borderSide: BorderSide.none,
+            borderSide: const BorderSide(color: AppColors.primary),
           ),
-          prefixIcon: const Icon(Icons.search, color: Color(0xFF9CA3AF), size: 20),
+          prefixIcon: Icon(Icons.search, color: context.textHintColor, size: 20),
         ),
       ),
     );
   }
 
-  Widget _buildJobList() {
+  Widget _buildJobList(BuildContext context) {
     return Obx(() {
       if (controller.isLoading.value) {
         return const Center(
@@ -165,16 +150,16 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.work_outline, size: 60, color: Colors.grey[300]),
+                  Icon(Icons.work_outline, size: 60, color: context.textHintColor),
                   const SizedBox(height: 16),
                   Text(
                     'No nearby jobs found',
-                    style: AppStyles.bodyLarge.copyWith(color: Colors.grey),
+                    style: AppStyles.bodyLargeOf(context).copyWith(color: context.textSecondaryColor),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Pull down to refresh',
-                    style: AppStyles.bodyMedium.copyWith(color: Colors.grey[400]),
+                    style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
                   ),
                 ],
               ),
@@ -189,9 +174,9 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
             margin: const EdgeInsets.only(bottom: 16),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: context.cardColor,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFF3F4F6)),
+              border: Border.all(color: context.borderSubtle),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.02),
@@ -216,8 +201,8 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
                           errorBuilder: (_, __, ___) => Container(
                             width: 40,
                             height: 40,
-                            color: const Color(0xFFF3F4F6),
-                            child: const Icon(Icons.person, color: Colors.grey),
+                            color: context.inputFillLight,
+                            child: Icon(Icons.person, color: context.textHintColor),
                           ),
                         ),
                       ),
@@ -228,7 +213,7 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
                         children: [
                           Text(
                             job.helperName,
-                            style: AppStyles.h2.copyWith(fontSize: 16),
+                            style: AppStyles.h2Of(context).copyWith(fontSize: 16),
                           ),
                           if (job.category.isNotEmpty)
                             Text(
@@ -249,14 +234,14 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
                     job.bio!,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: AppStyles.bodyMedium.copyWith(fontSize: 13),
+                    style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 13),
                   ),
                 ],
                 if (job.address != null && job.address!.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.location_on_outlined, size: 14, color: Colors.grey[400]),
+                      Icon(Icons.location_on_outlined, size: 14, color: Colors.orange[400]),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
@@ -265,7 +250,7 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
                           overflow: TextOverflow.ellipsis,
                           style: AppStyles.bodyMedium.copyWith(
                             fontSize: 12,
-                            color: Colors.grey,
+                            color: context.textSecondaryColor,
                           ),
                         ),
                       ),
@@ -314,15 +299,15 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
     });
   }
 
-  Widget _buildAvatarPlaceholder(double size) {
+  Widget _buildAvatarPlaceholder(BuildContext context, double size) {
     return Container(
       width: size,
       height: size,
-      color: const Color(0xFFF3F4F6),
+      color: context.inputFillLight,
       padding: EdgeInsets.all(size * 0.3),
       child: SvgPicture.asset(
         'assets/svgs/profile_icon.svg',
-        colorFilter: const ColorFilter.mode(Color(0xFF9CA3AF), BlendMode.srcIn),
+        colorFilter: ColorFilter.mode(context.textHintColor, BlendMode.srcIn),
       ),
     );
   }

@@ -12,18 +12,15 @@ class HelperMessagesTabView extends GetView<MessagesController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         title: Obx(() {
           if (controller.isSearching.value) {
             return TextField(
               autofocus: true,
-              style: const TextStyle(color: Colors.black, fontSize: 16),
+              style: TextStyle(color: context.textPrimaryColor, fontSize: 16),
               decoration: InputDecoration(
                 hintText: 'messages_search'.tr,
-                hintStyle: TextStyle(color: Colors.grey),
+                hintStyle: TextStyle(color: context.textHintColor),
                 border: InputBorder.none,
               ),
               onChanged: (value) => controller.searchQuery.value = value,
@@ -31,9 +28,8 @@ class HelperMessagesTabView extends GetView<MessagesController> {
           }
           return Text(
             'helper_messages_tab'.tr,
-            style: AppStyles.h1.copyWith(
+            style: AppStyles.h1Of(context).copyWith(
               fontSize: 24,
-              color: const Color(0xFF1F2A37),
             ),
           );
         }),
@@ -41,7 +37,7 @@ class HelperMessagesTabView extends GetView<MessagesController> {
           Obx(() {
             if (controller.isSearching.value) {
               return IconButton(
-                icon: const Icon(Icons.close, color: Colors.black),
+                icon: Icon(Icons.close, color: context.textPrimaryColor),
                 onPressed: () {
                   controller.isSearching.value = false;
                   controller.searchQuery.value = '';
@@ -49,7 +45,7 @@ class HelperMessagesTabView extends GetView<MessagesController> {
               );
             }
             return IconButton(
-              icon: const Icon(Icons.search, color: Colors.black),
+              icon: Icon(Icons.search, color: context.textPrimaryColor),
               onPressed: () {
                 controller.isSearching.value = true;
               },
@@ -65,7 +61,7 @@ class HelperMessagesTabView extends GetView<MessagesController> {
 
         final list = controller.filteredChats;
         if (list.isEmpty) {
-          return _buildEmptyState();
+          return _buildEmptyState(context);
         }
 
         return RefreshIndicator(
@@ -74,9 +70,9 @@ class HelperMessagesTabView extends GetView<MessagesController> {
             padding: const EdgeInsets.symmetric(vertical: 10),
             itemCount: list.length,
             separatorBuilder: (context, index) =>
-                const Divider(height: 1, indent: 80),
+                Divider(height: 1, indent: 80, color: context.borderSubtle),
             itemBuilder: (context, index) {
-              return _buildChatItem(list[index]);
+              return _buildChatItem(context, list[index]);
             },
           ),
         );
@@ -84,7 +80,7 @@ class HelperMessagesTabView extends GetView<MessagesController> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -92,13 +88,13 @@ class HelperMessagesTabView extends GetView<MessagesController> {
           Icon(
             Icons.chat_bubble_outline,
             size: 80,
-            color: Colors.grey[300],
+            color: context.textHintColor,
           ),
           const SizedBox(height: 16),
           Text(
             'No conversations yet',
-            style: AppStyles.h2.copyWith(
-              color: Colors.grey[600],
+            style: AppStyles.h2Of(context).copyWith(
+              color: context.textSecondaryColor,
               fontSize: 18,
             ),
           ),
@@ -107,7 +103,7 @@ class HelperMessagesTabView extends GetView<MessagesController> {
             'Messages from clients will appear here\nwhen they start a conversation',
             textAlign: TextAlign.center,
             style: AppStyles.bodyMedium.copyWith(
-              color: Colors.grey[400],
+              color: context.textHintColor,
               fontSize: 14,
             ),
           ),
@@ -116,7 +112,7 @@ class HelperMessagesTabView extends GetView<MessagesController> {
     );
   }
 
-  Widget _buildChatItem(ChatSummary chat) {
+  Widget _buildChatItem(BuildContext context, ChatSummary chat) {
     return ListTile(
       onTap: () => Get.toNamed(Routes.helperChatDetail, arguments: chat),
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -133,11 +129,11 @@ class HelperMessagesTabView extends GetView<MessagesController> {
                 return Container(
                   width: 56,
                   height: 56,
-                  color: const Color(0xFFF3F4F6),
+                  color: context.inputFillLight,
                   padding: const EdgeInsets.all(12),
                   child: SvgPicture.asset(
                     'assets/svgs/profile_icon.svg',
-                    colorFilter: const ColorFilter.mode(Color(0xFF9CA3AF), BlendMode.srcIn),
+                    colorFilter: ColorFilter.mode(context.textHintColor, BlendMode.srcIn),
                   ),
                 );
               },
@@ -153,7 +149,7 @@ class HelperMessagesTabView extends GetView<MessagesController> {
                 decoration: BoxDecoration(
                   color: Colors.green,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
+                  border: Border.all(color: context.cardColor, width: 2),
                 ),
               ),
             ),
@@ -165,7 +161,7 @@ class HelperMessagesTabView extends GetView<MessagesController> {
           Expanded(
             child: Text(
               chat.name,
-              style: AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
+              style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold),
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -185,7 +181,7 @@ class HelperMessagesTabView extends GetView<MessagesController> {
             Expanded(
               child: Text(
                 chat.lastMessage,
-                style: AppStyles.bodyMedium.copyWith(color: Colors.grey[500]),
+                style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

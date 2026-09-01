@@ -15,13 +15,16 @@ class QuickActions extends GetView<HomeController> {
           child: GestureDetector(
             onTap: controller.onFindHelperTap,
             child: _buildActionCard(
+              context,
               title: 'Find Helper',
               subtitle: 'Browse Services',
               icon: Icons.search,
-              color: const Color(0xFFE5F7F5),
+              color: context.isDarkMode
+                  ? AppColors.primary.withOpacity(0.15)
+                  : const Color(0xFFE5F7F5),
               iconBgColor: AppColors.primary,
               iconColorOverride: Colors.white,
-              titleColor: const Color(0xFF5AB9A7),
+              titleColor: context.isDarkMode ? AppColors.primary : const Color(0xFF5AB9A7),
             ),
           ),
         ),
@@ -30,13 +33,14 @@ class QuickActions extends GetView<HomeController> {
           child: GestureDetector(
             onTap: controller.onPostJobTap,
             child: _buildActionCard(
+              context,
               title: 'Post a job',
               subtitle: '',
               icon: Icons.track_changes,
-              color: Colors.white,
-              iconBgColor: const Color(0xFFF3F4F6),
-              iconColorOverride: const Color(0xFF4B5563),
-              titleColor: const Color(0xFF1F2937),
+              color: context.cardColor,
+              iconBgColor: context.inputFillLight,
+              iconColorOverride: context.textPrimaryColor,
+              titleColor: context.textPrimaryColor,
               hasBorder: true,
             ),
           ),
@@ -45,7 +49,8 @@ class QuickActions extends GetView<HomeController> {
     );
   }
 
-  Widget _buildActionCard({
+  Widget _buildActionCard(
+    BuildContext context, {
     required String title,
     required String subtitle,
     required IconData icon,
@@ -61,7 +66,7 @@ class QuickActions extends GetView<HomeController> {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(16),
-        border: hasBorder ? Border.all(color: Colors.grey[200]!) : null,
+        border: hasBorder ? Border.all(color: context.borderSubtle) : null,
         boxShadow: hasBorder
             ? null
             : [

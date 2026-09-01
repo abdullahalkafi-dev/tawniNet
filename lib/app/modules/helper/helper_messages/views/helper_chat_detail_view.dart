@@ -48,19 +48,17 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0.5,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Column(
           children: [
             Text(
               chat.name,
-              style: AppStyles.h2.copyWith(color: Colors.black, fontSize: 18),
+              style: AppStyles.h2Of(context).copyWith(fontSize: 18),
             ),
             Obx(() {
               if (chatController.isTyping.value) {
@@ -90,7 +88,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
                 return Center(
                   child: Text(
                     'No messages yet. Say hello!',
-                    style: AppStyles.bodyMedium.copyWith(color: Colors.grey),
+                    style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
                   ),
                 );
               }
@@ -112,24 +110,24 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
                     return Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _buildDateSeparator(message.createdAt),
-                        _buildMessageWidget(message, isSent),
+                        _buildDateSeparator(context, message.createdAt),
+                        _buildMessageWidget(context, message, isSent),
                       ],
                     );
                   }
 
-                  return _buildMessageWidget(message, isSent);
+                  return _buildMessageWidget(context, message, isSent);
                 },
               );
             }),
           ),
-          _buildInputBar(),
+          _buildInputBar(context),
         ],
       ),
     );
   }
 
-  Widget _buildDateSeparator(DateTime date) {
+  Widget _buildDateSeparator(BuildContext context, DateTime date) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final messageDate = DateTime(date.year, date.month, date.day);
@@ -149,13 +147,13 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.blue[50],
+            color: context.isDarkMode ? Colors.blue.withOpacity(0.2) : Colors.blue[50],
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
             label,
             style: AppStyles.bodyMedium.copyWith(
-              color: Colors.blue[300],
+              color: context.isDarkMode ? Colors.lightBlue[200] : Colors.blue[600],
               fontSize: 12,
             ),
           ),
@@ -164,20 +162,20 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
     );
   }
 
-  Widget _buildMessageWidget(ChatMessage message, bool isSent) {
+  Widget _buildMessageWidget(BuildContext context, ChatMessage message, bool isSent) {
     switch (message.type) {
       case 'image':
-        return _buildImageMessage(message, isSent);
+        return _buildImageMessage(context, message, isSent);
       case 'video':
-        return _buildVideoMessage(message, isSent);
+        return _buildVideoMessage(context, message, isSent);
       case 'offer':
-        return _buildOfferMessage(message, isSent);
+        return _buildOfferMessage(context, message, isSent);
       default:
-        return _buildTextMessage(message, isSent);
+        return _buildTextMessage(context, message, isSent);
     }
   }
 
-  Widget _buildTextMessage(ChatMessage message, bool isSent) {
+  Widget _buildTextMessage(BuildContext context, ChatMessage message, bool isSent) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -202,8 +200,8 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: isSent
-                    ? AppColors.primary.withOpacity(0.8)
-                    : const Color(0xFFF3F4F6),
+                    ? AppColors.primary.withOpacity(0.85)
+                    : context.cardColor,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(16),
                   topRight: const Radius.circular(16),
@@ -212,6 +210,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
                   bottomRight:
                       isSent ? Radius.zero : const Radius.circular(16),
                 ),
+                border: isSent ? null : Border.all(color: context.borderSubtle),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -219,7 +218,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
                   Text(
                     message.content ?? '',
                     style: TextStyle(
-                      color: isSent ? Colors.white : Colors.black87,
+                      color: isSent ? Colors.white : context.textPrimaryColor,
                       fontSize: 14,
                       height: 1.4,
                     ),
@@ -228,7 +227,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
                   Text(
                     _formatTime(message.createdAt),
                     style: TextStyle(
-                      color: isSent ? Colors.white70 : Colors.grey,
+                      color: isSent ? Colors.white70 : context.textHintColor,
                       fontSize: 10,
                     ),
                   ),
@@ -241,7 +240,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
     );
   }
 
-  Widget _buildImageMessage(ChatMessage message, bool isSent) {
+  Widget _buildImageMessage(BuildContext context, ChatMessage message, bool isSent) {
     final images = message.images;
     if (images.isEmpty) return const SizedBox.shrink();
 
@@ -269,9 +268,10 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: isSent
-                    ? AppColors.primary.withOpacity(0.8)
-                    : const Color(0xFFF3F4F6),
+                    ? AppColors.primary.withOpacity(0.85)
+                    : context.cardColor,
                 borderRadius: BorderRadius.circular(16),
+                border: isSent ? null : Border.all(color: context.borderSubtle),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -281,7 +281,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
                   Text(
                     _formatTime(message.createdAt),
                     style: TextStyle(
-                      color: isSent ? Colors.white70 : Colors.grey,
+                      color: isSent ? Colors.white70 : context.textHintColor,
                       fontSize: 10,
                     ),
                   ),
@@ -419,7 +419,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
     );
   }
 
-  Widget _buildVideoMessage(ChatMessage message, bool isSent) {
+  Widget _buildVideoMessage(BuildContext context, ChatMessage message, bool isSent) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -444,9 +444,10 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: isSent
-                    ? AppColors.primary.withOpacity(0.8)
-                    : const Color(0xFFF3F4F6),
+                    ? AppColors.primary.withOpacity(0.85)
+                    : context.cardColor,
                 borderRadius: BorderRadius.circular(16),
+                border: isSent ? null : Border.all(color: context.borderSubtle),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -471,7 +472,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
                   Text(
                     _formatTime(message.createdAt),
                     style: TextStyle(
-                      color: isSent ? Colors.white70 : Colors.grey,
+                      color: isSent ? Colors.white70 : context.textHintColor,
                       fontSize: 10,
                     ),
                   ),
@@ -484,7 +485,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
     );
   }
 
-  Widget _buildOfferMessage(ChatMessage message, bool isSent) {
+  Widget _buildOfferMessage(BuildContext context, ChatMessage message, bool isSent) {
     final currentUserId = Get.find<AuthService>().currentUser.value?.id;
     final isHelper = message.senderId == currentUserId;
 
@@ -550,11 +551,11 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
     );
   }
 
-  Widget _buildInputBar() {
+  Widget _buildInputBar(BuildContext context) {
     return Container(
       padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.cardColor,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -580,15 +581,17 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
+                  color: context.inputFillColor,
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: TextField(
                   controller: chatController.messageController,
                   onChanged: chatController.onTextChanged,
                   maxLines: null,
+                  style: TextStyle(color: context.textPrimaryColor),
                   decoration: InputDecoration(
                     hintText: 'label_type_message'.tr,
+                    hintStyle: TextStyle(color: context.textHintColor),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   ),
@@ -616,21 +619,23 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
   void _showMediaOptions() {
     showModalBottomSheet(
       context: context,
+      backgroundColor: context.cardColor,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.photo),
-              title: const Text('Send Image'),
+              leading: const Icon(Icons.photo, color: AppColors.primary),
+              title: Text('Send Image', style: TextStyle(color: context.textPrimaryColor)),
               onTap: () async {
                 Navigator.pop(context);
                 await _pickAndSendImages();
               },
             ),
             ListTile(
-              leading: const Icon(Icons.videocam),
-              title: const Text('Send Video'),
+              leading: const Icon(Icons.videocam, color: AppColors.primary),
+              title: Text('Send Video', style: TextStyle(color: context.textPrimaryColor)),
               onTap: () async {
                 Navigator.pop(context);
                 await _pickAndSendVideo();
@@ -704,11 +709,9 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
     File? compressed;
 
     try {
-      // Show progress dialog IMMEDIATELY (before compression)
       UploadProgressDialog.show(progress: uploadProgress, status: uploadStatus);
       dialogShowing = true;
 
-      // Compress video (dialog visible with "Compressing video...")
       compressed = await VideoCompressor.compress(pickedFile.path);
       final file = compressed ?? File(pickedFile.path);
 
@@ -723,7 +726,6 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
         return;
       }
 
-      // Upload with progress
       uploadStatus.value = 'Uploading video...';
       final api = Get.find<ApiClient>();
       final formData = dio.FormData.fromMap({

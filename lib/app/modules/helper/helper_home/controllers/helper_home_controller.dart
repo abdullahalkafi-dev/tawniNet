@@ -3,6 +3,7 @@ import 'package:awnneaapp/app/data/models/home_models.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
+import 'package:awnneaapp/app/services/job_service.dart';
 import 'package:awnneaapp/app/modules/messages/controllers/messages_controller.dart';
 import 'package:get/get.dart';
 
@@ -83,6 +84,18 @@ class HelperHomeController extends GetxController {
 
   void onNotificationTap() {
     Get.toNamed(Routes.helperNotifications);
+  }
+
+  Future<void> acceptJob(String jobId) async {
+    try {
+      final jobService = Get.find<JobService>();
+      await jobService.acceptJob(jobId);
+      Get.back();
+      Get.snackbar('Job Accepted', 'Job accepted successfully!', snackPosition: SnackPosition.BOTTOM);
+      refreshData();
+    } catch (e) {
+      Get.snackbar('Error', e.toString().replaceAll('Exception: ', ''), snackPosition: SnackPosition.BOTTOM);
+    }
   }
 
   List<HelperJob> get filteredJobs {

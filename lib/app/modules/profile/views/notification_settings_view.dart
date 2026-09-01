@@ -10,17 +10,14 @@ class NotificationSettingsView extends GetView<ProfileController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Notification',
-          style: AppStyles.h2.copyWith(color: Colors.black),
+          'notif_title'.tr,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 18),
         ),
         centerTitle: true,
       ),
@@ -28,14 +25,15 @@ class NotificationSettingsView extends GetView<ProfileController> {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
         child: Column(
           children: [
-            _buildToggleItem('Notification', controller.notificationEnabled),
-            _buildToggleItem('Sound', controller.soundEnabled),
-            _buildToggleItem('Vibrate', controller.vibrateEnabled),
-            _buildToggleItem('Payments', controller.paymentsEnabled),
-            _buildToggleItem('Cashback', controller.cashbackEnabled),
-            _buildToggleItem('App Updates', controller.appUpdatesEnabled),
+            _buildToggleItem(context, 'notif_title'.tr, controller.notificationEnabled),
+            _buildToggleItem(context, 'notif_sound'.tr, controller.soundEnabled),
+            _buildToggleItem(context, 'notif_vibrate'.tr, controller.vibrateEnabled),
+            _buildToggleItem(context, 'notif_payments'.tr, controller.paymentsEnabled),
+            _buildToggleItem(context, 'notif_cashback'.tr, controller.cashbackEnabled),
+            _buildToggleItem(context, 'notif_app_updates'.tr, controller.appUpdatesEnabled),
             _buildToggleItem(
-              'New Service Available',
+              context,
+              'notif_new_service'.tr,
               controller.newServiceEnabled,
             ),
           ],
@@ -44,7 +42,7 @@ class NotificationSettingsView extends GetView<ProfileController> {
     );
   }
 
-  Widget _buildToggleItem(String title, RxBool value) {
+  Widget _buildToggleItem(BuildContext context, String title, RxBool value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
@@ -52,8 +50,7 @@ class NotificationSettingsView extends GetView<ProfileController> {
         children: [
           Text(
             title,
-            style: AppStyles.bodyLarge.copyWith(
-              color: Colors.black87,
+            style: AppStyles.bodyLargeOf(context).copyWith(
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -62,9 +59,9 @@ class NotificationSettingsView extends GetView<ProfileController> {
               value: value.value,
               onChanged: (val) => value.value = val,
               activeColor: Colors.white,
-              activeTrackColor: AppColors.primary.withOpacity(0.5),
+              activeTrackColor: AppColors.primary,
               inactiveThumbColor: Colors.white,
-              inactiveTrackColor: Colors.grey[300],
+              inactiveTrackColor: context.isDarkMode ? AppColors.darkBorder : Colors.grey[300],
             ),
           ),
         ],

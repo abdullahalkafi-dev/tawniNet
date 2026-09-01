@@ -7,7 +7,6 @@ import 'package:awnneaapp/app/services/category_service.dart';
 import 'package:awnneaapp/app/services/refetch_service.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/constants/refetch_keys.dart';
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../views/all_services_view.dart';
@@ -196,7 +195,7 @@ class HomeController extends GetxController {
   }
 
   void onCategorySelected(Category category) {
-    Get.toNamed(Routes.categoryDetails, arguments: category.name);
+    Get.toNamed(Routes.categoryDetails, arguments: category);
   }
 
   void onViewAllCategories() {
@@ -204,7 +203,7 @@ class HomeController extends GetxController {
   }
 
   void onJobSelected(HelperJob job) {
-    Get.toNamed(Routes.helperProfile);
+    Get.toNamed(Routes.helperProfile, arguments: job.postedByUserId);
   }
 
   Future<void> onChatWithHelper(String helperId) async {
@@ -224,7 +223,7 @@ class HomeController extends GetxController {
   }
 
   void onViewProfile(String helperId) {
-    Get.toNamed(Routes.helperProfile);
+    Get.toNamed(Routes.helperProfile, arguments: helperId);
   }
 
   void onSearch(String query) {

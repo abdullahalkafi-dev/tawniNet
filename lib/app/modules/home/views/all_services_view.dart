@@ -9,54 +9,77 @@ import '../controllers/home_controller.dart';
 class AllServicesView extends GetView<HomeController> {
   const AllServicesView({super.key});
 
-  String _getCategorySvg(String id) {
-    switch (id) {
-      case '1':
+  String _getCategoryFallback(String name) {
+    switch (name) {
+      case 'Carrying':
         return 'assets/svgs/carrying_icon.svg';
-      case '2':
+      case 'Cleaning':
         return 'assets/svgs/cleaning_icon.svg';
-      case '3':
+      case 'Electrician':
         return 'assets/svgs/electrician_icon.svg';
-      case '4':
+      case 'Barber':
         return 'assets/svgs/barber_icon.svg';
-      case '5':
+      case 'Floor':
         return 'assets/svgs/floor_icon.svg';
-      case '6':
+      case 'Shifting':
         return 'assets/svgs/shifting2_icon.svg';
-      case '7':
+      case 'Garden':
         return 'assets/svgs/garden_icon.svg';
-      case '8':
+      case 'Moving':
         return 'assets/svgs/shifting_icon.svg';
       default:
         return 'assets/svgs/cleaning_icon.svg';
     }
   }
 
+  Widget _buildCategoryIcon(String? iconUrl, String name, double size) {
+    if (iconUrl != null && iconUrl.isNotEmpty) {
+      return SvgPicture.network(
+        iconUrl,
+        width: size,
+        height: size,
+        placeholderBuilder: (context) => Icon(
+          Icons.category_outlined,
+          size: size,
+          color: AppColors.primary,
+        ),
+        errorBuilder: (context, error, stackTrace) {
+          return SvgPicture.asset(
+            _getCategoryFallback(name),
+            width: size,
+            height: size,
+          );
+        },
+      );
+    }
+    return SvgPicture.asset(
+      _getCategoryFallback(name),
+      width: size,
+      height: size,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Generate 16 categories for the grid based on the original 8 to match the image
     final allCategories = [
       ...controller.categories,
       ...controller.categories
           .map(
             (c) =>
-                Category(id: c.id, name: c.name, icon: c.icon, color: c.color),
+                Category(id: c.id, name: c.name, iconUrl: c.iconUrl, icon: c.icon, color: c.color),
           )
           .toList(),
     ];
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'All Services',
-          style: AppStyles.h2.copyWith(color: Colors.black, fontSize: 18),
+          'cat_all_services'.tr,
+          style: AppStyles.h2Of(context).copyWith(fontSize: 18),
         ),
         centerTitle: true,
       ),
@@ -67,15 +90,16 @@ class AllServicesView extends GetView<HomeController> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.cardColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey[200]!),
+                border: Border.all(color: context.borderSubtle),
               ),
               child: TextField(
+                style: TextStyle(color: context.textPrimaryColor),
                 decoration: InputDecoration(
-                  icon: const Icon(Icons.search, color: Colors.grey),
-                  hintText: 'Search Services...',
-                  hintStyle: AppStyles.bodyMedium.copyWith(color: Colors.grey),
+                  icon: Icon(Icons.search, color: context.textHintColor),
+                  hintText: 'cat_search_services'.tr,
+                  hintStyle: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 14),
                 ),
@@ -100,10 +124,10 @@ class AllServicesView extends GetView<HomeController> {
                             Container(
                               height: itemWidth,
                               decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: context.cardColor,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: const Color(0xFFE5E7EB),
+                                  color: context.borderSubtle,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
@@ -117,24 +141,25 @@ class AllServicesView extends GetView<HomeController> {
                               child: Container(
                                 width: itemWidth * 0.65,
                                 height: itemWidth * 0.65,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFFF0FDF8),
+                                decoration: BoxDecoration(
+                                  color: context.isDarkMode
+                                      ? AppColors.primary.withOpacity(0.12)
+                                      : const Color(0xFFF0FDF8),
                                   shape: BoxShape.circle,
                                 ),
                                 alignment: Alignment.center,
-                                child: SvgPicture.asset(
-                                  _getCategorySvg(cat.id),
-                                  width: 24,
-                                  height: 24,
+                                child: _buildCategoryIcon(
+                                  cat.resolvedIconUrl,
+                                  cat.name,
+                                  24,
                                 ),
                               ),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               cat.name,
-                              style: AppStyles.bodyMedium.copyWith(
+                              style: AppStyles.bodyMediumOf(context).copyWith(
                                 fontSize: 13,
-                                color: const Color(0xFF1F2937),
                                 fontWeight: FontWeight.w500,
                               ),
                               textAlign: TextAlign.center,
