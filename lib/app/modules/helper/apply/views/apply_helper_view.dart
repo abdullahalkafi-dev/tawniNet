@@ -6,6 +6,7 @@ import 'package:awnneaapp/app/core/widgets/custom_text_field.dart';
 import 'package:awnneaapp/app/data/models/home_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import '../controllers/apply_helper_controller.dart';
 
@@ -520,6 +521,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
 
   Widget _buildCategoryIcon(Category category, {double size = 18}) {
     final iconUrl = category.resolvedIconUrl;
+    final isSvg = iconUrl != null && (iconUrl.toLowerCase().endsWith('.svg') || iconUrl.toLowerCase().contains('.svg'));
     return Container(
       width: size + 12,
       height: size + 12,
@@ -530,17 +532,28 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
       ),
       child: Center(
         child: (iconUrl != null && iconUrl.isNotEmpty)
-            ? Image.network(
-                iconUrl,
-                width: size,
-                height: size,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => Icon(
-                  category.icon,
-                  size: size,
-                  color: category.color,
-                ),
-              )
+            ? (isSvg
+                ? SvgPicture.network(
+                    iconUrl,
+                    width: size,
+                    height: size,
+                    placeholderBuilder: (_) => Icon(
+                      category.icon,
+                      size: size,
+                      color: category.color,
+                    ),
+                  )
+                : Image.network(
+                    iconUrl,
+                    width: size,
+                    height: size,
+                    fit: BoxFit.contain,
+                    errorBuilder: (_, __, ___) => Icon(
+                      category.icon,
+                      size: size,
+                      color: category.color,
+                    ),
+                  ))
             : Icon(
                 category.icon,
                 size: size,
