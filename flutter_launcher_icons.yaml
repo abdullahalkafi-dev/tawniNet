@@ -1,0 +1,21 @@
+# Generates Android/iOS launcher icons from assets/images/app_logo.png
+# Run from tarik-flutter-app:
+#   flutter pub get
+#   dart run flutter_launcher_icons
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/app_logo.png"
+
+  # Brand teal so icon edge matches app chrome
+  adaptive_icon_background: "#0D9488"
+  adaptive_icon_foreground: "assets/images/app_logo.png"
+
+  # Keep default Flutter launcher name used in AndroidManifest
+  android_adaptive_icon_background: "#0D9488"
+  android_adaptive_icon_foreground: "assets/images/app_logo.png"
+
+  remove_alpha_ios: false
+  image_path_ios: "assets/images/app_logo.png"
+  min_sdk_android: 21
