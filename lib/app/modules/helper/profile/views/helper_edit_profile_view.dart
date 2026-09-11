@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:awnneaapp/app/core/utils/app_feedback.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
@@ -192,7 +193,7 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
         }
       }
     } catch (_) {
-      Get.snackbar('Error', 'Failed to pick photos', snackPosition: SnackPosition.BOTTOM);
+      AppFeedback.error('Failed to pick photos');
     }
   }
 
@@ -310,9 +311,20 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
         }
       }
 
+      // Validate email if provided
+      if (emailCtl.text.trim().isNotEmpty && !GetUtils.isEmail(emailCtl.text.trim())) {
+        Get.snackbar(
+          'Error',
+          'Please enter a valid email address',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
       // 2. Prepare payload
       final data = <String, dynamic>{
         if (nameCtl.text.trim().isNotEmpty) 'name': nameCtl.text.trim(),
+        if (emailCtl.text.trim().isNotEmpty) 'email': emailCtl.text.trim(),
         if (phoneCtl.text.trim().isNotEmpty) 'phone': phoneCtl.text.trim(),
         if (bioCtl.text.trim().isNotEmpty) 'bio': bioCtl.text.trim(),
         if (cityCtl.text.trim().isNotEmpty) 'city': cityCtl.text.trim(),
@@ -394,7 +406,7 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
             const SizedBox(height: 16),
             _buildField(context, 'apply_full_name'.tr, nameCtl),
             const SizedBox(height: 16),
-            _buildField(context, 'apply_email'.tr, emailCtl, readOnly: true),
+            _buildField(context, 'apply_email'.tr, emailCtl, keyboardType: TextInputType.emailAddress),
             const SizedBox(height: 16),
             _buildField(context, 'helper_phone'.tr, phoneCtl, keyboardType: TextInputType.phone),
             const SizedBox(height: 16),

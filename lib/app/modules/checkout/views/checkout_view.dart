@@ -16,29 +16,61 @@ class CheckoutView extends GetView<CheckoutController> {
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'checkout_title'.tr,
+          'Secure Checkout',
           style: AppStyles.h2Of(context).copyWith(fontSize: 18),
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            _buildSummaryCard(context),
-            const SizedBox(height: 24),
-            _buildPaymentMethodTile(context, 'checkout_paypal'.tr, 'checkout_connected'.tr, true),
-            const SizedBox(height: 16),
-            _buildPaymentMethodTile(context, 'checkout_paypal'.tr, 'checkout_connected'.tr, false),
-            const SizedBox(height: 16),
-            _buildAddMethodTile(context),
-          ],
-        ),
-      ),
+      body: Obx(() {
+        if (controller.isSuccess.value) {
+          return _buildSuccessView(context);
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildOrderSummaryCard(context),
+              const SizedBox(height: 24),
+              Text(
+                'Select Moroccan Payment Channel',
+                style: AppStyles.bodyLargeOf(context).copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ...controller.paymentMethods.map(
+                (method) => _buildPaymentMethodCard(context, method),
+              ),
+              const SizedBox(height: 24),
+              _buildSandboxNotice(context),
+              if (controller.errorMessage.value.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.red.shade200),
+                  ),
+                  child: Text(
+                    controller.errorMessage.value,
+                    style: TextStyle(color: Colors.red.shade800, fontSize: 13),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 32),
+              _buildActionButtons(context),
+            ],
+          ),
+        );
+      }),
     );
   }
 
-  Widget _buildSummaryCard(BuildContext context) {
+  Widget _buildOrderSummaryCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -47,7 +79,7 @@ class CheckoutView extends GetView<CheckoutController> {
         border: Border.all(color: context.borderSubtle),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withOpacity(0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -59,145 +91,264 @@ class CheckoutView extends GetView<CheckoutController> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'checkout_service_name'.tr,
-                style: AppStyles.bodyLargeOf(context).copyWith(
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Text(
+                  controller.title.value.isNotEmpty
+                      ? controller.title.value
+                      : 'Service Checkout',
+                  style: AppStyles.bodyLargeOf(context).copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 17,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Text(
-                '35 MAD',
-                style: AppStyles.bodyLargeOf(context).copyWith(
-                  fontWeight: FontWeight.bold,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  controller.orderType.value.toUpperCase(),
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(
-            'checkout_include_service'.tr,
-            style: AppStyles.bodyMediumOf(context).copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Lorem ipsum dolor sit amet consectetur. Elit ac gravida augue suspendisse in scelerisque pellentesque diam elementum. Lorem quam vitae mus metus tortor turpis at. Cras accumsan pharetra odio euismod metus leo neque duis. More',
-            style: AppStyles.bodyMediumOf(context).copyWith(
-              fontSize: 13,
-              color: context.textSecondaryColor,
+          if (controller.orderId.value.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Order ID: ${controller.orderId.value}',
+              style: AppStyles.bodyMediumOf(context).copyWith(
+                fontSize: 12,
+                color: context.textHintColor,
+                fontFamily: 'monospace',
+              ),
             ),
-          ),
-          Divider(height: 32, color: context.borderSubtle),
+          ],
+          Divider(height: 28, color: context.borderSubtle),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'checkout_total'.tr,
-                style: AppStyles.bodyLargeOf(context).copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                '36.10 MAD',
-                style: AppStyles.bodyLargeOf(context).copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'checkout_delivery_time'.tr,
-                style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
-              ),
-              Text(
-                'checkout_hour'.tr,
+                'Total to Pay',
                 style: AppStyles.bodyMediumOf(context).copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
+              ),
+              Text(
+                'MAD ${controller.amount.value.toStringAsFixed(2)}',
+                style: AppStyles.h1Of(context).copyWith(
+                  fontSize: 22,
+                  color: AppColors.primary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            height: 55,
-            child: ElevatedButton(
-              onPressed: controller.confirmAndPay,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentMethodCard(
+    BuildContext context,
+    Map<String, dynamic> method,
+  ) {
+    return Obx(() {
+      final isSelected = controller.selectedMethod.value == method['id'];
+      final color = method['color'] as Color;
+
+      return GestureDetector(
+        onTap: () => controller.selectMethod(method['id'] as String),
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isSelected ? color.withOpacity(0.04) : context.cardColor,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isSelected ? color : context.borderSubtle,
+              width: isSelected ? 2 : 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(method['icon'] as IconData, color: color, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      method['name'] as String,
+                      style: AppStyles.bodyLargeOf(context).copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      method['subtitle'] as String,
+                      style: AppStyles.bodyMediumOf(context).copyWith(
+                        fontSize: 12,
+                        color: context.textHintColor,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              child: Text(
-                'checkout_confirm_pay'.tr,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+              Icon(
+                isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                color: isSelected ? color : context.textHintColor,
+                size: 22,
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildSandboxNotice(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.amber.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.amber.shade200),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.shield_outlined, color: Colors.amber.shade800, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Moroccan Sandbox Gateway (CashPlus / ChariBaaS). Tap below to simulate instant real-time payment confirmation.',
+              style: TextStyle(color: Colors.amber.shade900, fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context) {
+    return Column(
+      children: [
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton(
+            onPressed: controller.isProcessing.value
+                ? null
+                : controller.confirmAndPay,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            child: controller.isProcessing.value
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(
+                    'Confirm & Pay MAD ${controller.amount.value.toStringAsFixed(2)}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: OutlinedButton(
+            onPressed: controller.isProcessing.value
+                ? null
+                : controller.showCancelConfirm,
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: Colors.red.shade300),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            child: Text(
+              'Cancel payment',
+              style: TextStyle(
+                color: Colors.red.shade700,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          Center(
-            child: Text(
-              'checkout_secure'.tr,
-              style: TextStyle(color: context.textHintColor, fontSize: 12),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  Widget _buildPaymentMethodTile(BuildContext context, String name, String status, bool isSelected) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      decoration: BoxDecoration(
-        color: context.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.borderSubtle),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.payment, color: Colors.blue, size: 30),
-          const SizedBox(width: 12),
-          Text(
-            name,
-            style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold),
-          ),
-          const Spacer(),
-          Text(
-            status,
-            style: AppStyles.bodyMedium.copyWith(
-              color: Colors.blueAccent,
-              fontWeight: FontWeight.bold,
+  Widget _buildSuccessView(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: const BoxDecoration(
+                color: Colors.green,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.check, color: Colors.white, size: 48),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAddMethodTile(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      decoration: BoxDecoration(
-        color: context.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.borderSubtle, style: BorderStyle.solid),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.add, color: context.textPrimaryColor),
-          const SizedBox(width: 8),
-          Text(
-            'checkout_add_method'.tr,
-            style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold),
-          ),
-        ],
+            const SizedBox(height: 24),
+            Text(
+              'Payment Successful!',
+              style: AppStyles.h1Of(context).copyWith(fontSize: 24),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'MAD ${controller.amount.value.toStringAsFixed(2)} has been verified and processed securely.',
+              textAlign: TextAlign.center,
+              style: AppStyles.bodyMediumOf(context).copyWith(
+                color: context.textSecondaryColor,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 24),
+            const CircularProgressIndicator(strokeWidth: 2),
+            const SizedBox(height: 12),
+            Text(
+              'Returning to app...',
+              style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 12),
+            ),
+          ],
+        ),
       ),
     );
   }

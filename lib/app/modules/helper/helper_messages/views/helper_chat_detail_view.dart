@@ -1,5 +1,6 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/utils/app_feedback.dart';
 import 'package:awnneaapp/app/data/models/message_model.dart';
 import 'package:awnneaapp/app/modules/messages/controllers/chat_detail_controller.dart';
 import 'package:awnneaapp/app/modules/messages/controllers/messages_controller.dart';
@@ -29,18 +30,47 @@ class HelperChatDetailView extends StatefulWidget {
 
 class _HelperChatDetailViewState extends State<HelperChatDetailView> {
   late final ChatDetailController chatController;
-  late final ChatSummary chat;
+  late ChatSummary chat;
 
   @override
   void initState() {
     super.initState();
-    chat = Get.arguments as ChatSummary;
-    chatController = Get.put(ChatDetailController());
-    chatController.initConversation(chat.id, chat.id);
+    // Accept ChatSummary (normal nav) or conversationId String (push deep-link).
+    final args = Get.arguments;
+    if (args is ChatSummary) {
+      chat = args;
+      chatController = Get.put(ChatDetailController());
+      chatController.initConversation(chat.id, chat.otherUserId.isNotEmpty ? chat.otherUserId : chat.id);
+    } else if (args is String) {
+      chat = ChatSummary(id: args, name: 'Chat', image: '');
+      chatController = Get.put(ChatDetailController());
+      chatController.initConversation(chat.id, chat.id);
+      _resolveChatMeta(args);
+    } else {
+      chat = ChatSummary(id: '', name: 'Chat', image: '');
+      chatController = Get.put(ChatDetailController());
+    }
+  }
+
+  Future<void> _resolveChatMeta(String conversationId) async {
+    try {
+      final messages = Get.find<MessagesController>();
+      final summary = await messages.resolveChatSummary(conversationId);
+      if (summary != null && mounted) {
+        setState(() {
+          chat = summary;
+        });
+      }
+    } catch (_) {}
   }
 
   @override
   void dispose() {
+    if (chat.id.isNotEmpty) {
+      try {
+        Get.find<MessagesController>().markConversationReadLocally(chat.id);
+      } catch (_) {}
+    }
     Get.delete<ChatDetailController>();
     super.dispose();
   }
@@ -676,8 +706,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
           }
         } else {
           if (mounted) {
-            Get.snackbar('Error', 'Failed to upload image ${imageKeys.length + 1}',
-                snackPosition: SnackPosition.BOTTOM);
+            AppFeedback.error('Failed to upload image ${imageKeys.length + 1}');
           }
           return;
         }
@@ -688,8 +717,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
       }
     } catch (e) {
       if (mounted) {
-        Get.snackbar('Error', 'Failed to upload images',
-            snackPosition: SnackPosition.BOTTOM);
+        AppFeedback.error('Failed to upload images');
       }
     }
   }
@@ -721,8 +749,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
           Get.back();
           dialogShowing = false;
         }
-        Get.snackbar('Error', 'Video must be under 400MB',
-            snackPosition: SnackPosition.BOTTOM);
+        AppFeedback.error('Video must be under 400MB', title: 'File too large');
         return;
       }
 
@@ -751,16 +778,14 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
           chatController.sendVideoMessage(data['key']);
         }
       } else {
-        Get.snackbar('Error', 'Failed to upload video',
-            snackPosition: SnackPosition.BOTTOM);
+        AppFeedback.error('Failed to upload video');
       }
     } catch (e) {
       if (dialogShowing && Get.isDialogOpen == true) {
         Get.back();
       }
       if (mounted) {
-        Get.snackbar('Error', 'Failed to upload video',
-            snackPosition: SnackPosition.BOTTOM);
+        AppFeedback.error('Failed to upload video');
       }
     } finally {
       if (compressed != null) {

@@ -18,8 +18,8 @@ class ReviewService extends GetxService {
     final response = await _api.post(
       ApiConstants.reviews,
       data: {
-        'job': jobId,
-        'reviewee': revieweeId,
+        'jobId': jobId,
+        'revieweeId': revieweeId,
         'rating': rating,
         if (comment != null && comment.isNotEmpty) 'comment': comment,
       },

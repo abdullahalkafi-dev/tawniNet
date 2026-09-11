@@ -1,5 +1,10 @@
+import 'package:awnneaapp/app/core/utils/app_feedback.dart';
+import 'package:awnneaapp/app/core/utils/datetime_format.dart';
+import 'package:awnneaapp/app/core/utils/job_display.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/widgets/job_status_timeline.dart';
+import 'package:awnneaapp/app/modules/helper/helper_jobs/controllers/helper_jobs_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -8,7 +13,10 @@ class ActiveJobDetailsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final job = Get.arguments as Map;
+    final job = Get.arguments is Map
+        ? Map<String, dynamic>.from(Get.arguments as Map)
+        : <String, dynamic>{};
+    final jobId = (job['id'] ?? job['_id'] ?? '').toString();
 
     return Scaffold(
       appBar: AppBar(
@@ -31,8 +39,25 @@ class ActiveJobDetailsView extends StatelessWidget {
             const SizedBox(height: 16),
             _buildJobDescriptionWithPhotos(context, job),
             const SizedBox(height: 16),
-            _buildJobStatusTimeline(context),
+            _buildJobStatusTimeline(context, job),
             const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () {
+                final controller = Get.find<HelperJobsController>();
+                controller.completeJob(jobId);
+                Get.back();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              ),
+              child: const Text(
+                'Mark as Completed',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+            const SizedBox(height: 12),
             GestureDetector(
               onTap: () => _showCancelDialog(context, job),
               child: Container(
@@ -67,6 +92,23 @@ class ActiveJobDetailsView extends StatelessWidget {
   }
 
   Widget _buildJobInfoTable(BuildContext context, Map job) {
+    final clientName = JobDisplay.personName(job['postedBy'],
+        fallback: JobDisplay.safeText(job['clientName']));
+    final categoryName = JobDisplay.categoryName(job['category'],
+        fallback: JobDisplay.safeText(job['jobType'], fallback: 'Service'));
+    final bookingDate = job['date'] != null
+        ? AppDateTime.formatDateDisplay(job['date'].toString())
+        : AppDateTime.formatDateDisplay(job['bookingDate']?.toString() ?? '');
+    final preferredTime = job['startTime'] != null
+        ? [
+            AppDateTime.formatTime12h(job['startTime']?.toString()),
+            if (job['endTime'] != null)
+              AppDateTime.formatTime12h(job['endTime']?.toString()),
+          ].where((t) => t.isNotEmpty).join(' - ')
+        : JobDisplay.safeText(job['preferredTime']);
+    final location = JobDisplay.publicAddress(job);
+    final budget = job['budget'] != null ? 'MAD ${job['budget']}' : '';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -77,12 +119,12 @@ class ActiveJobDetailsView extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _buildInfoRow(context, 'label_order_by'.tr, job['orderBy'] ?? job['clientName'] ?? ''),
-          _buildInfoRow(context, 'label_job_type'.tr, job['jobType'] ?? ''),
-          _buildInfoRow(context, 'label_booking_date'.tr, job['bookingDate'] ?? ''),
-          _buildInfoRow(context, 'label_preferred_time'.tr, job['preferredTime'] ?? ''),
-          _buildInfoRow(context, 'label_location'.tr, job['location'] ?? ''),
-          _buildInfoRow(context, 'label_budget'.tr, 'MAD ${job['budget'] ?? ''}'),
+          _buildInfoRow(context, 'label_order_by'.tr, clientName),
+          _buildInfoRow(context, 'label_job_type'.tr, categoryName),
+          _buildInfoRow(context, 'label_booking_date'.tr, bookingDate),
+          _buildInfoRow(context, 'label_preferred_time'.tr, preferredTime),
+          _buildInfoRow(context, 'label_location'.tr, location),
+          _buildInfoRow(context, 'label_budget'.tr, budget),
           if (job['distance'] != null)
             Padding(
               padding: const EdgeInsets.only(top: 4),
@@ -100,17 +142,31 @@ class ActiveJobDetailsView extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor)),
-          Text(value, style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold, fontSize: 14)),
+          Flexible(
+            flex: 2,
+            child: Text(label, style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor)),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            flex: 3,
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+              style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildJobDescriptionWithPhotos(BuildContext context, Map job) {
-    final photos = job['photos'] as List? ?? [];
+    final photos = (job['images'] as List? ?? job['photos'] as List? ?? []);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -141,7 +197,7 @@ class ActiveJobDetailsView extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
                     child: Image.network(
-                      photos[index],
+                      photos[index].toString(),
                       width: 100,
                       height: 100,
                       fit: BoxFit.cover,
@@ -164,167 +220,162 @@ class ActiveJobDetailsView extends StatelessWidget {
     );
   }
 
-  Widget _buildJobStatusTimeline(BuildContext context) {
-    final steps = [
-      {'label': 'status_submitted'.tr, 'date': 'March 10, 2024 at 2:30 PM', 'completed': true},
-      {'label': 'status_worker_matched'.tr, 'date': 'March 11, 2024 at 9:15 AM', 'completed': true},
-      {'label': 'status_in_progress'.tr, 'date': 'Started March 15, 2024 at 10:00 AM', 'completed': true, 'active': true},
-      {'label': 'status_completed'.tr, 'date': 'Pending', 'completed': false},
-      {'label': 'status_payment_processed'.tr, 'date': 'Pending', 'completed': false},
-    ];
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.borderSubtle),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('label_job_status'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 16)),
-          const SizedBox(height: 16),
-          ...steps.asMap().entries.map((entry) {
-            final step = entry.value;
-            final isLast = entry.key == steps.length - 1;
-            final isActive = step['active'] == true;
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  children: [
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: (step['completed'] as bool)
-                            ? (isActive ? AppColors.primary : AppColors.primary)
-                            : (context.isDarkMode ? AppColors.darkBorder : const Color(0xFFE5E7EB)),
-                        shape: BoxShape.circle,
-                      ),
-                      child: (step['completed'] as bool)
-                          ? const Icon(Icons.check, color: Colors.white, size: 16)
-                          : null,
-                    ),
-                    if (!isLast)
-                      Container(width: 2, height: 30, color: (context.isDarkMode ? AppColors.darkBorder : const Color(0xFFE5E7EB))),
-                  ],
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        step['label'] as String,
-                        style: AppStyles.bodyLargeOf(context).copyWith(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: (step['completed'] as bool) ? context.textPrimaryColor : context.textHintColor,
-                        ),
-                      ),
-                      Text(
-                        step['date'] as String,
-                        style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: context.textHintColor),
-                      ),
-                      SizedBox(height: isLast ? 0 : 12),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          }),
-        ],
-      ),
-    );
+  Widget _buildJobStatusTimeline(BuildContext context, Map job) {
+    return JobStatusTimeline(steps: JobTimeline.fromJobMap(job));
   }
 
   void _showCancelDialog(BuildContext context, Map job) {
     final reasonController = TextEditingController();
+    final jobId = (job['id'] ?? job['_id'] ?? '').toString();
     Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: context.cardColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: context.borderSecondary,
-                  borderRadius: BorderRadius.circular(2),
+      Builder(
+        builder: (dialogContext) {
+          return Container(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+            decoration: BoxDecoration(
+              color: dialogContext.cardColor,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: SafeArea(
+              top: false,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: dialogContext.borderSecondary,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.warning_amber_rounded,
+                        color: Color(0xFFE53935),
+                        size: 26,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'booking_cancel_booking'.tr,
+                      style: AppStyles.h2Of(dialogContext).copyWith(fontSize: 18),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'job_cancel_reason_default'.tr,
+                      style: AppStyles.bodyMedium.copyWith(
+                        color: dialogContext.textSecondaryColor,
+                        fontSize: 13,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 14),
+                    TextField(
+                      controller: reasonController,
+                      minLines: 3,
+                      maxLines: 4,
+                      maxLength: 200,
+                      style: TextStyle(color: dialogContext.textPrimaryColor, fontSize: 14),
+                      decoration: InputDecoration(
+                        hintText: 'job_cancel_reason_hint'.tr,
+                        hintStyle: AppStyles.bodyMedium.copyWith(
+                          color: dialogContext.textHintColor,
+                          fontSize: 13,
+                        ),
+                        filled: true,
+                        fillColor: dialogContext.inputFillColor,
+                        counterText: "",
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: dialogContext.borderSubtle),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Color(0xFFE53935), width: 1.5),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Get.back(),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              side: BorderSide(color: dialogContext.borderSecondary),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                            ),
+                            child: Text(
+                              'btn_cancel'.tr,
+                              style: TextStyle(
+                                color: dialogContext.textPrimaryColor,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              final reason = reasonController.text.trim();
+                              if (reason.length < 3) {
+                                AppFeedback.error(
+                                  'Please enter a reason (at least 3 characters).',
+                                  title: 'Reason required',
+                                );
+                                return;
+                              }
+                              Get.back();
+                              final controller = Get.find<HelperJobsController>();
+                              final ok = await controller.cancelJob(
+                                jobId,
+                                reason: reason,
+                              );
+                              if (ok && Get.context != null) {
+                                Get.back();
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFE53935),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                            ),
+                            child: Text(
+                              'booking_yes_cancel'.tr,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            Text('job_cancel_reason'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 20)),
-            const SizedBox(height: 8),
-            Text(
-              'job_cancel_reason_default'.tr,
-              style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 14),
-            ),
-            const SizedBox(height: 16),
-            Text('job_cancel_reason'.tr, style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 8),
-            TextField(
-              controller: reasonController,
-              maxLines: 3,
-              style: TextStyle(color: context.textPrimaryColor),
-              decoration: InputDecoration(
-                hintText: 'job_cancel_reason_hint'.tr,
-                hintStyle: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
-                filled: true,
-                fillColor: context.inputFillColor,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: context.borderSubtle),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: context.borderSubtle),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Get.back(),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.primary),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    child: Text('btn_cancel'.tr, style: AppStyles.buttonText.copyWith(color: AppColors.primary)),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Get.back();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    child: Text('btn_confirm'.tr, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+          );
+        },
       ),
       isScrollControlled: true,
     );

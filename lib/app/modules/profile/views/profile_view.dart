@@ -4,7 +4,6 @@ import 'package:awnneaapp/app/core/localization/locale_service.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/theme_service.dart';
-import 'package:awnneaapp/app/modules/messages/controllers/messages_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -43,6 +42,12 @@ class ProfileView extends GetView<ProfileController> {
                 Icons.notifications_none,
                 'profile_notification'.tr,
                 onTap: () => Get.toNamed(Routes.notificationSettings),
+              ),
+              _buildProfileOption(
+                context,
+                Icons.account_balance_wallet_outlined,
+                'Wallet',
+                onTap: () => Get.toNamed(Routes.wallet),
               ),
               _buildProfileOption(
                 context,
@@ -880,18 +885,7 @@ class ProfileView extends GetView<ProfileController> {
               Icons.chat_bubble_outline,
               () {
                 Get.back();
-                Get.toNamed(
-                  Routes.chatDetail,
-                  arguments: ChatSummary(
-                    id: 'support_agent',
-                    name: 'Awnnea Support Agent',
-                    image: 'https://i.pravatar.cc/150?u=support',
-                    lastMessage: 'How can I assist you today?',
-                    time: 'Now',
-                    unreadCount: 0,
-                    isOnline: true,
-                  ),
-                );
+                Get.toNamed(Routes.supportTicketList);
               },
             ),
             _buildSupportTile(

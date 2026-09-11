@@ -29,21 +29,36 @@ class SplashController extends GetxController {
         return;
       }
 
+      if (!user.hasLocation) {
+        Get.offAllNamed(Routes.locationAllow);
+        return;
+      }
+
       if (user.role == 'helper') {
-        // Check application status
+        // Step 1: Check if basic form is submitted
+        if (!user.isHelperFormSubmitted) {
+          Get.offAllNamed(Routes.applyAsHelper);
+          return;
+        }
+
+        // Step 2: Form submitted, check KYC status
         switch (user.helperApplicationStatus) {
           case 'approved':
             Get.offAllNamed(Routes.helperHome);
             break;
-          case 'pending':
           case 'pending_appeal':
             Get.offAllNamed(Routes.applicationPending);
             break;
           case 'rejected':
             Get.offAllNamed(Routes.applicationRejected);
             break;
-          default: // null — no application yet
-            Get.offAllNamed(Routes.applyAsHelper);
+          case 'pending':
+          default:
+            if (user.diditStatus == 'In Review') {
+              Get.offAllNamed(Routes.applicationPending);
+            } else {
+              Get.offAllNamed(Routes.helperKycVerification);
+            }
             break;
         }
       } else {

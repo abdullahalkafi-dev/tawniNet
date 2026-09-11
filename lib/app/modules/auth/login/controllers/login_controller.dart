@@ -26,10 +26,10 @@ class LoginController extends GetxController {
     if (isClosed) return;
 
     final user = authService.currentUser.value;
-    final hasLocation = user?.address != null && user!.address!.isNotEmpty;
+    final hasLocation = user?.hasLocation ?? false;
 
     if (hasLocation) {
-      _navigateToDestination(user!);
+      _navigateToDestination(user);
     } else {
       Get.offAllNamed(Routes.locationAllow);
     }
@@ -38,19 +38,28 @@ class LoginController extends GetxController {
   void _navigateToDestination(dynamic user) {
     if (isClosed) return;
     if (user.role == 'helper') {
+      if (user.isHelperFormSubmitted != true) {
+        Get.offAllNamed(Routes.applyAsHelper);
+        return;
+      }
+
       switch (user.helperApplicationStatus) {
         case 'approved':
           Get.offAllNamed(Routes.helperHome);
           return;
-        case 'pending':
         case 'pending_appeal':
           Get.offAllNamed(Routes.applicationPending);
           return;
         case 'rejected':
           Get.offAllNamed(Routes.applicationRejected);
           return;
+        case 'pending':
         default:
-          Get.offAllNamed(Routes.applyAsHelper);
+          if (user.diditStatus == 'In Review') {
+            Get.offAllNamed(Routes.applicationPending);
+          } else {
+            Get.offAllNamed(Routes.helperKycVerification);
+          }
           return;
       }
     }

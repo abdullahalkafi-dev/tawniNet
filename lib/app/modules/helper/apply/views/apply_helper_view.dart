@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/widgets/custom_button.dart';
@@ -22,7 +23,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
           onPressed: () => _showLogoutDialog(context),
         ),
         title: Text(
-          'apply_title'.tr,
+          'Helper Application',
           style: AppStyles.h2Of(context).copyWith(fontSize: 20),
         ),
         centerTitle: true,
@@ -34,40 +35,67 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
           children: [
             const SizedBox(height: 16),
             Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  'Step 1 of 2: Profile & Services',
+                  style: AppStyles.bodyMedium.copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Center(
               child: Text(
-                'apply_personal'.tr,
+                'Personal & Work Details',
                 textAlign: TextAlign.center,
                 style: AppStyles.h2Of(context).copyWith(
-                  fontSize: 24,
-                  color: AppColors.primary,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Center(
               child: Text(
-                'apply_subtitle'.tr,
+                'Please provide your service details. All information is saved securely before identity verification.',
                 textAlign: TextAlign.center,
-                style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 14),
+                style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 13),
               ),
             ),
             const SizedBox(height: 24),
             _buildAvatarSection(context),
             const SizedBox(height: 24),
-            _buildRequiredField(context, 'apply_full_name'.tr, 'apply_enter_name'.tr, controller.fullNameController, readOnly: true),
+            _buildRequiredField(context, 'Full Name', 'Enter your full name', controller.fullNameController, readOnly: true),
             const SizedBox(height: 16),
-            _buildRequiredField(context, 'apply_age'.tr, 'apply_enter_age'.tr, controller.ageController),
+            _buildRequiredField(
+              context,
+              'Age',
+              'Enter your age (13+)',
+              controller.ageController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(3),
+              ],
+            ),
             const SizedBox(height: 4),
             Text(
-              'apply_age_requirement'.tr,
+              'Must be 13 years or older to provide services',
               style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: context.textHintColor),
             ),
             const SizedBox(height: 16),
             _buildRequiredField(
               context,
-              'apply_city'.tr,
-              'apply_city_hint'.tr,
+              'Moroccan Postal Code',
+              '5-digit Postal Code (e.g. 20000)',
               controller.cityController,
               keyboardType: TextInputType.number,
               inputFormatters: [
@@ -76,43 +104,49 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
               ],
             ),
             const SizedBox(height: 16),
-            _buildRequiredField(context, 'apply_phone'.tr, '+212600000000', controller.phoneController, readOnly: true),
+            _buildRequiredField(context, 'Phone Number', '+212600000000', controller.phoneController, readOnly: true),
             const SizedBox(height: 16),
-            _buildRequiredField(context, 'apply_email'.tr, 'your.email@example.com', controller.emailController, readOnly: false, keyboardType: TextInputType.emailAddress),
+            _buildOptionalField(
+              context,
+              'Email Address',
+              'your.email@example.com',
+              controller.emailController,
+              keyboardType: TextInputType.emailAddress,
+            ),
             const SizedBox(height: 16),
             _buildDropdownField(
               context: context,
-              label: 'apply_language'.tr,
+              label: 'Language',
               value: controller.selectedLanguage,
               items: controller.languages,
             ),
             const SizedBox(height: 16),
             _buildCategoryDropdownField(
               context: context,
-              label: 'apply_service_type'.tr,
+              label: 'Service Category',
               selected: controller.selectedServiceType,
               categories: controller.categories,
             ),
             const SizedBox(height: 16),
             CustomTextField(
-              label: 'apply_price_hour'.tr,
-              hint: 'apply_set_price'.tr,
+              label: 'Hourly Rate (MAD) *',
+              hint: 'e.g. 100',
               controller: controller.priceController,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             ),
             const SizedBox(height: 16),
             CustomTextField(
-              label: 'apply_experience'.tr,
-              hint: 'apply_type_experience'.tr,
+              label: 'Experience (Years) *',
+              hint: 'e.g. 3',
               controller: controller.experienceController,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             ),
             const SizedBox(height: 16),
             CustomTextField(
-              label: 'apply_radius'.tr,
-              hint: 'apply_service_area'.tr,
+              label: 'Service Radius (km) *',
+              hint: 'e.g. 15',
               controller: controller.serviceRadiusController,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -122,7 +156,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'apply_bio'.tr,
+                  'Bio (Optional)',
                   style: AppStyles.bodyMediumOf(context).copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -130,11 +164,11 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
                 const SizedBox(height: 8),
                 TextField(
                   controller: controller.bioController,
-                  maxLines: 8,
-                  minLines: 5,
+                  maxLines: 5,
+                  minLines: 3,
                   style: TextStyle(color: context.textPrimaryColor),
                   decoration: InputDecoration(
-                    hintText: 'apply_enter_bio'.tr,
+                    hintText: 'Introduce yourself and your skills to clients...',
                     hintStyle: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
                     filled: true,
                     fillColor: context.inputFillColor,
@@ -157,27 +191,32 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
             ),
             const SizedBox(height: 20),
             _buildPhotoUploadSection(context),
-            const SizedBox(height: 20),
-            _buildDocumentUploadSection(context),
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
+
+            // Next: Verify Identity Button
             Obx(() => CustomButton(
-              text: controller.isLoading.value ? 'apply_submitting'.tr : 'apply_submit'.tr,
-              onPressed: controller.isLoading.value ? () {} : controller.submitApplication,
+              text: controller.isLoading.value
+                  ? 'Saving Information...'
+                  : 'Next: Verify Identity',
+              icon: const Icon(Icons.arrow_forward_rounded),
+              onPressed: controller.isLoading.value
+                  ? () {}
+                  : controller.submitFormStep,
             )),
             const SizedBox(height: 12),
             Row(
               children: [
-                Icon(Icons.lock_outline, size: 14, color: context.textHintColor),
+                Icon(Icons.shield_outlined, size: 14, color: context.textHintColor),
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'apply_safe_info'.tr,
+                    'Step 2 will require scanning your Moroccan CIN / Passport.',
                     style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: context.textSecondaryColor),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 36),
           ],
         ),
       ),
@@ -213,10 +252,10 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
               child: const Icon(Icons.power_settings_new, color: Colors.redAccent, size: 30),
             ),
             const SizedBox(height: 16),
-            Text('apply_logout_title'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 20)),
+            Text('Logout Confirmation', style: AppStyles.h2Of(context).copyWith(fontSize: 20)),
             const SizedBox(height: 8),
             Text(
-              'apply_logout_confirm'.tr,
+              'Are you sure you want to log out?',
               style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor),
               textAlign: TextAlign.center,
             ),
@@ -231,7 +270,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: Text('btn_cancel'.tr, style: AppStyles.buttonText.copyWith(color: AppColors.primary)),
+                    child: Text('Cancel', style: AppStyles.buttonText.copyWith(color: AppColors.primary)),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -246,7 +285,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: Text('apply_logout'.tr, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: const Text('Logout', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -261,7 +300,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
     BuildContext context,
     String label,
     String hint,
-    TextEditingController controller, {
+    TextEditingController textCtl, {
     bool readOnly = false,
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
@@ -285,7 +324,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
         ),
         const SizedBox(height: 8),
         TextFormField(
-          controller: controller,
+          controller: textCtl,
           readOnly: readOnly,
           keyboardType: keyboardType,
           inputFormatters: inputFormatters,
@@ -319,56 +358,134 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
     );
   }
 
+  Widget _buildOptionalField(
+    BuildContext context,
+    String label,
+    String hint,
+    TextEditingController textCtl, {
+    TextInputType? keyboardType,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppStyles.bodyMediumOf(context).copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: textCtl,
+          keyboardType: keyboardType,
+          style: TextStyle(color: context.textPrimaryColor),
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+            filled: true,
+            fillColor: context.inputFillColor,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: context.borderSubtle),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: context.borderSubtle),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.primary, width: 2),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildAvatarSection(BuildContext context) {
     return Center(
-      child: GestureDetector(
-        onTap: controller.pickProfilePhoto,
-        child: Stack(
-          children: [
-            Obx(() {
-              final photoPath = controller.profilePhotoPath.value;
-              return Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: context.cardColor, width: 3),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                    ),
-                  ],
-                ),
-                child: ClipOval(
-                  child: photoPath != null
-                      ? Image.file(
-                          File(photoPath),
-                          fit: BoxFit.cover,
-                          width: 100,
-                          height: 100,
-                        )
-                      : Container(
-                          color: context.inputFillLight,
-                          child: Icon(Icons.person, size: 40, color: context.textHintColor),
+      child: Column(
+        children: [
+          GestureDetector(
+            onTap: controller.pickProfilePhoto,
+            child: Stack(
+              children: [
+                Obx(() {
+                  final photoPath = controller.profilePhotoPath.value;
+                  final photoKey = controller.profilePhotoKey.value;
+
+                  ImageProvider? imageProvider;
+                  if (photoPath != null) {
+                    imageProvider = FileImage(File(photoPath));
+                  } else if (photoKey != null && photoKey.isNotEmpty) {
+                    final resolved = ApiConstants.resolveImageUrl(photoKey);
+                    if (resolved != null && resolved.isNotEmpty) {
+                      imageProvider = NetworkImage(resolved);
+                    }
+                  }
+
+                  return Container(
+                    width: 105,
+                    height: 105,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: context.cardColor, width: 4),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.12),
+                          blurRadius: 16,
+                          spreadRadius: 2,
                         ),
+                      ],
+                    ),
+                    child: ClipOval(
+                      child: imageProvider != null
+                          ? Image(
+                              image: imageProvider,
+                              fit: BoxFit.cover,
+                              width: 105,
+                              height: 105,
+                            )
+                          : Container(
+                              color: context.inputFillLight,
+                              child: Icon(Icons.person, size: 50, color: context.textHintColor),
+                            ),
+                    ),
+                  );
+                }),
+                Positioned(
+                  bottom: 2,
+                  right: 2,
+                  child: Container(
+                    padding: const EdgeInsets.all(7),
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
+                  ),
                 ),
-              );
-            }),
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.camera_alt, color: Colors.white, size: 16),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          RichText(
+            text: TextSpan(
+              text: 'Profile Photo ',
+              style: AppStyles.bodyMediumOf(context).copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+              children: const [
+                TextSpan(
+                  text: '*',
+                  style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -462,7 +579,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
               borderRadius: BorderRadius.circular(14),
               icon: Icon(Icons.keyboard_arrow_down_rounded, color: context.textSecondaryColor),
               hint: Text(
-                'apply_select_service'.tr,
+                'Select service category',
                 style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
               ),
               isExpanded: true,
@@ -499,8 +616,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
                           category.name,
                           style: TextStyle(
                             color: context.textPrimaryColor,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -509,8 +625,8 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
                   ),
                 );
               }).toList(),
-              onChanged: (Category? newValue) {
-                selected.value = newValue;
+              onChanged: (Category? newCategory) {
+                if (newCategory != null) selected.value = newCategory;
               },
             ),
           ),
@@ -519,48 +635,25 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
     );
   }
 
-  Widget _buildCategoryIcon(Category category, {double size = 18}) {
-    final iconUrl = category.resolvedIconUrl;
-    final isSvg = iconUrl != null && (iconUrl.toLowerCase().endsWith('.svg') || iconUrl.toLowerCase().contains('.svg'));
-    return Container(
-      width: size + 12,
-      height: size + 12,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: category.color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Center(
-        child: (iconUrl != null && iconUrl.isNotEmpty)
-            ? (isSvg
-                ? SvgPicture.network(
-                    iconUrl,
-                    width: size,
-                    height: size,
-                    placeholderBuilder: (_) => Icon(
-                      category.icon,
-                      size: size,
-                      color: category.color,
-                    ),
-                  )
-                : Image.network(
-                    iconUrl,
-                    width: size,
-                    height: size,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Icon(
-                      category.icon,
-                      size: size,
-                      color: category.color,
-                    ),
-                  ))
-            : Icon(
-                category.icon,
-                size: size,
-                color: category.color,
-              ),
-      ),
-    );
+  Widget _buildCategoryIcon(Category category, {double size = 20}) {
+    if (category.iconUrl != null && category.iconUrl!.isNotEmpty) {
+      if (category.iconUrl!.endsWith('.svg')) {
+        return SvgPicture.network(
+          category.iconUrl!,
+          width: size,
+          height: size,
+          colorFilter: ColorFilter.mode(category.color, BlendMode.srcIn),
+          placeholderBuilder: (context) => Icon(category.icon, size: size, color: category.color),
+        );
+      }
+      return Image.network(
+        category.iconUrl!,
+        width: size,
+        height: size,
+        errorBuilder: (context, error, stackTrace) => Icon(category.icon, size: size, color: category.color),
+      );
+    }
+    return Icon(category.icon, size: size, color: category.color);
   }
 
   Widget _buildPhotoUploadSection(BuildContext context) {
@@ -568,246 +661,97 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'helper_add_photos'.tr,
+          'Work Samples / Portfolio (Up to 5 photos)',
           style: AppStyles.bodyMediumOf(context).copyWith(
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 12),
-        Obx(() {
-          final photos = controller.selectedPhotoPaths;
-          return Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              // Add photo button
-              GestureDetector(
-                onTap: controller.pickPhotos,
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: context.inputFillColor,
-                    border: Border.all(color: context.borderSubtle, style: BorderStyle.solid),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: controller.isUploadingPhoto.value
-                      ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
-                      : Icon(Icons.camera_alt_outlined, color: context.textHintColor, size: 28),
-                ),
-              ),
-              // Photo thumbnails
-              ...photos.asMap().entries.map((entry) {
-                final index = entry.key;
-                final path = entry.value;
-                return Stack(
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        image: DecorationImage(
-                          image: FileImage(File(path)),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      top: 4,
-                      right: 4,
-                      child: GestureDetector(
-                        onTap: () => controller.removePhoto(index),
-                        child: Container(
-                          padding: const EdgeInsets.all(2),
-                          decoration: const BoxDecoration(
-                            color: Colors.redAccent,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.close, color: Colors.white, size: 14),
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              }),
-            ],
-          );
-        }),
-      ],
-    );
-  }
-
-  Widget _buildDocumentUploadSection(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Automated Didit KYC Card
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                const Color(0xFF0D9488).withOpacity(0.08),
-                const Color(0xFF0D9488).withOpacity(0.02),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF0D9488).withOpacity(0.3)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0D9488).withOpacity(0.12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.verified_user_outlined, color: Color(0xFF0D9488), size: 20),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Automated Moroccan ID Verification',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                        Text(
-                          'Fast biometric & Moroccan ID scan powered by Didit',
-                          style: TextStyle(fontSize: 12, color: context.textSecondaryColor),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Obx(() {
-                final isStarting = controller.isStartingKyc.value;
-                return SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: isStarting ? null : controller.launchDiditKyc,
-                    icon: isStarting
-                        ? const SizedBox(
-                            width: 14,
-                            height: 14,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Icon(Icons.camera_alt_outlined, size: 16, color: Colors.white),
-                    label: Text(
-                      isStarting ? 'Starting Session...' : 'Verify Moroccan ID with Didit',
-                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0D9488),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                  ),
-                );
-              }),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        _buildDropdownField(
-          context: context,
-          label: 'apply_upload_photo'.tr,
-          value: controller.selectedIdType,
-          items: controller.idTypes,
-        ),
-        const SizedBox(height: 12),
-        Obx(() {
-          final hasDoc = controller.documentPath.value != null;
-          if (hasDoc) {
-            return Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: context.inputFillColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: context.borderSubtle),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.description, color: AppColors.primary),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          controller.documentFileName.value ?? 'Document',
-                          style: AppStyles.bodyLargeOf(context).copyWith(fontSize: 14),
-                        ),
-                        Text(
-                          controller.documentFileSize.value ?? '',
-                          style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: context.textHintColor),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                    onPressed: controller.removeDocument,
-                  ),
-                ],
-              ),
-            );
-          }
-          return GestureDetector(
-            onTap: controller.pickDocument,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: context.cardColor,
-                border: Border.all(color: AppColors.primary, width: 1.5),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  const Icon(Icons.cloud_upload_outlined, size: 40, color: AppColors.primary),
-                  const SizedBox(height: 8),
-                  Text(
-                    'apply_upload_document'.tr,
-                    style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'apply_upload_hint'.tr,
-                    style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: context.textSecondaryColor),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: controller.pickDocument,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                    ),
-                    child: Text('apply_upload_btn'.tr, style: const TextStyle(color: Colors.white, fontSize: 14)),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }),
         const SizedBox(height: 8),
-        Text(
-          'apply_upload_desc'.tr,
-          style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: context.textHintColor),
-        ),
+        Obx(() {
+          final count = controller.selectedPhotoPaths.length + controller.uploadedPhotoKeys.length;
+          return Column(
+            children: [
+              if (count < 5)
+                GestureDetector(
+                  onTap: controller.pickPhotos,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    decoration: BoxDecoration(
+                      color: context.inputFillColor,
+                      border: Border.all(color: context.borderSubtle),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(Icons.add_photo_alternate_outlined, size: 36, color: context.textHintColor),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Upload Work Photos ($count/5)',
+                          style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              if (count > 0) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 90,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: count,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final isUploaded = index < controller.uploadedPhotoKeys.length;
+                      return Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: isUploaded
+                                ? Image.network(
+                                    ApiConstants.resolveImageUrl(controller.uploadedPhotoKeys[index]) ?? '',
+                                    width: 90,
+                                    height: 90,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(
+                                      width: 90,
+                                      height: 90,
+                                      color: context.inputFillLight,
+                                      child: const Icon(Icons.broken_image),
+                                    ),
+                                  )
+                                : Image.file(
+                                    File(controller.selectedPhotoPaths[index - controller.uploadedPhotoKeys.length]),
+                                    width: 90,
+                                    height: 90,
+                                    fit: BoxFit.cover,
+                                  ),
+                          ),
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: GestureDetector(
+                              onTap: () => controller.removePhoto(index),
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: Colors.redAccent,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.close, size: 12, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ],
+          );
+        }),
       ],
     );
   }

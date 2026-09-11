@@ -35,6 +35,7 @@ import '../modules/booking/views/cancel_details_view.dart';
 import '../modules/messages/views/chat_detail_view.dart';
 import '../modules/profile/views/edit_profile_view.dart';
 import '../modules/profile/views/notification_settings_view.dart';
+import '../modules/wallet/views/wallet_view.dart';
 
 // Helper module imports
 import '../modules/helper/location/bindings/location_binding.dart';
@@ -42,6 +43,7 @@ import '../modules/helper/location/views/location_allow_view.dart';
 import '../modules/helper/location/views/manual_location_view.dart';
 import '../modules/helper/apply/bindings/apply_helper_binding.dart';
 import '../modules/helper/apply/views/apply_helper_view.dart';
+import '../modules/helper/apply/views/helper_kyc_view.dart';
 import '../modules/helper/apply/views/application_pending_view.dart';
 import '../modules/helper/apply/views/application_rejected_view.dart';
 import '../modules/helper/helper_home/bindings/helper_home_binding.dart';
@@ -68,6 +70,8 @@ import '../modules/helper/settings/views/help_center_view.dart';
 import '../modules/helper/settings/views/privacy_policy_view.dart';
 import '../modules/helper/settings/views/about_us_view.dart';
 import '../modules/helper/settings/views/customer_service_view.dart';
+import '../modules/helper/settings/views/support_ticket_list_view.dart';
+import '../modules/home/views/user_customer_service_view.dart';
 import '../modules/helper/helper_messages/bindings/helper_messages_binding.dart';
 import '../modules/helper/helper_messages/views/helper_chat_detail_view.dart';
 
@@ -216,6 +220,13 @@ class AppPages {
       transition: Transition.rightToLeft,
       middlewares: [AuthMiddleware()],
     ),
+    GetPage(
+      name: Routes.wallet,
+      page: () => const WalletView(),
+      binding: HomeBinding(),
+      transition: Transition.rightToLeft,
+      middlewares: [AuthMiddleware()],
+    ),
 
     // Helper routes
     GetPage(
@@ -233,6 +244,12 @@ class AppPages {
     GetPage(
       name: Routes.applyAsHelper,
       page: () => const ApplyHelperView(),
+      binding: ApplyHelperBinding(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.helperKycVerification,
+      page: () => const HelperKycView(),
       binding: ApplyHelperBinding(),
       transition: Transition.rightToLeft,
     ),
@@ -384,6 +401,20 @@ class AppPages {
     GetPage(
       name: Routes.customerService,
       page: () => const CustomerServiceView(),
+      binding: HelperSettingsBinding(),
+      transition: Transition.rightToLeft,
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: Routes.supportTicketList,
+      page: () => const SupportTicketListView(),
+      binding: HelperSettingsBinding(),
+      transition: Transition.rightToLeft,
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: Routes.userCustomerService,
+      page: () => const UserCustomerServiceView(),
       binding: HelperSettingsBinding(),
       transition: Transition.rightToLeft,
       middlewares: [AuthMiddleware()],

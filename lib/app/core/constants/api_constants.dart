@@ -87,6 +87,7 @@ class ApiConstants {
   static const String helperApply = '/user/helper/apply';
   static const String helperAppeal = '/user/helper/appeal';
   static const String helperApplicationStatus = '/user/helper/application-status';
+  static const String deviceToken = '/user/device-token';
 
   // ─── Categories ─────────────────────────────────────────
   static const String categories = '/categories';
@@ -104,13 +105,25 @@ class ApiConstants {
   // ─── Jobs ───────────────────────────────────────────────
   static const String jobs = '/jobs';
   static const String jobsNearby = '/jobs/nearby';
+  static const String jobsMyBookings = '/jobs/my-bookings';
+  static const String jobsMyAssigned = '/jobs/my-assigned-jobs';
   static String jobById(String id) => '/jobs/$id';
   static String acceptJob(String id) => '/jobs/$id/accept';
+  static String completeJob(String id) => '/jobs/$id/complete';
+  static String cancelJob(String id) => '/jobs/$id/cancel';
+  static String jobCheckout(String id) => '/jobs/$id/checkout';
 
   // ─── Wallet & Payment ────────────────────────────────────
   static const String walletBalance = '/wallet/balance';
+  static const String walletTransactions = '/wallet/transactions';
   static const String walletTopup = '/wallet/topup';
   static const String paymentInitialize = '/payment/initialize';
+
+  // ─── Notifications ──────────────────────────────────────
+  static const String notifications = '/notifications';
+  static const String notificationsUnread = '/notifications/unread-count';
+  static const String notificationsReadAll = '/notifications/read-all';
+  static String notificationRead(String id) => '/notifications/$id/read';
 
   // ─── Support ─────────────────────────────────────────────
   static const String supportTickets = '/support/tickets';

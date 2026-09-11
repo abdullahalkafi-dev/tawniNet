@@ -3,6 +3,7 @@ import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/services/wallet_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 
 class EarningView extends StatefulWidget {
   const EarningView({super.key});
@@ -13,6 +14,7 @@ class EarningView extends StatefulWidget {
 
 class _EarningViewState extends State<EarningView> {
   double balance = 0.0;
+  List<Map<String, dynamic>> transactions = [];
   bool isLoading = true;
 
   @override
@@ -28,12 +30,61 @@ class _EarningViewState extends State<EarningView> {
       if (mounted) {
         setState(() {
           balance = (res['balance'] as num?)?.toDouble() ?? 0.0;
+          transactions = (res['transactions'] as List<dynamic>?)
+                  ?.map((e) => Map<String, dynamic>.from(e as Map))
+                  .toList() ??
+              [];
           isLoading = false;
         });
       }
     } catch (_) {
       if (mounted) setState(() => isLoading = false);
     }
+  }
+
+  String _formatDate(dynamic createdAt) {
+    if (createdAt == null) return '';
+    try {
+      final date = DateTime.parse(createdAt.toString());
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final dateOnly = DateTime(date.year, date.month, date.day);
+      if (dateOnly == today) return 'Today';
+      if (dateOnly == today.subtract(const Duration(days: 1))) return 'Yesterday';
+      return DateFormat('MMM d').format(date);
+    } catch (_) {
+      return '';
+    }
+  }
+
+  String _getActivityLabel(String type) {
+    switch (type) {
+      case 'commission_deduction':
+        return 'Platform Fee';
+      case 'commission_refund':
+        return 'Fee Refund';
+      case 'earning_payout':
+        return 'Job Earning';
+      default:
+        return 'Transaction';
+    }
+  }
+
+  String _getMethodLabel(String type) {
+    switch (type) {
+      case 'commission_deduction':
+        return 'Platform Fee';
+      case 'commission_refund':
+        return 'Refund';
+      case 'earning_payout':
+        return 'Job Payout';
+      default:
+        return 'Other';
+    }
+  }
+
+  bool _isRevenue(String type) {
+    return type == 'commission_refund' || type == 'earning_payout';
   }
 
   @override
@@ -65,14 +116,14 @@ class _EarningViewState extends State<EarningView> {
                         AppStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold),
                     tabs: [
                       Tab(text: 'earning_revenue'.tr),
-                      Tab(text: 'earning_withdrawals'.tr),
+                      Tab(text: 'earning_fees'.tr),
                     ],
                   ),
                   Expanded(
                     child: TabBarView(
                       children: [
                         _buildRevenueTable(context),
-                        _buildWithdrawalsTable(context),
+                        _buildFeesTable(context),
                       ],
                     ),
                   ),
@@ -83,36 +134,59 @@ class _EarningViewState extends State<EarningView> {
   }
 
   Widget _buildRevenueTable(BuildContext context) {
-    final records = [
-      {
-        'date': 'Today',
-        'activity': 'Earning',
-        'method': 'Online',
-        'from': 'Commission',
-        'amount': '+MAD ${balance.toStringAsFixed(2)}',
-        'isWithdrawal': false,
-      },
-    ];
+    final revenueTransactions = transactions.where((t) {
+      final type = (t['type'] ?? '').toString();
+      return _isRevenue(type);
+    }).toList();
+
+    if (revenueTransactions.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Text(
+            'earning_no_revenue'.tr,
+            style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+          ),
+        ),
+      );
+    }
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
           _buildTableHeader(context),
-          ...records.map((r) => _buildTableRow(context, r)),
+          ...revenueTransactions.map((t) => _buildTableRow(context, t)),
         ],
       ),
     );
   }
 
-  Widget _buildWithdrawalsTable(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Text(
-          'No withdrawal records found.',
-          style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+  Widget _buildFeesTable(BuildContext context) {
+    final feeTransactions = transactions.where((t) {
+      final type = (t['type'] ?? '').toString();
+      return type == 'commission_deduction';
+    }).toList();
+
+    if (feeTransactions.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Text(
+            'earning_no_fees'.tr,
+            style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+          ),
         ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          _buildTableHeader(context),
+          ...feeTransactions.map((t) => _buildTableRow(context, t)),
+        ],
       ),
     );
   }
@@ -155,8 +229,12 @@ class _EarningViewState extends State<EarningView> {
     );
   }
 
-  Widget _buildTableRow(BuildContext context, Map record) {
-    final isWithdrawal = record['isWithdrawal'] == true;
+  Widget _buildTableRow(BuildContext context, Map<String, dynamic> record) {
+    final type = (record['type'] ?? '').toString();
+    final amount = (record['amount'] as num?)?.toDouble() ?? 0.0;
+    final description = (record['description'] ?? '').toString();
+    final isCredit = _isRevenue(type);
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
@@ -166,28 +244,34 @@ class _EarningViewState extends State<EarningView> {
         children: [
           Expanded(
             flex: 2,
-            child: Text(record['date'], style: TextStyle(fontSize: 12, color: context.textPrimaryColor)),
+            child: Text(_formatDate(record['createdAt']),
+                style: TextStyle(fontSize: 12, color: context.textPrimaryColor)),
           ),
           Expanded(
             flex: 2,
-            child: Text(record['activity'], style: TextStyle(fontSize: 12, color: context.textPrimaryColor)),
+            child: Text(_getActivityLabel(type),
+                style: TextStyle(fontSize: 12, color: context.textPrimaryColor)),
           ),
           Expanded(
             flex: 3,
-            child: Text(record['method'], style: TextStyle(fontSize: 12, color: context.textPrimaryColor)),
+            child: Text(_getMethodLabel(type),
+                style: TextStyle(fontSize: 12, color: context.textPrimaryColor)),
           ),
           Expanded(
             flex: 2,
-            child: Text(record['from'], style: TextStyle(fontSize: 12, color: context.textPrimaryColor)),
+            child: Text(description.isNotEmpty ? description : '—',
+                style: TextStyle(fontSize: 12, color: context.textHintColor),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis),
           ),
           Expanded(
             flex: 2,
             child: Text(
-              record['amount'],
+              '${isCredit ? '+' : '-'}MAD ${amount.toStringAsFixed(2)}',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
-                color: isWithdrawal ? Colors.red : Colors.green[600],
+                color: isCredit ? Colors.green[600] : Colors.red,
               ),
             ),
           ),

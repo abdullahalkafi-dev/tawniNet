@@ -12,6 +12,10 @@ class SocketService extends GetxService {
 
   IO.Socket? _socket;
 
+  // Rooms to re-join after reconnect
+  final Set<String> _joinedConversations = {};
+  final Set<String> _joinedSupportTickets = {};
+
   // Broadcast streams — multiple listeners can subscribe
   final _messageController = StreamController<ChatMessage>.broadcast();
   final _typingStartController = StreamController<Map<String, String>>.broadcast();
@@ -19,6 +23,12 @@ class SocketService extends GetxService {
   final _readController = StreamController<Map<String, dynamic>>.broadcast();
   final _presenceController = StreamController<Map<String, dynamic>>.broadcast();
   final _offerUpdateController = StreamController<Map<String, dynamic>>.broadcast();
+  final _newNearbyJobController = StreamController<Map<String, dynamic>>.broadcast();
+  final _jobAcceptedController = StreamController<Map<String, dynamic>>.broadcast();
+  final _jobCompletedController = StreamController<Map<String, dynamic>>.broadcast();
+  final _jobCancelledController = StreamController<Map<String, dynamic>>.broadcast();
+  final _walletTopupController = StreamController<Map<String, dynamic>>.broadcast();
+  final _supportMessageController = StreamController<Map<String, dynamic>>.broadcast();
 
   // Public streams
   Stream<ChatMessage> get onNewMessage => _messageController.stream;
@@ -27,6 +37,12 @@ class SocketService extends GetxService {
   Stream<Map<String, dynamic>> get onMessagesRead => _readController.stream;
   Stream<Map<String, dynamic>> get onPresenceUpdate => _presenceController.stream;
   Stream<Map<String, dynamic>> get onOfferUpdate => _offerUpdateController.stream;
+  Stream<Map<String, dynamic>> get onNewNearbyJob => _newNearbyJobController.stream;
+  Stream<Map<String, dynamic>> get onJobAccepted => _jobAcceptedController.stream;
+  Stream<Map<String, dynamic>> get onJobCompleted => _jobCompletedController.stream;
+  Stream<Map<String, dynamic>> get onJobCancelled => _jobCancelledController.stream;
+  Stream<Map<String, dynamic>> get onWalletTopupSuccess => _walletTopupController.stream;
+  Stream<Map<String, dynamic>> get onSupportMessage => _supportMessageController.stream;
   IO.Socket? get socket => _socket;
 
   /// Connect to the socket server with JWT token.
@@ -59,6 +75,7 @@ class SocketService extends GetxService {
     _socket?.onConnect((_) {
       isConnected.value = true;
       isConnecting.value = false;
+      _rejoinRooms();
     });
 
     _socket?.onDisconnect((_) {
@@ -72,6 +89,7 @@ class SocketService extends GetxService {
 
     _socket?.onReconnect((_) {
       isConnected.value = true;
+      _rejoinRooms();
     });
 
     _setupChatListeners();
@@ -114,7 +132,47 @@ class SocketService extends GetxService {
     });
 
     _socket?.on('chat:offer-update', (data) {
-      _offerUpdateController.add(data);
+      if (data is Map<String, dynamic>) {
+        _offerUpdateController.add(data);
+      }
+    });
+
+    _socket?.on('job:new_nearby', (data) {
+      if (data is Map<String, dynamic>) {
+        _newNearbyJobController.add(data);
+      }
+    });
+
+    _socket?.on('job:accepted', (data) {
+      if (data is Map<String, dynamic>) {
+        _jobAcceptedController.add(data);
+      }
+    });
+
+    _socket?.on('job:completed', (data) {
+      if (data is Map<String, dynamic>) {
+        _jobCompletedController.add(data);
+      }
+    });
+
+    _socket?.on('job:cancelled', (data) {
+      if (data is Map<String, dynamic>) {
+        _jobCancelledController.add(data);
+      }
+    });
+
+    _socket?.on('wallet:topup_success', (data) {
+      if (data is Map<String, dynamic>) {
+        _walletTopupController.add(data);
+      }
+    });
+
+    _socket?.on('support:message', (data) {
+      if (data is Map<String, dynamic>) {
+        _supportMessageController.add(data);
+      } else if (data is Map) {
+        _supportMessageController.add(Map<String, dynamic>.from(data));
+      }
     });
   }
 
@@ -125,10 +183,19 @@ class SocketService extends GetxService {
     _socket?.off('chat:read');
     _socket?.off('presence:update');
     _socket?.off('chat:offer-update');
+    _socket?.off('job:new_nearby');
+    _socket?.off('job:accepted');
+    _socket?.off('job:completed');
+    _socket?.off('job:cancelled');
+    _socket?.off('wallet:topup_success');
+    _socket?.off('support:message');
   }
 
   /// Disconnect from the socket server.
+  /// Clears joined rooms so the next login cannot re-join the previous user's chats.
   void disconnect() {
+    _joinedConversations.clear();
+    _joinedSupportTickets.clear();
     _socket?.disconnect();
     _socket?.dispose();
     _socket = null;
@@ -136,13 +203,26 @@ class SocketService extends GetxService {
     isConnecting.value = false;
   }
 
+  /// Re-join tracked rooms after reconnect (Socket.IO forgets membership).
+  void _rejoinRooms() {
+    for (final id in _joinedConversations) {
+      _socket?.emit('chat:join', {'conversationId': id});
+    }
+    for (final id in _joinedSupportTickets) {
+      _socket?.emit('support:join', {'ticketId': id});
+    }
+  }
+
   /// Join a conversation room.
   void joinConversation(String conversationId) {
+    if (conversationId.isEmpty) return;
+    _joinedConversations.add(conversationId);
     _socket?.emit('chat:join', {'conversationId': conversationId});
   }
 
   /// Leave a conversation room.
   void leaveConversation(String conversationId) {
+    _joinedConversations.remove(conversationId);
     _socket?.emit('chat:leave', {'conversationId': conversationId});
   }
 
@@ -181,6 +261,19 @@ class SocketService extends GetxService {
     });
   }
 
+  /// Join a support ticket room.
+  void joinSupportRoom(String ticketId) {
+    if (ticketId.isEmpty) return;
+    _joinedSupportTickets.add(ticketId);
+    _socket?.emit('support:join', {'ticketId': ticketId});
+  }
+
+  /// Leave a support ticket room.
+  void leaveSupportRoom(String ticketId) {
+    _joinedSupportTickets.remove(ticketId);
+    _socket?.emit('support:leave', {'ticketId': ticketId});
+  }
+
   @override
   void onClose() {
     disconnect();
@@ -190,6 +283,12 @@ class SocketService extends GetxService {
     _readController.close();
     _presenceController.close();
     _offerUpdateController.close();
+    _newNearbyJobController.close();
+    _jobAcceptedController.close();
+    _jobCompletedController.close();
+    _jobCancelledController.close();
+    _walletTopupController.close();
+    _supportMessageController.close();
     super.onClose();
   }
 }

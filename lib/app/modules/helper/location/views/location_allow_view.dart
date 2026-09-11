@@ -19,8 +19,13 @@ class LocationAllowView extends GetView<LocationController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+      },
+      child: Scaffold(
+        body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 30),
           child: Column(
@@ -96,6 +101,7 @@ class LocationAllowView extends GetView<LocationController> {
           ),
         ),
       ),
+    ),
     );
   }
 }

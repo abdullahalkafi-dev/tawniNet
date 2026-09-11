@@ -1,5 +1,6 @@
 import 'package:awnneaapp/app/modules/home/controllers/home_controller.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
+import 'package:awnneaapp/app/services/notification_badge_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -59,7 +60,12 @@ class HomeHeader extends GetView<HomeController> {
         ),
         const Spacer(),
         GestureDetector(
-          onTap: controller.onNotificationTap,
+          onTap: () {
+            controller.onNotificationTap();
+            if (Get.isRegistered<NotificationBadgeController>()) {
+              Get.find<NotificationBadgeController>().refresh();
+            }
+          },
           child: Stack(
             children: [
               Container(
@@ -76,18 +82,31 @@ class HomeHeader extends GetView<HomeController> {
               Positioned(
                 right: 2,
                 top: 2,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: context.cardColor, width: 1.5),
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 10,
-                    minHeight: 10,
-                  ),
-                ),
+                child: Obx(() {
+                  final count = Get.isRegistered<NotificationBadgeController>()
+                      ? Get.find<NotificationBadgeController>().unread.value
+                      : 0;
+                  // No badge when everything is read (same as helper home).
+                  if (count <= 0) return const SizedBox.shrink();
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: context.cardColor, width: 1.5),
+                    ),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    child: Text(
+                      count > 99 ? '99+' : '$count',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  );
+                }),
               ),
             ],
           ),

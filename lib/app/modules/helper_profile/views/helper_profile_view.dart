@@ -1,5 +1,7 @@
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/modules/messages/views/widgets/image_viewer_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -225,7 +227,14 @@ class HelperProfileView extends GetView<HelperProfileController> {
   }
 
   Widget _buildPhotos(BuildContext context, dynamic helper) {
-    final photos = helper.profilePhotos ?? [];
+    final rawPhotos = helper.profilePhotos;
+    final photoUrls = <String>[];
+    if (rawPhotos is List) {
+      for (final p in rawPhotos) {
+        final s = p?.toString() ?? '';
+        if (s.isNotEmpty && s != 'null') photoUrls.add(s);
+      }
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,7 +244,7 @@ class HelperProfileView extends GetView<HelperProfileController> {
           style: AppStyles.h2Of(context).copyWith(fontSize: 20),
         ),
         const SizedBox(height: 16),
-        if (photos.isEmpty)
+        if (photoUrls.isEmpty)
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 24),
@@ -263,19 +272,30 @@ class HelperProfileView extends GetView<HelperProfileController> {
               crossAxisSpacing: 12,
               childAspectRatio: 1.2,
             ),
-            itemCount: photos.length,
+            itemCount: photoUrls.length,
             itemBuilder: (context, index) {
-              return ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.network(
-                  photos[index],
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: context.inputFillLight,
-                      child: Icon(Icons.broken_image, color: context.textHintColor),
-                    );
-                  },
+              return GestureDetector(
+                onTap: () {
+                  Get.to(
+                    () => ImageViewerScreen(
+                      imageUrls: photoUrls,
+                      initialIndex: index.clamp(0, photoUrls.length - 1).toInt(),
+                    ),
+                  );
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    ApiConstants.resolveImageUrl(photoUrls[index]) ??
+                        photoUrls[index],
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: context.inputFillLight,
+                        child: Icon(Icons.broken_image, color: context.textHintColor),
+                      );
+                    },
+                  ),
                 ),
               );
             },

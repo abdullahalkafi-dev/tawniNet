@@ -1,14 +1,18 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/storage_service.dart';
 import 'package:awnneaapp/app/services/role_service.dart';
 import 'package:awnneaapp/app/services/socket_service.dart';
 import 'package:awnneaapp/app/services/refetch_service.dart';
+import 'package:awnneaapp/app/services/notification_service.dart';
+import 'package:awnneaapp/app/services/notification_badge_controller.dart';
 import 'package:awnneaapp/app/modules/messages/controllers/messages_controller.dart';
 import 'package:awnneaapp/app/data/models/auth_model.dart';
 import 'package:awnneaapp/app/modules/home/controllers/home_controller.dart';
 import 'package:awnneaapp/app/modules/helper/helper_home/controllers/helper_home_controller.dart';
 import 'package:awnneaapp/app/modules/helper/helper_jobs/controllers/helper_jobs_controller.dart';
+import 'package:awnneaapp/app/modules/helper/settings/controllers/customer_service_controller.dart';
 import 'package:awnneaapp/app/modules/profile/controllers/profile_controller.dart';
 import 'package:awnneaapp/app/modules/booking/controllers/booking_controller.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
@@ -229,6 +233,18 @@ class AuthService extends GetxService {
     throw Exception(response.message ?? 'Failed to sync verification decision');
   }
 
+  Future<void> updateProfile(Map<String, dynamic> data) async {
+    final response = await _api.patch(
+      ApiConstants.userMe,
+      data: data,
+    );
+    if (response.success) {
+      await getMe();
+      return;
+    }
+    throw Exception(response.message ?? 'Failed to update profile');
+  }
+
   // ─── Submit Rejection Appeal ─────────────────────────────
 
   Future<void> submitAppeal(String message) async {
@@ -368,72 +384,112 @@ class AuthService extends GetxService {
 
   // ─── Logout ─────────────────────────────────────────────
 
+  static bool _loggingOut = false;
+
   Future<void> logout() async {
-    // 1. Disconnect socket
+    if (_loggingOut) return;
+    _loggingOut = true;
+    try {
+      await _performLogout();
+    } finally {
+      _loggingOut = false;
+    }
+  }
+
+  Future<void> _performLogout() async {
+    // 0. Unregister FCM (best-effort, short timeout) — before clearing tokens
+    try {
+      if (Get.isRegistered<NotificationService>()) {
+        await Get.find<NotificationService>()
+            .clearOnBackend()
+            .timeout(const Duration(seconds: 4));
+        Get.find<NotificationService>().clearSessionState();
+      }
+    } catch (_) {}
+
+    // 0b. Reset unread badge so the next login does not show the old count
+    try {
+      if (Get.isRegistered<NotificationBadgeController>()) {
+        Get.find<NotificationBadgeController>().clear();
+      }
+    } catch (_) {}
+
+    // 1. Leave support rooms / drop socket
+    try {
+      if (Get.isRegistered<CustomerServiceController>()) {
+        Get.find<CustomerServiceController>().clearSelection();
+      }
+    } catch (_) {}
     try {
       if (Get.isRegistered<SocketService>()) {
         Get.find<SocketService>().disconnect();
       }
     } catch (_) {}
 
-    // 2. Clear messages and refetch listeners
+    // 2. Clear in-memory session data WITHOUT deleting controllers
+    //    that mounted views still depend on (HelperHomeView etc.).
+    //    Deleting while the tree is dirty causes:
+    //    "HelperHomeController" not found during Obx rebuild.
     try {
       if (Get.isRegistered<MessagesController>()) {
         Get.find<MessagesController>().clear();
       }
     } catch (_) {}
-
     try {
       if (Get.isRegistered<RefetchService>()) {
         Get.find<RefetchService>().clear();
       }
     } catch (_) {}
-
-    // 3. Clear ProfileController data and delete instance
     try {
       if (Get.isRegistered<ProfileController>()) {
         Get.find<ProfileController>().clear();
-        Get.delete<ProfileController>(force: true);
       }
     } catch (_) {}
-
-    // 4. Delete Helper-specific controllers
     try {
-      if (Get.isRegistered<HelperHomeController>()) {
-        Get.delete<HelperHomeController>(force: true);
+      if (Get.isRegistered<CustomerServiceController>()) {
+        final c = Get.find<CustomerServiceController>();
+        c.clearSelection();
+        c.tickets.clear();
+        c.messages.clear();
       }
     } catch (_) {}
 
-    try {
-      if (Get.isRegistered<HelperJobsController>()) {
-        Get.delete<HelperJobsController>(force: true);
-      }
-    } catch (_) {}
-
-    // 5. Delete Client-specific controllers
-    try {
-      if (Get.isRegistered<HomeController>()) {
-        Get.delete<HomeController>(force: true);
-      }
-    } catch (_) {}
-
-    try {
-      if (Get.isRegistered<BookingController>()) {
-        Get.delete<BookingController>(force: true);
-      }
-    } catch (_) {}
-
-    // 6. Reset auth state
+    // 3. Reset auth flags + storage first so any late API is unauthorized safely
     currentUser.value = null;
     isLoggedIn.value = false;
     isEmailVerified.value = false;
-    _roleService.clearRole();
+    try {
+      _roleService.clearRole();
+    } catch (_) {}
+    try {
+      await _storage.clearAuthData();
+    } catch (_) {}
 
-    // 7. Clear user tokens & JSON without wiping language/theme settings
-    await _storage.clearAuthData();
+    // 4. Leave authenticated stack FIRST (unmounts HelperHomeView, etc.)
+    try {
+      Get.offAllNamed(Routes.roleSelection);
+    } catch (_) {
+      try {
+        Get.offAllNamed(Routes.login);
+      } catch (_) {}
+    }
 
-    // 8. Route to role selection cleanly
-    Get.offAllNamed(Routes.roleSelection);
+    // 5. Tear down role-specific controllers AFTER the old routes are gone
+    Future<void>.delayed(const Duration(milliseconds: 350), () {
+      void tryDelete<T>() {
+        try {
+          if (Get.isRegistered<T>()) {
+            Get.delete<T>(force: true);
+          }
+        } catch (_) {}
+      }
+
+      tryDelete<ProfileController>();
+      tryDelete<HelperHomeController>();
+      tryDelete<HelperJobsController>();
+      tryDelete<HomeController>();
+      tryDelete<BookingController>();
+    });
   }
 
   // ─── Internal Helpers ───────────────────────────────────
@@ -471,5 +527,32 @@ class AuthService extends GetxService {
         socketService.connect(token);
       }
     } catch (_) {}
+
+    // Register FCM device token for push notifications (user + helper)
+    Future<void> tryRegisterFcm(String label) async {
+      try {
+        debugPrint('[FCM] $label — registering device token...');
+        final ready = await NotificationService.ensureFirebase();
+        if (!ready) {
+          debugPrint('[FCM] $label — Firebase not ready');
+          return;
+        }
+        if (!Get.isRegistered<NotificationService>()) {
+          debugPrint('[FCM] NotificationService missing — creating + init');
+          final ns = NotificationService();
+          Get.put(ns, permanent: true);
+          await ns.init();
+        }
+        await Get.find<NotificationService>().registerWithBackend();
+        debugPrint('[FCM] $label — registerWithBackend finished');
+      } catch (e) {
+        debugPrint('[FCM] $label — register failed: $e');
+      }
+    }
+
+    await tryRegisterFcm('login-immediate');
+    // Retry shortly after — Firebase token can be ready a beat after first login frame
+    Future<void>.delayed(const Duration(seconds: 2), () => tryRegisterFcm('login+2s'));
+    Future<void>.delayed(const Duration(seconds: 6), () => tryRegisterFcm('login+6s'));
   }
 }

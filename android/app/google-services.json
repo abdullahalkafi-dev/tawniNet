@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "906405287310",
+    "project_id": "tarik-test-notification",
+    "storage_bucket": "tarik-test-notification.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:906405287310:android:bd3220459b7606584a40df",
+        "android_client_info": {
+          "package_name": "com.example.awnneaapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyt2cjcHTE33-XnWXXcAKeqFXfLsmlNiY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

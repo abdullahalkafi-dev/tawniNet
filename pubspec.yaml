@@ -38,6 +38,7 @@ dependencies:
   google_fonts: ^6.2.1
   flutter_svg: ^2.3.0
   image_picker: ^1.2.2
+  intl: any
 
   # API & Storage
   dio: ^5.4.0
@@ -47,6 +48,11 @@ dependencies:
   video_compress: ^3.1.4
   path_provider: ^2.1.2
   url_launcher: ^6.2.5
+
+  # Push notifications (FCM)
+  firebase_core: ^3.8.0
+  firebase_messaging: ^15.1.5
+  flutter_local_notifications: ^18.0.1
 
   # Location
   geolocator: ^13.0.1

@@ -13,6 +13,8 @@ class EarningSummaryView extends StatefulWidget {
 
 class _EarningSummaryViewState extends State<EarningSummaryView> {
   double balance = 0.0;
+  double jobEarnings = 0.0;
+  double platformFees = 0.0;
   bool isLoading = true;
 
   @override
@@ -26,8 +28,27 @@ class _EarningSummaryViewState extends State<EarningSummaryView> {
       final walletService = Get.find<WalletService>();
       final res = await walletService.getWalletBalance();
       if (mounted) {
+        final transactions = (res['transactions'] as List<dynamic>?)
+                ?.map((e) => Map<String, dynamic>.from(e as Map))
+                .toList() ??
+            [];
+
+        double earnings = 0.0;
+        double fees = 0.0;
+        for (final t in transactions) {
+          final type = (t['type'] ?? '').toString();
+          final amount = (t['amount'] as num?)?.toDouble() ?? 0.0;
+          if (type == 'earning_payout' || type == 'commission_refund') {
+            earnings += amount;
+          } else if (type == 'commission_deduction') {
+            fees += amount.abs();
+          }
+        }
+
         setState(() {
           balance = (res['balance'] as num?)?.toDouble() ?? 0.0;
+          jobEarnings = earnings;
+          platformFees = fees;
           isLoading = false;
         });
       }
@@ -39,8 +60,6 @@ class _EarningSummaryViewState extends State<EarningSummaryView> {
   @override
   Widget build(BuildContext context) {
     final formattedBalance = 'MAD ${balance.toStringAsFixed(2)}';
-    final onlineEarnings = 'MAD ${(balance * 0.75).toStringAsFixed(2)}';
-    final offlineEarnings = 'MAD ${(balance * 0.25).toStringAsFixed(2)}';
 
     return Scaffold(
       appBar: AppBar(
@@ -68,16 +87,16 @@ class _EarningSummaryViewState extends State<EarningSummaryView> {
                       Expanded(
                         child: _buildEarningTypeCard(
                           context,
-                          'earning_online_earnings'.tr,
-                          onlineEarnings,
+                          'earning_job_earnings'.tr,
+                          'MAD ${jobEarnings.toStringAsFixed(2)}',
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _buildEarningTypeCard(
                           context,
-                          'earning_offline_earnings'.tr,
-                          offlineEarnings,
+                          'earning_platform_fees'.tr,
+                          'MAD ${platformFees.toStringAsFixed(2)}',
                         ),
                       ),
                     ],
@@ -90,7 +109,7 @@ class _EarningSummaryViewState extends State<EarningSummaryView> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: _buildStatCard(context, 'earning_withdrawals'.tr, '0'),
+                        child: _buildStatCard(context, 'earning_fees'.tr, 'MAD ${platformFees.toStringAsFixed(2)}'),
                       ),
                     ],
                   ),

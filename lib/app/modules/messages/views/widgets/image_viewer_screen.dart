@@ -1,3 +1,4 @@
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/media_downloader.dart';
@@ -47,12 +48,15 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
               setState(() => _currentIndex = index);
             },
             itemBuilder: (context, index) {
+              final resolved =
+                  ApiConstants.resolveImageUrl(widget.imageUrls[index]) ??
+                      widget.imageUrls[index];
               return InteractiveViewer(
                 minScale: 0.5,
                 maxScale: 4.0,
                 child: Center(
                   child: Image.network(
-                    widget.imageUrls[index],
+                    resolved,
                     fit: BoxFit.contain,
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
@@ -105,7 +109,9 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
               child: IconButton(
                 icon: const Icon(Icons.download, color: Colors.white),
                 onPressed: () {
-                  final url = widget.imageUrls[_currentIndex];
+                  final url = ApiConstants.resolveImageUrl(
+                          widget.imageUrls[_currentIndex]) ??
+                      widget.imageUrls[_currentIndex];
                   final ext = url.split('.').last.split('?').first;
                   MediaDownloader.download(
                     url: url,

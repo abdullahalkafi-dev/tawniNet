@@ -198,6 +198,7 @@ const Map<String, String> enUS = {
   // ─── Booking ───────────────────────────────────────────
   "booking_my_bookings": "My Bookings",
   "booking_active": "Active Order",
+  "booking_unpaid": "Awaiting Payment",
   "booking_completed": "Completed",
   "booking_cancelled": "Cancelled",
   "booking_no_bookings": "No bookings found",
@@ -277,6 +278,8 @@ const Map<String, String> enUS = {
   "notif_cashback": "Cashback",
   "notif_app_updates": "App Updates",
   "notif_new_service": "New Service Available",
+  "notif_mark_all_read": "Mark all read",
+  "notif_empty": "No notifications yet",
 
   // ─── Notifications ─────────────────────────────────────
   "notifications_payment_done": "Payment Done",
@@ -428,6 +431,11 @@ const Map<String, String> enUS = {
   "earning_title": "Earning",
   "earning_revenue": "Revenue",
   "earning_withdrawals": "Withdrawals",
+  "earning_fees": "Fees",
+  "earning_platform_fees": "Platform Fees",
+  "earning_job_earnings": "Job Earnings",
+  "earning_no_revenue": "No job earnings yet.",
+  "earning_no_fees": "No platform fees yet.",
   "earning_date": "Date",
   "earning_activity": "Activity",
   "earning_method": "Method",
@@ -452,6 +460,9 @@ const Map<String, String> enUS = {
   "connects_view_details": "View details",
   "connects_buy": "Buy Connects",
   "connects_no_history": "No Connects transactions.",
+  "connects_recharge_history": "Recharge History",
+  "connects_recharge": "Wallet recharge",
+  "connects_no_recharges": "No recharges yet.",
   "connects_my_balance": "My balance",
   "connects_select_amount": "Select the amount to buy",
   "connects_new_balance": "Your new Connects balance will be",

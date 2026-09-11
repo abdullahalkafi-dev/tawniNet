@@ -22,11 +22,13 @@ abstract class Routes {
   static const chatDetail = _Paths.chatDetail;
   static const editProfile = _Paths.editProfile;
   static const notificationSettings = _Paths.notificationSettings;
+  static const wallet = _Paths.wallet;
 
   // Helper routes
   static const locationAllow = _Paths.locationAllow;
   static const manualLocation = _Paths.manualLocation;
   static const applyAsHelper = _Paths.applyAsHelper;
+  static const helperKycVerification = _Paths.helperKycVerification;
   static const applicationPending = _Paths.applicationPending;
   static const applicationRejected = _Paths.applicationRejected;
   static const helperHome = _Paths.helperHome;
@@ -49,6 +51,8 @@ abstract class Routes {
   static const privacyPolicy = _Paths.privacyPolicy;
   static const aboutUs = _Paths.aboutUs;
   static const customerService = _Paths.customerService;
+  static const userCustomerService = _Paths.userCustomerService;
+  static const supportTicketList = _Paths.supportTicketList;
   static const helperChatDetail = _Paths.helperChatDetail;
 }
 
@@ -75,11 +79,13 @@ abstract class _Paths {
   static const chatDetail = '/chat-detail';
   static const editProfile = '/edit-profile';
   static const notificationSettings = '/notification-settings';
+  static const wallet = '/wallet';
 
   // Helper paths
   static const locationAllow = '/location-allow';
   static const manualLocation = '/manual-location';
   static const applyAsHelper = '/apply-as-helper';
+  static const helperKycVerification = '/helper-kyc-verification';
   static const applicationPending = '/application-pending';
   static const applicationRejected = '/application-rejected';
   static const helperHome = '/helper-home';
@@ -102,5 +108,7 @@ abstract class _Paths {
   static const privacyPolicy = '/privacy-policy';
   static const aboutUs = '/about-us';
   static const customerService = '/customer-service';
+  static const userCustomerService = '/user-customer-service';
+  static const supportTicketList = '/support-tickets';
   static const helperChatDetail = '/helper-chat-detail';
 }

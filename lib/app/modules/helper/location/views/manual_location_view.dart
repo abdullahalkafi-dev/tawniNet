@@ -78,40 +78,62 @@ class ManualLocationView extends GetView<LocationController> {
               ),
             ),
             const SizedBox(height: 12),
-            Obx(() {
-              if (controller.isSearching.value) {
-                return const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                );
-              }
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: controller.searchResults.map((result) {
-                  final displayName = result['displayName'] as String? ?? '';
-                  return GestureDetector(
-                    onTap: () => controller.selectLocation(result),
+            Expanded(
+              child: Obx(() {
+                if (controller.isSearching.value) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                  );
+                }
+                if (controller.searchResults.isEmpty) {
+                  return Center(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.location_on_outlined, color: AppColors.primary, size: 18),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              displayName,
-                              style: AppStyles.bodyLargeOf(context).copyWith(
-                                fontSize: 15,
-                              ),
-                            ),
-                          ),
-                        ],
+                      padding: const EdgeInsets.all(24.0),
+                      child: Text(
+                        'Type to search for any address...',
+                        style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+                        textAlign: TextAlign.center,
                       ),
                     ),
                   );
-                }).toList(),
-              );
-            }),
+                }
+                return ListView.separated(
+                  itemCount: controller.searchResults.length,
+                  separatorBuilder: (_, __) => Divider(height: 1, color: context.borderSubtle),
+                  itemBuilder: (context, index) {
+                    final result = controller.searchResults[index];
+                    final displayName = result['displayName'] as String? ?? '';
+                    return InkWell(
+                      onTap: () => controller.selectLocation(result),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Padding(
+                              padding: EdgeInsets.only(top: 2),
+                              child: Icon(Icons.location_on_outlined, color: AppColors.primary, size: 20),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                displayName,
+                                style: AppStyles.bodyLargeOf(context).copyWith(
+                                  fontSize: 14,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              }),
+            ),
           ],
         ),
       ),

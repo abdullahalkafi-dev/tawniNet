@@ -61,15 +61,7 @@ class AllServicesView extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    final allCategories = [
-      ...controller.categories,
-      ...controller.categories
-          .map(
-            (c) =>
-                Category(id: c.id, name: c.name, iconUrl: c.iconUrl, icon: c.icon, color: c.color),
-          )
-          .toList(),
-    ];
+    final allCategories = controller.categories.toList();
 
     return Scaffold(
       appBar: AppBar(

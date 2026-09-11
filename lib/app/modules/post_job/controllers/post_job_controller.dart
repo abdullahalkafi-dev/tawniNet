@@ -12,13 +12,22 @@ import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:awnneaapp/app/core/utils/app_feedback.dart';
 import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
+import 'package:awnneaapp/app/core/utils/datetime_format.dart';
+import 'package:awnneaapp/app/core/widgets/simple_time_picker.dart';
+
+/// Job photos: keep in sync with Create Offer (max 4).
+const int kJobMaxImages = 4;
 
 class PostJobController extends GetxController {
   final titleController = TextEditingController();
   final dateController = TextEditingController();
   final startTimeController = TextEditingController();
   final endTimeController = TextEditingController();
+
+  /// ISO `yyyy-MM-dd` — what we send to the API.
+  String? _isoDate;
   final descController = TextEditingController();
   final addressController = TextEditingController();
   final budgetController = TextEditingController();
@@ -205,8 +214,8 @@ class PostJobController extends GetxController {
       },
     );
     if (picked != null) {
-      dateController.text =
-          '${picked.month.toString().padLeft(2, '0')}/${picked.day.toString().padLeft(2, '0')}/${picked.year}';
+      _isoDate = AppDateTime.toIsoDate(picked);
+      dateController.text = AppDateTime.formatDateDisplay(_isoDate);
     }
   }
 
@@ -214,33 +223,10 @@ class PostJobController extends GetxController {
     BuildContext context,
     TextEditingController controller,
   ) async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: isDark
-                ? const ColorScheme.dark(
-                    primary: AppColors.primary,
-                    onPrimary: Colors.white,
-                    surface: AppColors.darkCard,
-                    onSurface: AppColors.darkTextPrimary,
-                  )
-                : const ColorScheme.light(
-                    primary: AppColors.primary,
-                    onPrimary: Colors.white,
-                    onSurface: Colors.black,
-                  ),
-          ),
-          child: child!,
-        );
-      },
-    );
+    final initial = AppDateTime.tryParseTimeOfDay(controller.text) ?? TimeOfDay.now();
+    final picked = await showSimpleTimePicker(context, initialTime: initial);
     if (picked != null) {
-      // ignore: use_build_context_synchronously
-      controller.text = picked.format(context);
+      controller.text = AppDateTime.formatTimeOfDay12h(picked);
     }
   }
 
@@ -249,6 +235,14 @@ class PostJobController extends GetxController {
   Future<void> pickImage() => pickImages();
 
   Future<void> pickImages() async {
+    if (selectedImages.length >= kJobMaxImages) {
+      AppFeedback.error(
+        'Maximum $kJobMaxImages images allowed',
+        title: 'Limit reached',
+      );
+      return;
+    }
+
     try {
       final List<XFile> images = await _imagePicker.pickMultiImage(
         maxWidth: 1024,
@@ -256,12 +250,22 @@ class PostJobController extends GetxController {
         imageQuality: 80,
       );
 
-      if (images.isNotEmpty) {
-        for (final img in images) {
-          if (selectedImages.length < 5) {
-            selectedImages.add(img.path);
-          }
+      if (images.isEmpty) return;
+
+      var skipped = 0;
+      for (final img in images) {
+        if (selectedImages.length < kJobMaxImages) {
+          selectedImages.add(img.path);
+        } else {
+          skipped++;
         }
+      }
+
+      if (skipped > 0) {
+        AppFeedback.error(
+          'Only $kJobMaxImages images allowed. $skipped image(s) were not added.',
+          title: 'Limit reached',
+        );
       }
     } catch (e) {
       _showError('Failed to pick images');
@@ -279,6 +283,7 @@ class PostJobController extends GetxController {
   Future<List<String>> _uploadImages() async {
     final api = Get.find<ApiClient>();
     final urls = <String>[];
+    var failed = 0;
 
     for (final path in selectedImages) {
       try {
@@ -296,11 +301,24 @@ class PostJobController extends GetxController {
 
         if (response.success && response.data != null) {
           final key = (response.data['key'] ?? response.data['url']) as String?;
-          if (key != null) {
+          if (key != null && key.isNotEmpty) {
             urls.add(key);
+            continue;
           }
         }
-      } catch (_) {}
+        failed++;
+      } catch (_) {
+        failed++;
+      }
+    }
+
+    if (failed > 0) {
+      throw Exception(
+        failed == selectedImages.length
+            ? 'Failed to upload images. Please try again.'
+            : 'Failed to upload $failed of ${selectedImages.length} image(s). '
+                'Remove failed photos or retry.',
+      );
     }
 
     return urls;
@@ -447,14 +465,19 @@ class PostJobController extends GetxController {
       if (descController.text.trim().isNotEmpty) {
         data['description'] = descController.text.trim();
       }
-      if (dateController.text.trim().isNotEmpty) {
-        data['date'] = dateController.text.trim();
+      String? isoDate = _isoDate;
+      if (isoDate == null && dateController.text.trim().isNotEmpty) {
+        final parsed = AppDateTime.tryParseDate(dateController.text);
+        if (parsed != null) isoDate = AppDateTime.toIsoDate(parsed);
+      }
+      if (isoDate != null && isoDate.isNotEmpty) {
+        data['date'] = isoDate;
       }
       if (startTimeController.text.trim().isNotEmpty) {
-        data['startTime'] = startTimeController.text.trim();
+        data['startTime'] = AppDateTime.formatTime12h(startTimeController.text);
       }
       if (endTimeController.text.trim().isNotEmpty) {
-        data['endTime'] = endTimeController.text.trim();
+        data['endTime'] = AppDateTime.formatTime12h(endTimeController.text);
       }
       if (addressController.text.trim().isNotEmpty) {
         data['address'] = addressController.text.trim();
@@ -476,6 +499,46 @@ class PostJobController extends GetxController {
       );
 
       if (response.success) {
+        final resData = response.data is Map ? response.data as Map<String, dynamic> : null;
+        final checkoutUrl = resData?['checkoutUrl'] as String?;
+
+        if (checkoutUrl != null && checkoutUrl.isNotEmpty) {
+          final jobId = (resData?['_id'] ?? resData?['id'])?.toString() ?? '';
+          final jobBudget = double.tryParse(budgetController.text.trim()) ?? 0.0;
+          final sessId = resData?['sessionId'] as String? ?? '';
+
+          Get.toNamed(
+            Routes.checkout,
+            arguments: {
+              'orderId': jobId,
+              'orderType': 'job',
+              'amount': jobBudget,
+              'currency': 'MAD',
+              'title': titleController.text.trim(),
+              'sessionId': sessId,
+              'metadata': {
+                'userId': Get.find<AuthService>().currentUser.value?.id,
+                'jobId': jobId,
+              },
+            },
+          )?.then((paid) {
+            if (paid == true) {
+              Get.offAllNamed(Routes.home);
+            } else {
+              // Stay so the client can retry payment or edit the job
+              Get.snackbar(
+                'Payment',
+                'Job saved as unpaid. Complete payment from My Bookings.',
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: Colors.orange.shade100,
+                colorText: Colors.orange.shade900,
+                margin: const EdgeInsets.all(16),
+              );
+            }
+          });
+          return;
+        }
+
         Get.snackbar(
           'Success',
           'Job posted successfully!',

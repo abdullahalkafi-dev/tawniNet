@@ -7,6 +7,9 @@ import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/socket_service.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/data/models/message_model.dart';
+import 'package:awnneaapp/app/modules/messages/controllers/messages_controller.dart';
+import 'package:awnneaapp/app/routes/app_routes.dart';
+import 'package:awnneaapp/app/core/utils/app_feedback.dart';
 
 class ChatDetailController extends GetxController {
   late final ApiClient _api;
@@ -24,11 +27,15 @@ class ChatDetailController extends GetxController {
   final scrollController = ScrollController();
 
   String? _conversationId;
+  String? _otherParticipantId;
   Timer? _typingTimer;
   StreamSubscription? _messageSub;
   StreamSubscription? _typingStartSub;
   StreamSubscription? _typingStopSub;
   StreamSubscription? _presenceSub;
+  StreamSubscription? _offerUpdateSub;
+  StreamSubscription? _readSub;
+  StreamSubscription? _connectionSub;
 
   bool _initialLoadDone = false;
   bool _isFetchingMore = false;
@@ -55,6 +62,9 @@ class ChatDetailController extends GetxController {
     _typingStartSub?.cancel();
     _typingStopSub?.cancel();
     _presenceSub?.cancel();
+    _offerUpdateSub?.cancel();
+    _readSub?.cancel();
+    _connectionSub?.cancel();
     messageController.dispose();
     scrollController.dispose();
     super.onClose();
@@ -63,12 +73,27 @@ class ChatDetailController extends GetxController {
   /// Initialize with conversation data from arguments.
   void initConversation(String conversationId, String otherParticipantId) {
     _conversationId = conversationId;
+    _otherParticipantId = otherParticipantId;
     _initialLoadDone = false;
     _isFetchingMore = false;
     hasMore.value = true;
     messages.clear(); // Clear old messages from previous conversation
 
+    // Opening a thread means "no unread left" in the conversation list.
+    try {
+      Get.find<MessagesController>().markConversationReadLocally(conversationId);
+    } catch (_) {}
+
     _socketService.joinConversation(conversationId);
+
+    // Re-join if socket reconnects while this screen is open
+    _connectionSub?.cancel();
+    _connectionSub = _socketService.isConnected.listen((connected) {
+      if (connected && _conversationId != null && !isClosed) {
+        _socketService.joinConversation(_conversationId!);
+      }
+    });
+
     fetchMessages();
   }
 
@@ -134,6 +159,13 @@ class ChatDetailController extends GetxController {
           messages.assignAll(newMessages);
           _initialLoadDone = true;
           _scrollToBottom();
+          // Server marks read on this GET — keep list badge in sync.
+          if (_conversationId != null) {
+            try {
+              Get.find<MessagesController>()
+                  .markConversationReadLocally(_conversationId!);
+            } catch (_) {}
+          }
         }
 
         if (response.meta != null) {
@@ -142,8 +174,7 @@ class ChatDetailController extends GetxController {
       }
     } catch (e) {
       if (!isClosed) {
-        Get.snackbar('Error', 'Failed to load messages',
-            snackPosition: SnackPosition.BOTTOM);
+        AppFeedback.error('Failed to load messages');
       }
     } finally {
       _isFetchingMore = false;
@@ -201,12 +232,12 @@ class ChatDetailController extends GetxController {
       } else {
         // Remove optimistic message on failure
         messages.removeWhere((m) => m.id == tempId);
-        Get.snackbar('Error', 'Failed to send message', snackPosition: SnackPosition.BOTTOM);
+        AppFeedback.error('Failed to send message');
       }
     } catch (_) {
       if (!isClosed) {
         messages.removeWhere((m) => m.id == tempId);
-        Get.snackbar('Error', 'Failed to send message', snackPosition: SnackPosition.BOTTOM);
+        AppFeedback.error('Failed to send message');
       }
     }
   }
@@ -349,8 +380,7 @@ class ChatDetailController extends GetxController {
       }
     } catch (e) {
       if (!isClosed) {
-        Get.snackbar('Error', 'Failed to send offer',
-            snackPosition: SnackPosition.BOTTOM);
+        AppFeedback.error('Failed to send offer');
       }
     }
   }
@@ -368,12 +398,49 @@ class ChatDetailController extends GetxController {
       if (isClosed) return;
 
       if (response.success) {
-        _updateOfferStatus(offerMessageId, 'accepted');
+        final resData = response.data;
+        final checkoutUrl = resData?['checkoutUrl'] as String?;
+        final paymentRequired = resData?['paymentRequired'] == true;
+
+        if (paymentRequired && checkoutUrl != null && checkoutUrl.isNotEmpty) {
+          final msg = messages.firstWhereOrNull((m) => m.id == offerMessageId);
+          // Prefer server-computed hourly total when present
+          final amountRaw = resData?['amount'];
+          final offerPrice = amountRaw is num
+              ? amountRaw.toDouble()
+              : (msg?.offerData?.price ?? 0.0);
+          final offerTitle = msg?.offerData?.title ?? 'Custom Service Offer';
+          final sessId = resData?['sessionId'] as String? ?? '';
+
+          _updateOfferStatus(offerMessageId, 'awaiting_payment');
+
+          Get.toNamed(
+            Routes.checkout,
+            arguments: {
+              'orderId': offerMessageId,
+              'orderType': 'offer',
+              'amount': offerPrice,
+              'currency': 'MAD',
+              'title': offerTitle,
+              'sessionId': sessId,
+              'metadata': {
+                'userId': currentUserId,
+                'helperId': msg?.senderId ?? _otherParticipantId ?? '',
+                'offerMessageId': offerMessageId,
+              },
+            },
+          )?.then((paid) {
+            if (paid == true) {
+              _updateOfferStatus(offerMessageId, 'accepted');
+            }
+          });
+        } else {
+          _updateOfferStatus(offerMessageId, 'accepted');
+        }
       }
     } catch (e) {
       if (!isClosed) {
-        Get.snackbar('Error', 'Failed to accept offer',
-            snackPosition: SnackPosition.BOTTOM);
+        AppFeedback.error('Failed to accept offer');
       }
     }
   }
@@ -395,8 +462,7 @@ class ChatDetailController extends GetxController {
       }
     } catch (e) {
       if (!isClosed) {
-        Get.snackbar('Error', 'Failed to reject offer',
-            snackPosition: SnackPosition.BOTTOM);
+        AppFeedback.error('Failed to reject offer');
       }
     }
   }
@@ -418,8 +484,7 @@ class ChatDetailController extends GetxController {
       }
     } catch (e) {
       if (!isClosed) {
-        Get.snackbar('Error', 'Failed to cancel offer',
-            snackPosition: SnackPosition.BOTTOM);
+        AppFeedback.error('Failed to cancel offer');
       }
     }
   }
@@ -466,42 +531,77 @@ class ChatDetailController extends GetxController {
       }
     } catch (e) {
       if (!isClosed) {
-        Get.snackbar('Error', 'Failed to edit offer',
-            snackPosition: SnackPosition.BOTTOM);
+        AppFeedback.error('Failed to edit offer');
       }
     }
   }
 
   // ─── Private Helpers ─────────────────────────────────
 
-  void _updateOfferStatus(String messageId, String status) {
+  void _updateOfferStatus(String messageId, String status, {OfferData? offerData}) {
     final idx = messages.indexWhere((m) => m.id == messageId);
-    if (idx != -1) {
-      final oldMsg = messages[idx];
-      if (oldMsg.offerData != null) {
-        messages[idx] = ChatMessage(
-          id: oldMsg.id,
-          conversationId: oldMsg.conversationId,
-          senderId: oldMsg.senderId,
-          type: oldMsg.type,
-          content: oldMsg.content,
-          images: oldMsg.images,
-          video: oldMsg.video,
-          offerData: OfferData(
-            title: oldMsg.offerData!.title,
-            description: oldMsg.offerData!.description,
-            price: oldMsg.offerData!.price,
-            priceType: oldMsg.offerData!.priceType,
-            startTime: oldMsg.offerData!.startTime,
-            endTime: oldMsg.offerData!.endTime,
-            paymentMethod: oldMsg.offerData!.paymentMethod,
-            images: oldMsg.offerData!.images,
-            status: status,
-          ),
-          createdAt: oldMsg.createdAt,
-          isSentByMe: oldMsg.isSentByMe,
+    if (idx == -1) return;
+    final oldMsg = messages[idx];
+    final existing = oldMsg.offerData;
+    if (existing == null && offerData == null) return;
+
+    final nextOffer = offerData ??
+        OfferData(
+          title: existing!.title,
+          description: existing.description,
+          price: existing.price,
+          priceType: existing.priceType,
+          date: existing.date,
+          startTime: existing.startTime,
+          endTime: existing.endTime,
+          paymentMethod: existing.paymentMethod,
+          images: existing.images,
+          status: status,
         );
-      }
+
+    messages[idx] = ChatMessage(
+      id: oldMsg.id,
+      conversationId: oldMsg.conversationId,
+      senderId: oldMsg.senderId,
+      type: oldMsg.type,
+      content: oldMsg.content,
+      images: oldMsg.images,
+      video: oldMsg.video,
+      offerData: nextOffer,
+      createdAt: oldMsg.createdAt,
+      isSentByMe: oldMsg.isSentByMe,
+    );
+  }
+
+  /// Apply remote offer update (socket chat:offer-update).
+  void _applyRemoteOfferUpdate(Map<String, dynamic> data) {
+    final messageId = (data['messageId'] ?? data['offerId'] ?? '').toString();
+    final conversationId = (data['conversationId'] ?? '').toString();
+    if (messageId.isEmpty) return;
+    if (conversationId.isNotEmpty && conversationId != _conversationId) return;
+
+    OfferData? offerData;
+    final offerMap = data['offerData'];
+    if (offerMap is Map<String, dynamic>) {
+      offerData = OfferData.fromJson(offerMap);
+    }
+    final status = offerData?.status ?? (data['status'] ?? '').toString();
+    _updateOfferStatus(
+      messageId,
+      status.isNotEmpty ? status : 'pending',
+      offerData: offerData,
+    );
+  }
+
+  void _applyRemoteRead(Map<String, dynamic> data) {
+    final userId = (data['userId'] ?? '').toString();
+    if (userId.isEmpty || userId == currentUserId) return;
+    final ids = (data['messageIds'] as List?)?.map((e) => e.toString()).toSet() ?? {};
+    if (ids.isEmpty) return;
+    for (var i = 0; i < messages.length; i++) {
+      if (!ids.contains(messages[i].id)) continue;
+      // ChatMessage is immutable — leave readBy display to model if present.
+      // Presence of socket event is enough for UI "seen" when model supports it.
     }
   }
 
@@ -517,6 +617,11 @@ class ChatDetailController extends GetxController {
         if (!exists) {
           messages.add(message);
           _scrollToBottom();
+          // Thread is open — keep conversation list badge at 0.
+          try {
+            Get.find<MessagesController>()
+                .markConversationReadLocally(message.conversationId);
+          } catch (_) {}
         }
       }
     });
@@ -537,6 +642,18 @@ class ChatDetailController extends GetxController {
           data['userId'] != currentUserId) {
         isTyping.value = false;
       }
+    });
+
+    // Offer status / edit updates from peer
+    _offerUpdateSub = _socketService.onOfferUpdate.listen((data) {
+      if (isClosed) return;
+      _applyRemoteOfferUpdate(data);
+    });
+
+    // Peer read receipts
+    _readSub = _socketService.onMessagesRead.listen((data) {
+      if (isClosed) return;
+      _applyRemoteRead(data);
     });
 
     // Listen for presence updates

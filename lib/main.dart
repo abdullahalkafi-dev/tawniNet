@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
@@ -18,6 +19,9 @@ import 'app/services/wallet_service.dart';
 import 'app/services/theme_service.dart';
 import 'app/services/support_service.dart';
 import 'app/services/review_service.dart';
+import 'app/services/notification_service.dart';
+import 'app/services/notification_api.dart';
+import 'app/services/notification_badge_controller.dart';
 import 'app/modules/messages/controllers/messages_controller.dart';
 
 void main() async {
@@ -35,6 +39,16 @@ void main() async {
     debugPrint(stack.toString());
     return true;
   };
+
+  // Firebase MUST be ready before any FirebaseMessaging access
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+      debugPrint('[FCM] Firebase.initializeApp OK (main)');
+    }
+  } catch (e) {
+    debugPrint('[FCM] Firebase.initializeApp failed (main): $e');
+  }
 
   // Initialize storage first (must be async)
   final storageService = await StorageService().init();
@@ -55,13 +69,28 @@ void main() async {
   Get.put(CategoryService(), permanent: true);
   Get.put(JobService(), permanent: true);
   Get.put(WalletService(), permanent: true);
-  Get.put(SupportService(), permanent: true);
+  final supportService = SupportService();
+  await supportService.init();
+  Get.put(supportService, permanent: true);
   Get.put(ReviewService(), permanent: true);
 
   // Auth service (depends on storage, api, role)
   final authService = AuthService();
   await authService.init();
   Get.put(authService, permanent: true);
+
+  // Push notifications (FCM) — always register service so login can upload token
+  try {
+    final notificationService = NotificationService();
+    Get.put(notificationService, permanent: true);
+    await notificationService.init();
+  } catch (e) {
+    debugPrint('[FCM] NotificationService init skipped: $e');
+  }
+  Get.put(NotificationApi(), permanent: true);
+  final badge = NotificationBadgeController();
+  Get.put(badge, permanent: true);
+  await badge.init();
 
   // Messages controller (permanent — needs to stay alive for online status)
   Get.put(MessagesController(), permanent: true);

@@ -70,6 +70,10 @@ class HelperJob {
   final String? paymentMethod; // 'online' or 'cash'
   final String? status; // 'open', 'completed', 'cancelled'
   final List<String> images;
+  final double rating;
+  final int reviewCount;
+
+  String get price => budget != null ? 'MAD ${budget!.toStringAsFixed(0)}' : '';
 
   HelperJob({
     required this.id,
@@ -93,6 +97,8 @@ class HelperJob {
     this.paymentMethod,
     this.status,
     this.images = const [],
+    this.rating = 0,
+    this.reviewCount = 0,
   }) : name = name ?? helperName;
 
   factory HelperJob.fromJson(Map<String, dynamic> json) {
@@ -259,7 +265,7 @@ class HelperProfileData {
       city: json['city'] as String?,
       language: json['language'] as String?,
       profilePhotos: (json['profilePhotos'] as List<dynamic>?)
-              ?.map((e) => ApiConstants.resolveImageUrl(e as String) ?? (e as String))
+              ?.map((e) => ApiConstants.resolveImageUrl(e.toString()) ?? e.toString())
               .toList() ??
           [],
       createdAt: json['createdAt'] != null

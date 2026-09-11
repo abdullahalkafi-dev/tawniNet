@@ -1,5 +1,7 @@
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/modules/messages/views/widgets/image_viewer_screen.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:flutter/material.dart';
@@ -186,14 +188,21 @@ class _HelperPublicProfileViewState extends State<HelperPublicProfileView> {
   }
 
   Widget _buildPhotosSection(BuildContext context, dynamic user) {
-    final profilePhotos = user.profilePhotos;
+    final rawPhotos = user.profilePhotos;
+    final photoUrls = <String>[];
+    if (rawPhotos is List) {
+      for (final p in rawPhotos) {
+        final s = p?.toString() ?? '';
+        if (s.isNotEmpty && s != 'null') photoUrls.add(s);
+      }
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('label_photos'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 18)),
         const SizedBox(height: 12),
-        if (profilePhotos == null || profilePhotos.isEmpty)
+        if (photoUrls.isEmpty)
           Container(
             height: 120,
             width: double.infinity,
@@ -214,16 +223,26 @@ class _HelperPublicProfileViewState extends State<HelperPublicProfileView> {
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
             ),
-            itemCount: profilePhotos.length,
+            itemCount: photoUrls.length,
             itemBuilder: (context, index) {
-              return ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  profilePhotos[index],
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: context.inputFillLight,
-                    child: Icon(Icons.image, color: context.textHintColor),
+              return GestureDetector(
+                onTap: () {
+                  Get.to(
+                    () => ImageViewerScreen(
+                      imageUrls: photoUrls,
+                      initialIndex: index.clamp(0, photoUrls.length - 1).toInt(),
+                    ),
+                  );
+                },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    ApiConstants.resolveImageUrl(photoUrls[index]) ?? photoUrls[index],
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: context.inputFillLight,
+                      child: Icon(Icons.image, color: context.textHintColor),
+                    ),
                   ),
                 ),
               );

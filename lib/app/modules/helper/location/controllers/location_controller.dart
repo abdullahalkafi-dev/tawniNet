@@ -23,16 +23,23 @@ class LocationController extends GetxController {
       final user = authService.currentUser.value;
 
       if (user?.role == 'helper') {
+        if (user?.isHelperFormSubmitted != true) {
+          return Routes.applyAsHelper;
+        }
+
         switch (user?.helperApplicationStatus) {
           case 'approved':
             return Routes.helperHome;
-          case 'pending':
           case 'pending_appeal':
             return Routes.applicationPending;
           case 'rejected':
             return Routes.applicationRejected;
+          case 'pending':
           default:
-            return Routes.applyAsHelper;
+            if (user?.diditStatus == 'In Review') {
+              return Routes.applicationPending;
+            }
+            return Routes.helperKycVerification;
         }
       }
       return Routes.home;

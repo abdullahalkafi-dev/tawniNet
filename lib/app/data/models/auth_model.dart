@@ -162,4 +162,13 @@ class AuthUser {
       'selfieUrl': selfieUrl,
     };
   }
+
+  bool get hasLocation =>
+      (latitude != null && longitude != null && (latitude != 0 || longitude != 0)) ||
+      (address != null && address!.trim().isNotEmpty);
+
+  bool get isHelper => role == 'helper';
+  bool get isApproved => helperApplicationStatus == 'approved';
+  bool get isPending => helperApplicationStatus == 'pending';
+  bool get isRejected => helperApplicationStatus == 'rejected';
 }

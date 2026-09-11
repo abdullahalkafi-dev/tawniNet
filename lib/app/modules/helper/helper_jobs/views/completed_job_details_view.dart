@@ -1,7 +1,10 @@
+import 'package:awnneaapp/app/core/utils/datetime_format.dart';
+import 'package:awnneaapp/app/core/utils/job_display.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/values/app_currency.dart';
 import 'package:awnneaapp/app/core/widgets/custom_button.dart';
+import 'package:awnneaapp/app/core/widgets/job_status_timeline.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -11,7 +14,15 @@ class CompletedJobDetailsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final job = Get.arguments as Map;
+    final job = Get.arguments is Map
+        ? Map<String, dynamic>.from(Get.arguments as Map)
+        : <String, dynamic>{};
+    final budgetRaw = job['budget'];
+    final budget = budgetRaw is num
+        ? budgetRaw.toDouble()
+        : (double.tryParse(budgetRaw?.toString() ?? '') ?? 0.0);
+    final isCash = job['paymentMethod'] == 'cash';
+    final earned = (job['earnedAmount'] as num?)?.toDouble() ?? (isCash ? budget : budget * 0.8);
 
     return Scaffold(
       appBar: AppBar(
@@ -38,7 +49,7 @@ class CompletedJobDetailsView extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                'completed_earned'.tr.replaceAll('@amount', formatMoney(job['earnedAmount'] ?? 88)),
+                'completed_earned'.tr.replaceAll('@amount', formatMoney(earned)),
                 style: AppStyles.bodyLarge.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
@@ -50,12 +61,28 @@ class CompletedJobDetailsView extends StatelessWidget {
             const SizedBox(height: 16),
             _buildPhotos(context, job),
             const SizedBox(height: 16),
-            _buildJobStatusTimeline(context),
+            _buildJobStatusTimeline(context, job),
             const SizedBox(height: 24),
-            CustomButton(
-              text: 'btn_review'.tr,
-              onPressed: () => Get.toNamed(Routes.rateClient, arguments: job),
-            ),
+            if (job['hasReviewFromOther'] == true && job['reviewFromOther'] is Map)
+              _buildReviewCard(
+                context,
+                title: 'Client review',
+                review: Map<String, dynamic>.from(job['reviewFromOther'] as Map),
+              ),
+            if (job['hasReviewFromOther'] == true &&
+                job['hasMyReview'] != true)
+              const SizedBox(height: 12),
+            if (job['hasMyReview'] == true && job['myReview'] is Map)
+              _buildReviewCard(
+                context,
+                title: 'Your review',
+                review: Map<String, dynamic>.from(job['myReview'] as Map),
+              )
+            else
+              CustomButton(
+                text: 'btn_review'.tr,
+                onPressed: () => Get.toNamed(Routes.rateClient, arguments: job),
+              ),
           ],
         ),
       ),
@@ -63,7 +90,81 @@ class CompletedJobDetailsView extends StatelessWidget {
     );
   }
 
+  Widget _buildReviewCard(
+    BuildContext context, {
+    required String title,
+    required Map review,
+  }) {
+    final ratingRaw = review['rating'];
+    final rating = (ratingRaw is num
+            ? ratingRaw
+            : (num.tryParse(ratingRaw?.toString() ?? '') ?? 0))
+        .round()
+        .clamp(0, 5);
+    final comment = (review['comment'] ?? '').toString();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: context.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: context.borderSubtle),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                title,
+                style: AppStyles.h2Of(context).copyWith(fontSize: 16),
+              ),
+              const Spacer(),
+              const Icon(Icons.verified, color: AppColors.primary, size: 18),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: List.generate(5, (i) {
+              return Icon(
+                i < rating ? Icons.star : Icons.star_border,
+                color: Colors.amber,
+                size: 20,
+              );
+            }),
+          ),
+          if (comment.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              comment,
+              style: AppStyles.bodyMediumOf(context).copyWith(height: 1.4),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildJobInfoTable(BuildContext context, Map job) {
+    final clientName = JobDisplay.personName(job['postedBy'],
+        fallback: JobDisplay.safeText(job['clientName']));
+    final categoryName = JobDisplay.categoryName(job['category'],
+        fallback: JobDisplay.safeText(job['jobType'], fallback: 'Service'));
+    final bookingDate = job['date'] != null
+        ? AppDateTime.formatDateDisplay(job['date'].toString())
+        : AppDateTime.formatDateDisplay(job['bookingDate']?.toString() ?? '');
+    final preferredTime = job['startTime'] != null
+        ? [
+            AppDateTime.formatTime12h(job['startTime']?.toString()),
+            if (job['endTime'] != null)
+              AppDateTime.formatTime12h(job['endTime']?.toString()),
+          ].where((t) => t.isNotEmpty).join(' - ')
+        : JobDisplay.safeText(job['preferredTime']);
+    final location = JobDisplay.safeLocation(job);
+    final budget = job['budget'] != null ? 'MAD ${job['budget']}' : '';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -74,12 +175,12 @@ class CompletedJobDetailsView extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _buildInfoRow(context, 'label_order_by'.tr, job['orderBy'] ?? job['clientName'] ?? ''),
-          _buildInfoRow(context, 'label_job_type'.tr, job['jobType'] ?? ''),
-          _buildInfoRow(context, 'label_booking_date'.tr, job['bookingDate'] ?? ''),
-          _buildInfoRow(context, 'label_preferred_time'.tr, job['preferredTime'] ?? ''),
-          _buildInfoRow(context, 'label_location'.tr, job['location'] ?? ''),
-          _buildInfoRow(context, 'label_budget'.tr, 'MAD ${job['budget'] ?? ''}'),
+          _buildInfoRow(context, 'label_order_by'.tr, clientName),
+          _buildInfoRow(context, 'label_job_type'.tr, categoryName),
+          _buildInfoRow(context, 'label_booking_date'.tr, bookingDate),
+          _buildInfoRow(context, 'label_preferred_time'.tr, preferredTime),
+          _buildInfoRow(context, 'label_location'.tr, location),
+          _buildInfoRow(context, 'label_budget'.tr, budget),
           if (job['distance'] != null)
             Padding(
               padding: const EdgeInsets.only(top: 4),
@@ -97,10 +198,24 @@ class CompletedJobDetailsView extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor)),
-          Text(value, style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold, fontSize: 14)),
+          Flexible(
+            flex: 2,
+            child: Text(label, style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor)),
+          ),
+          const SizedBox(width: 12),
+          Flexible(
+            flex: 3,
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+              style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+          ),
         ],
       ),
     );
@@ -129,7 +244,7 @@ class CompletedJobDetailsView extends StatelessWidget {
   }
 
   Widget _buildPhotos(BuildContext context, Map job) {
-    final photos = job['photos'] as List? ?? [];
+    final photos = (job['images'] as List? ?? job['photos'] as List? ?? []);
     if (photos.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,7 +258,7 @@ class CompletedJobDetailsView extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: Image.network(
-                  photos[index],
+                  photos[index].toString(),
                   width: 100,
                   height: 100,
                   fit: BoxFit.cover,
@@ -159,74 +274,8 @@ class CompletedJobDetailsView extends StatelessWidget {
     );
   }
 
-  Widget _buildJobStatusTimeline(BuildContext context) {
-    final steps = [
-      {'label': 'status_submitted'.tr, 'date': 'March 10, 2024 at 2:30 PM', 'completed': true},
-      {'label': 'status_worker_matched'.tr, 'date': 'March 11, 2024 at 9:15 AM', 'completed': true},
-      {'label': 'status_in_progress'.tr, 'date': 'Started March 15, 2024 at 10:00 AM', 'completed': true},
-      {'label': 'status_completed'.tr, 'date': 'March 11, 2024 at 9:15 AM', 'completed': true},
-      {'label': 'status_payment_processed'.tr, 'date': 'Pending', 'completed': false},
-    ];
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.borderSubtle),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('label_job_status'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 16)),
-          const SizedBox(height: 16),
-          ...steps.asMap().entries.map((entry) {
-            final step = entry.value;
-            final isLast = entry.key == steps.length - 1;
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  children: [
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: (step['completed'] as bool) ? AppColors.primary : (context.isDarkMode ? AppColors.darkBorder : const Color(0xFFE5E7EB)),
-                        shape: BoxShape.circle,
-                      ),
-                      child: (step['completed'] as bool)
-                          ? const Icon(Icons.check, color: Colors.white, size: 16)
-                          : null,
-                    ),
-                    if (!isLast) Container(width: 2, height: 30, color: (context.isDarkMode ? AppColors.darkBorder : const Color(0xFFE5E7EB))),
-                  ],
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        step['label'] as String,
-                        style: AppStyles.bodyLargeOf(context).copyWith(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: (step['completed'] as bool) ? context.textPrimaryColor : context.textHintColor,
-                        ),
-                      ),
-                      Text(step['date'] as String, style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: context.textHintColor)),
-                      SizedBox(height: isLast ? 0 : 12),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          }),
-        ],
-      ),
-    );
+  Widget _buildJobStatusTimeline(BuildContext context, Map job) {
+    return JobStatusTimeline(steps: JobTimeline.fromJobMap(job));
   }
 
   Widget _buildInputBar(BuildContext context) {

@@ -1,6 +1,7 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
+import 'package:awnneaapp/app/services/notification_badge_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -81,14 +82,51 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
         ),
         const SizedBox(width: 8),
         GestureDetector(
-          onTap: controller.onNotificationTap,
-          child: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.notifications_outlined, color: AppColors.primary, size: 24),
+          onTap: () async {
+            controller.onNotificationTap();
+            if (Get.isRegistered<NotificationBadgeController>()) {
+              await Get.find<NotificationBadgeController>().refresh();
+            }
+          },
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.notifications_outlined, color: AppColors.primary, size: 24),
+              ),
+              Positioned(
+                right: -4,
+                top: -4,
+                child: Obx(() {
+                  final count = Get.isRegistered<NotificationBadgeController>()
+                      ? Get.find<NotificationBadgeController>().unread.value
+                      : 0;
+                  if (count <= 0) return const SizedBox.shrink();
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                    child: Text(
+                      count > 99 ? '99+' : '$count',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ],
           ),
         ),
       ],

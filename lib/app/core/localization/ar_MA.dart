@@ -198,6 +198,7 @@ const Map<String, String> arMA = {
   // ─── Booking ───────────────────────────────────────────
   "booking_my_bookings": "حجوزاتي",
   "booking_active": "الطلبات النشطة",
+  "booking_unpaid": "في انتظار الدفع",
   "booking_completed": "المكتملة",
   "booking_cancelled": "الملغية",
   "booking_no_bookings": "ما لقيناش حجوزات",
@@ -277,6 +278,8 @@ const Map<String, String> arMA = {
   "notif_cashback": "استرداد النقود",
   "notif_app_updates": "تحديثات التطبيق",
   "notif_new_service": "خدمة جديدة متاحة",
+  "notif_mark_all_read": "تعليم الكل كمقروء",
+  "notif_empty": "ما كاينش إشعارات بعد",
 
   // ─── Notifications ─────────────────────────────────────
   "notifications_payment_done": "تم الدفع",
@@ -428,6 +431,11 @@ const Map<String, String> arMA = {
   "earning_title": "الأرباح",
   "earning_revenue": "الإيرادات",
   "earning_withdrawals": "السحب",
+  "earning_fees": "الرسوم",
+  "earning_platform_fees": "رسوم المنصة",
+  "earning_job_earnings": "أرباح الخدمات",
+  "earning_no_revenue": "ما كاينش أرباح خدمات بعد.",
+  "earning_no_fees": "ما كاينش رسوم منصة بعد.",
   "earning_date": "التاريخ",
   "earning_activity": "النشاط",
   "earning_method": "الطريقة",
@@ -452,6 +460,9 @@ const Map<String, String> arMA = {
   "connects_view_details": "شوف التفاصيل",
   "connects_buy": "شراء اتصالات",
   "connects_no_history": "ما كاينش سجل معاملات.",
+  "connects_recharge_history": "سجل التعبئة",
+  "connects_recharge": "تعبئة المحفظة",
+  "connects_no_recharges": "ما كاينش تعبئات بعد.",
   "connects_my_balance": "الرصيد ديالي",
   "connects_select_amount": "اختار المبلغ",
   "connects_new_balance": "الرصيد الجديد ديالك غادي يكون",

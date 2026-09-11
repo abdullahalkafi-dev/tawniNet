@@ -1,6 +1,10 @@
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
+import 'package:awnneaapp/app/core/utils/datetime_format.dart';
+import 'package:awnneaapp/app/core/utils/job_display.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/widgets/custom_button.dart';
+import 'package:awnneaapp/app/core/widgets/job_status_timeline.dart';
 import 'package:awnneaapp/app/data/models/home_models.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/image_viewer_screen.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/media_downloader.dart';
@@ -54,12 +58,12 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
 
   Widget _buildJobInfoCard(BuildContext context, HelperJob job) {
     final dateStr = job.date != null
-        ? '${job.date!.day}/${job.date!.month}/${job.date!.year}'
+        ? AppDateTime.formatDateDisplay(job.date!.toIso8601String())
         : 'Not specified';
     final timeStr = (job.startTime != null && job.startTime!.isNotEmpty)
         ? (job.endTime != null && job.endTime!.isNotEmpty
-            ? '${job.startTime} - ${job.endTime}'
-            : job.startTime!)
+            ? '${AppDateTime.formatTime12h(job.startTime)} - ${AppDateTime.formatTime12h(job.endTime)}'
+            : AppDateTime.formatTime12h(job.startTime))
         : 'Not specified';
 
     return Container(
@@ -236,7 +240,8 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
                           ));
                     },
                     onLongPress: () {
-                      final url = job.images[index];
+                      final url = ApiConstants.resolveImageUrl(job.images[index]) ??
+                          job.images[index];
                       final ext = url.split('.').last.split('?').first;
                       MediaDownloader.download(
                         url: url,
@@ -247,7 +252,8 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Image.network(
-                        job.images[index],
+                        ApiConstants.resolveImageUrl(job.images[index]) ??
+                            job.images[index],
                         width: 100,
                         height: 100,
                         fit: BoxFit.cover,
@@ -383,104 +389,16 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
   }
 
   Widget _buildJobStatusTimeline(BuildContext context, HelperJob job) {
-    final isOpen = job.status == 'open' || job.status == null;
-
-    final steps = [
-      {
-        'label': 'job_status_submitted'.tr,
-        'date': job.timeAgo,
-        'completed': true,
-      },
-      {
-        'label': 'job_status_accepted'.tr,
-        'date': isOpen ? 'Pending' : 'Accepted',
-        'completed': !isOpen,
-      },
-      {
-        'label': 'status_in_progress'.tr,
-        'date': 'Pending',
-        'completed': false,
-      },
-      {
-        'label': 'status_completed'.tr,
-        'date': job.status == 'completed' ? 'Completed' : 'Pending',
-        'completed': job.status == 'completed',
-      },
-      {
-        'label': 'status_payment_processed'.tr,
-        'date': job.status == 'completed' ? 'Processed' : 'Pending',
-        'completed': job.status == 'completed',
-      },
-    ];
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.borderSubtle),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('label_job_status'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 16)),
-          const SizedBox(height: 16),
-          ...steps.asMap().entries.map((entry) {
-            final step = entry.value;
-            final isLast = entry.key == steps.length - 1;
-            return Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  children: [
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: step['completed'] as bool ? AppColors.primary : (context.isDarkMode ? AppColors.darkBorder : const Color(0xFFE5E7EB)),
-                        shape: BoxShape.circle,
-                      ),
-                      child: (step['completed'] as bool)
-                          ? const Icon(Icons.check, color: Colors.white, size: 16)
-                          : null,
-                    ),
-                    if (!isLast)
-                      Container(
-                        width: 2,
-                        height: 30,
-                        color: (context.isDarkMode ? AppColors.darkBorder : const Color(0xFFE5E7EB)),
-                      ),
-                  ],
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        step['label'] as String,
-                        style: AppStyles.bodyLargeOf(context).copyWith(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: (step['completed'] as bool) ? context.textPrimaryColor : context.textHintColor,
-                        ),
-                      ),
-                      Text(
-                        step['date'] as String,
-                        style: AppStyles.bodyMedium.copyWith(
-                          fontSize: 12,
-                          color: context.textHintColor,
-                        ),
-                      ),
-                      SizedBox(height: isLast ? 0 : 12),
-                    ],
-                  ),
-                ),
-              ],
-            );
-          }),
-        ],
+    final status = (job.status ?? 'open').toLowerCase();
+    final isAssigned = status != 'open' && status != 'pending_payment';
+    return JobStatusTimeline(
+      steps: JobTimeline.fromStatus(
+        status: status,
+        submittedAt: null,
+        completedAt: null,
+        isAssigned: isAssigned,
+        escrowCredited: status == 'completed',
+        paymentMethod: '',
       ),
     );
   }

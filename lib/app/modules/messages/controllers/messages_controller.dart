@@ -1,15 +1,16 @@
 import 'dart:async';
 import 'package:get/get.dart';
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/socket_service.dart';
-import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/data/models/message_model.dart';
 
 class ChatSummary {
   final String id;
   final String name;
   final String image;
+  final String otherUserId;
   final String lastMessage;
   final String time;
   final int unreadCount;
@@ -19,6 +20,7 @@ class ChatSummary {
     required this.id,
     required this.name,
     required this.image,
+    this.otherUserId = '',
     this.lastMessage = '',
     this.time = '',
     this.unreadCount = 0,
@@ -38,6 +40,7 @@ class MessagesController extends GetxController {
   final onlineUserIds = <String>{}.obs;
 
   StreamSubscription? _presenceSub;
+  StreamSubscription? _newMessageSub;
 
   @override
   void onInit() {
@@ -46,12 +49,14 @@ class MessagesController extends GetxController {
     _authService = Get.find<AuthService>();
     _socketService = Get.find<SocketService>();
     _setupPresenceListener();
+    _setupLiveListListener();
     fetchConversations();
   }
 
   @override
   void onClose() {
     _presenceSub?.cancel();
+    _newMessageSub?.cancel();
     super.onClose();
   }
 
@@ -76,15 +81,50 @@ class MessagesController extends GetxController {
     });
   }
 
+  /// Keep conversation list / unread badges fresh when a message arrives.
+  void _setupLiveListListener() {
+    _newMessageSub = _socketService.onNewMessage.listen((message) {
+      if (isClosed) return;
+      if (!_authService.isLoggedIn.value) return;
+      final idx = conversations.indexWhere((c) => c.id == message.conversationId);
+      if (idx == -1) {
+        // New conversation for me — refresh list from API
+        fetchConversations();
+        return;
+      }
+      final conv = conversations[idx];
+      final isMine = message.senderId == currentUserId;
+      final updated = conv.copyWith(
+        lastMessage: message,
+        lastMessageAt: message.createdAt,
+        unreadCount: isMine ? conv.unreadCount : conv.unreadCount + 1,
+      );
+      conversations.removeAt(idx);
+      conversations.insert(0, updated);
+    });
+  }
+
+  /// Zero local unread after the user opens a thread (server already marked read).
+  void markConversationReadLocally(String conversationId) {
+    if (conversationId.isEmpty) return;
+    final idx = conversations.indexWhere((c) => c.id == conversationId);
+    if (idx == -1) return;
+    final conv = conversations[idx];
+    if (conv.unreadCount == 0) return;
+    conversations[idx] = conv.copyWith(unreadCount: 0);
+  }
+
   List<ChatSummary> get filteredChats {
     final query = searchQuery.value.toLowerCase();
     return conversations.map((conv) {
       final other = conv.otherParticipant;
       final otherId = other?.id ?? '';
+      final avatar = other?.avatar ?? '';
       return ChatSummary(
         id: conv.id,
         name: other?.name ?? 'Unknown',
-        image: other?.avatar ?? '',
+        image: ApiConstants.resolveImageUrl(avatar) ?? avatar,
+        otherUserId: otherId,
         lastMessage: conv.lastMessage?.content ??
             (conv.lastMessage?.type == 'image' ? '📷 Image' : ''),
         time: _formatTime(conv.lastMessageAt),
@@ -159,6 +199,29 @@ class MessagesController extends GetxController {
 
   /// Get the current user ID.
   String? get currentUserId => _authService.currentUser.value?.id;
+
+  /// Resolve a ChatSummary for deep-links (push tap) by conversation id.
+  /// Uses cache first, then refetches the conversation list.
+  Future<ChatSummary?> resolveChatSummary(String conversationId) async {
+    if (conversationId.isEmpty) return null;
+
+    ChatSummary? fromList() {
+      for (final chat in filteredChats) {
+        if (chat.id == conversationId) return chat;
+      }
+      return null;
+    }
+
+    var summary = fromList();
+    if (summary != null) return summary;
+
+    await fetchConversations();
+    summary = fromList();
+    if (summary != null) return summary;
+
+    // Fallback: minimal summary so the chat screen can open and load messages.
+    return ChatSummary(id: conversationId, name: 'Chat', image: '');
+  }
 
   /// Format time for display.
   String _formatTime(DateTime dateTime) {

@@ -1,3 +1,4 @@
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/modules/messages/controllers/messages_controller.dart';
@@ -121,7 +122,7 @@ class HelperMessagesTabView extends GetView<MessagesController> {
           ClipRRect(
             borderRadius: BorderRadius.circular(28),
             child: Image.network(
-              chat.image,
+              ApiConstants.resolveImageUrl(chat.image) ?? chat.image,
               width: 56,
               height: 56,
               fit: BoxFit.cover,

@@ -79,11 +79,14 @@ class FindHelperController extends GetxController {
     isAvailableNow.value = !isAvailableNow.value;
   }
 
-  void applyFilters() {
+  void applyFilters({bool closeScreen = true}) {
     currentPage.value = 1;
     searchHelpers();
-    Get.back();
+    if (closeScreen) Get.back();
   }
+
+  /// Distance slider / in-page filters — stay on this screen.
+  void applyFiltersInPlace() => applyFilters(closeScreen: false);
 
   void clearFilters() {
     selectedCategoryIndex.value = 0;
@@ -140,27 +143,31 @@ class FindHelperController extends GetxController {
         final total = data['totalPages'] as int? ?? 1;
 
         final fetchedHelpers = helpersList.map((h) {
-          final serviceType = h['serviceType'];
+          final map = h is Map ? Map<String, dynamic>.from(h) : <String, dynamic>{};
+          final serviceType = map['serviceType'];
           String category = 'General';
           if (serviceType is Map) {
-            category = serviceType['name'] as String? ?? 'General';
+            category = serviceType['name']?.toString() ?? 'General';
           }
 
-          String avatar = 'https://i.pravatar.cc/150';
-          if (h['avatar'] != null && (h['avatar'] as String).isNotEmpty) {
-            avatar = h['avatar'];
+          String avatar = '';
+          final rawAvatar = map['avatar'];
+          if (rawAvatar is String && rawAvatar.isNotEmpty) {
+            avatar = rawAvatar;
           }
 
           return HelperJob(
-            id: h['_id'] ?? '',
-            helperName: h['name'] ?? 'Helper',
+            id: map['_id']?.toString() ?? '',
+            helperName: map['name']?.toString() ?? 'Helper',
             helperImage: avatar,
-            postedByUserId: h['_id'] ?? '',
-            timeAgo: _formatDate(h['createdAt']),
+            postedByUserId: map['_id']?.toString() ?? '',
+            timeAgo: _formatDate(map['createdAt']?.toString()),
             category: category,
-            title: h['bio'] ?? 'Available for hire',
-            description: h['bio'] ?? 'Professional helper in your area',
-            distance: h['address'] ?? 'Nearby',
+            title: map['bio']?.toString() ?? 'Available for hire',
+            description: map['bio']?.toString() ?? 'Professional helper in your area',
+            distance: map['address']?.toString() ?? 'Nearby',
+            rating: (map['rating'] as num?)?.toDouble() ?? 0,
+            reviewCount: (map['reviewCount'] as num?)?.toInt() ?? 0,
           );
         }).toList();
 

@@ -1,10 +1,14 @@
+import 'package:awnneaapp/app/core/utils/app_feedback.dart';
+import 'package:awnneaapp/app/core/utils/datetime_format.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/widgets/simple_time_picker.dart';
 import 'package:awnneaapp/app/data/models/message_model.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -35,6 +39,8 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
   String _priceType = 'fixed';
   String _paymentMethod = 'cash';
   final List<String> _selectedImages = [];
+  String? _isoDate;
+  bool _isUploadingImages = false;
 
   @override
   void initState() {
@@ -44,9 +50,24 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
     _priceController = TextEditingController(
       text: widget.editOffer?.price.toString() ?? '',
     );
-    _dateController = TextEditingController(text: widget.editOffer?.date ?? '');
-    _startTimeController = TextEditingController(text: widget.editOffer?.startTime ?? '');
-    _endTimeController = TextEditingController(text: widget.editOffer?.endTime ?? '');
+
+    final rawDate = widget.editOffer?.date ?? '';
+    final parsedDate = AppDateTime.tryParseDate(rawDate);
+    if (parsedDate != null) {
+      _isoDate = AppDateTime.toIsoDate(parsedDate);
+      _dateController = TextEditingController(
+        text: AppDateTime.formatDateDisplay(_isoDate),
+      );
+    } else {
+      _dateController = TextEditingController(text: rawDate);
+    }
+
+    _startTimeController = TextEditingController(
+      text: AppDateTime.formatTime12h(widget.editOffer?.startTime ?? ''),
+    );
+    _endTimeController = TextEditingController(
+      text: AppDateTime.formatTime12h(widget.editOffer?.endTime ?? ''),
+    );
 
     if (widget.editOffer != null) {
       _priceType = widget.editOffer!.priceType;
@@ -144,7 +165,11 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                     controller: _priceController,
                     style: TextStyle(color: context.textPrimaryColor),
                     decoration: _buildInputDecoration(context, '0'),
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                    ],
+                    onChanged: (_) => setState(() {}),
                   ),
                   const SizedBox(height: 16),
 
@@ -161,6 +186,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                       }),
                     ],
                   ),
+                  if (_priceType == 'hourly') _buildHourlyEstimate(),
                   const SizedBox(height: 16),
 
                   // Date
@@ -197,7 +223,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                   const SizedBox(height: 16),
 
                   // Images
-                  _buildLabel(context, 'Images (max 4)'),
+                  _buildLabel(context, 'Images (${_selectedImages.length}/4)'),
                   SizedBox(
                     height: 80,
                     child: ListView(
@@ -210,10 +236,19 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
                                     child: Image.network(
-                                      img,
+                                      ApiConstants.resolveImageUrl(img) ?? img,
                                       width: 80,
                                       height: 80,
                                       fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Container(
+                                        width: 80,
+                                        height: 80,
+                                        color: context.inputFillColor,
+                                        child: Icon(
+                                          Icons.broken_image,
+                                          color: context.textHintColor,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                   Positioned(
@@ -244,7 +279,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                             )),
                         if (_selectedImages.length < 4)
                           GestureDetector(
-                            onTap: _addImage,
+                            onTap: _isUploadingImages ? null : _addImage,
                             child: Container(
                               width: 80,
                               height: 80,
@@ -253,10 +288,15 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(color: context.borderSubtle),
                               ),
-                              child: Icon(
-                                Icons.add_photo_alternate_outlined,
-                                color: context.textHintColor,
-                              ),
+                              child: _isUploadingImages
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(24),
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    )
+                                  : Icon(
+                                      Icons.add_photo_alternate_outlined,
+                                      color: context.textHintColor,
+                                    ),
                             ),
                           ),
                       ],
@@ -284,7 +324,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: _submitOffer,
+                onPressed: _isUploadingImages ? null : _submitOffer,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -303,6 +343,62 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildHourlyEstimate() {
+    final rate = double.tryParse(_priceController.text.trim()) ?? 0;
+    final start = AppDateTime.tryParseTimeOfDay(_startTimeController.text);
+    final end = AppDateTime.tryParseTimeOfDay(_endTimeController.text);
+    String? estimate;
+    if (rate > 0 && start != null && end != null) {
+      var startMins = start.hour * 60 + start.minute;
+      var endMins = end.hour * 60 + end.minute;
+      var mins = endMins - startMins;
+      if (mins <= 0) mins += 24 * 60;
+      if (mins > 0) {
+        final hours = mins / 60.0;
+        final total = (rate * hours).round();
+        estimate =
+            '${hours.toStringAsFixed(2)} h × ${rate.toStringAsFixed(0)} MAD/h\n'
+            'Client pays: $total MAD (rounded)';
+      }
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.primary.withOpacity(0.25)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Hourly estimate',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              estimate ??
+                  'Set price + start/end time to see the rounded total.',
+              style: TextStyle(
+                fontSize: 12,
+                color: context.textSecondaryColor,
+                height: 1.35,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -329,16 +425,22 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
         GestureDetector(
           onTap: () async {
             final now = DateTime.now();
+            final initial = _isoDate != null
+                ? (AppDateTime.tryParseDate(_isoDate!) ?? now)
+                : (AppDateTime.tryParseDate(controller.text) ?? now);
             final picked = await showDatePicker(
               context: context,
-              initialDate: controller.text.isNotEmpty
-                  ? DateTime.tryParse(controller.text) ?? now
-                  : now,
+              initialDate: initial.isBefore(now)
+                  ? now
+                  : (initial.isAfter(now.add(const Duration(days: 365)))
+                      ? now
+                      : initial),
               firstDate: now,
               lastDate: now.add(const Duration(days: 365)),
             );
             if (picked != null) {
-              controller.text = picked.toIso8601String().split('T')[0];
+              _isoDate = AppDateTime.toIsoDate(picked);
+              controller.text = AppDateTime.formatDateDisplay(_isoDate);
             }
           },
           child: AbsorbPointer(
@@ -364,15 +466,12 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
         GestureDetector(
           onTap: () async {
             final now = TimeOfDay.now();
-            final picked = await showTimePicker(
-              context: context,
-              initialTime: controller.text.isNotEmpty
-                  ? _parseTimeOfDay(controller.text) ?? now
-                  : now,
+            final picked = await showSimpleTimePicker(
+              context,
+              initialTime: AppDateTime.tryParseTimeOfDay(controller.text) ?? now,
             );
             if (picked != null) {
-              controller.text =
-                  '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+              controller.text = AppDateTime.formatTimeOfDay12h(picked);
             }
           },
           child: AbsorbPointer(
@@ -388,18 +487,6 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
         ),
       ],
     );
-  }
-
-  TimeOfDay? _parseTimeOfDay(String time) {
-    final parts = time.split(':');
-    if (parts.length == 2) {
-      final hour = int.tryParse(parts[0]);
-      final minute = int.tryParse(parts[1]);
-      if (hour != null && minute != null) {
-        return TimeOfDay(hour: hour, minute: minute);
-      }
-    }
-    return null;
   }
 
   InputDecoration _buildInputDecoration(BuildContext context, String hint) {
@@ -453,38 +540,66 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
 
   Future<void> _addImage() async {
     if (_selectedImages.length >= 4) {
-      Get.snackbar('Error', 'Maximum 4 images allowed',
-          snackPosition: SnackPosition.BOTTOM);
+      AppFeedback.error('Maximum 4 images allowed', title: 'Limit reached');
       return;
     }
 
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    final picked = await picker.pickMultiImage(
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 80,
+    );
+    if (picked.isEmpty) return;
 
-    if (pickedFile == null) return;
+    final remaining = 4 - _selectedImages.length;
+    final toUpload = picked.take(remaining).toList();
+    final skipped = picked.length - toUpload.length;
 
+    if (skipped > 0) {
+      AppFeedback.error(
+        'Only 4 images allowed. $skipped image(s) were not added.',
+        title: 'Limit reached',
+      );
+    }
+
+    setState(() => _isUploadingImages = true);
+    var failed = 0;
     try {
       final api = Get.find<ApiClient>();
-      final formData = dio.FormData.fromMap({
-        'file': await dio.MultipartFile.fromFile(pickedFile.path),
-      });
-
-      final response = await api.upload<dynamic>(
-        ApiConstants.uploadImage,
-        formData: formData,
-      );
-
-      if (response.success && response.data != null) {
-        final data = response.data;
-        if (data is Map<String, dynamic> && data['url'] != null) {
-          setState(() {
-            _selectedImages.add(data['url']);
+      for (final file in toUpload) {
+        try {
+          final formData = dio.FormData.fromMap({
+            'file': await dio.MultipartFile.fromFile(file.path),
           });
+          final response = await api.upload<dynamic>(
+            ApiConstants.uploadImage,
+            formData: formData,
+          );
+          if (response.success && response.data is Map<String, dynamic>) {
+            final data = response.data as Map<String, dynamic>;
+            final key = (data['key'] ?? data['url'])?.toString();
+            if (key != null && key.isNotEmpty) {
+              if (!mounted) return;
+              setState(() => _selectedImages.add(key));
+              continue;
+            }
+          }
+          failed++;
+        } catch (_) {
+          failed++;
         }
       }
-    } catch (e) {
-      Get.snackbar('Error', 'Failed to upload image',
-          snackPosition: SnackPosition.BOTTOM);
+    } finally {
+      if (mounted) setState(() => _isUploadingImages = false);
+    }
+
+    if (failed > 0 && mounted) {
+      AppFeedback.error(
+        failed == toUpload.length
+            ? 'Failed to upload images. Please try again.'
+            : 'Failed to upload $failed of ${toUpload.length} image(s).',
+      );
     }
   }
 
@@ -506,14 +621,20 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
       return;
     }
 
+    String? isoDate = _isoDate;
+    if (isoDate == null && _dateController.text.trim().isNotEmpty) {
+      final parsed = AppDateTime.tryParseDate(_dateController.text);
+      if (parsed != null) isoDate = AppDateTime.toIsoDate(parsed);
+    }
+
     widget.onOfferSent({
       'title': title,
       'description': _descController.text.trim(),
       'price': price,
       'priceType': _priceType,
-      'date': _dateController.text.trim(),
-      'startTime': _startTimeController.text.trim(),
-      'endTime': _endTimeController.text.trim(),
+      'date': isoDate ?? '',
+      'startTime': AppDateTime.formatTime12h(_startTimeController.text),
+      'endTime': AppDateTime.formatTime12h(_endTimeController.text),
       'paymentMethod': _paymentMethod,
       'images': _selectedImages,
     });

@@ -1,7 +1,11 @@
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
+import 'package:awnneaapp/app/core/utils/datetime_format.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/data/models/message_model.dart';
+import 'package:awnneaapp/app/modules/messages/views/widgets/image_viewer_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 class OfferCardWidget extends StatelessWidget {
   final ChatMessage message;
@@ -29,6 +33,8 @@ class OfferCardWidget extends StatelessWidget {
     if (offer == null) return const SizedBox.shrink();
 
     final isPending = offer.status == 'pending';
+    final isAwaitingPayment = offer.status == 'awaiting_payment';
+    final showActions = isPending || (isAwaitingPayment && !isHelper && !isSentByMe);
 
     return Container(
       width: 280,
@@ -94,18 +100,29 @@ class OfferCardWidget extends StatelessWidget {
                 itemBuilder: (context, index) {
                   return Padding(
                     padding: const EdgeInsets.only(right: 4),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        offer.images[index],
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
+                    child: GestureDetector(
+                      onTap: () {
+                        Get.to(
+                          () => ImageViewerScreen(
+                            imageUrls: offer.images,
+                            initialIndex: index,
+                          ),
+                        );
+                      },
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          ApiConstants.resolveImageUrl(offer.images[index]) ??
+                              offer.images[index],
                           width: 80,
                           height: 80,
-                          color: context.inputFillColor,
-                          child: Icon(Icons.image, color: context.textHintColor),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 80,
+                            height: 80,
+                            color: context.inputFillColor,
+                            child: Icon(Icons.image, color: context.textHintColor),
+                          ),
                         ),
                       ),
                     ),
@@ -171,13 +188,21 @@ class OfferCardWidget extends StatelessWidget {
                     children: [
                       Icon(Icons.access_time, size: 14, color: context.textHintColor),
                       const SizedBox(width: 4),
-                      Text(
-                        [
-                          if (offer.date.isNotEmpty) offer.date,
-                          if (offer.startTime.isNotEmpty || offer.endTime.isNotEmpty)
-                            '${offer.startTime} - ${offer.endTime}',
-                        ].join('  '),
-                        style: TextStyle(fontSize: 12, color: context.textHintColor),
+                      Expanded(
+                        child: Text(
+                          [
+                            if (offer.date.isNotEmpty)
+                              AppDateTime.formatDateDisplay(offer.date),
+                            if (offer.startTime.isNotEmpty || offer.endTime.isNotEmpty)
+                              [
+                                AppDateTime.formatTime12h(offer.startTime),
+                                AppDateTime.formatTime12h(offer.endTime),
+                              ].where((t) => t.isNotEmpty).join(' - '),
+                          ].where((s) => s.isNotEmpty).join('  '),
+                          style: TextStyle(fontSize: 12, color: context.textHintColor),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
@@ -206,7 +231,7 @@ class OfferCardWidget extends StatelessWidget {
           ),
 
           // Action buttons
-          if (isPending)
+          if (showActions)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
@@ -214,7 +239,23 @@ class OfferCardWidget extends StatelessWidget {
                   top: BorderSide(color: context.borderSubtle),
                 ),
               ),
-              child: _buildActionButtons(offer.status),
+              child: isAwaitingPayment
+                  ? SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: onAccept,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange.shade700,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                        child: const Text('Pay now', style: TextStyle(fontSize: 12)),
+                      ),
+                    )
+                  : _buildActionButtons(offer.status),
             ),
         ],
       ),
@@ -237,6 +278,10 @@ class OfferCardWidget extends StatelessWidget {
       case 'cancelled':
         color = Colors.orange;
         text = 'Cancelled';
+        break;
+      case 'awaiting_payment':
+        color = Colors.orange.shade800;
+        text = 'Payment required';
         break;
       default:
         color = Colors.blue;
@@ -342,6 +387,8 @@ class OfferCardWidget extends StatelessWidget {
         return Colors.red;
       case 'cancelled':
         return Colors.orange;
+      case 'awaiting_payment':
+        return Colors.orange.shade800;
       default:
         return Colors.blue;
     }

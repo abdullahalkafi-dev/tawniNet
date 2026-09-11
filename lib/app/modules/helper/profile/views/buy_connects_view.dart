@@ -1,9 +1,17 @@
+import 'package:awnneaapp/app/core/utils/app_feedback.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:awnneaapp/app/services/wallet_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:url_launcher/url_launcher.dart';
+
+class _ConnectPackage {
+  final int connects;
+  final double price;
+
+  const _ConnectPackage({required this.connects, required this.price});
+}
 
 class BuyConnectsView extends StatefulWidget {
   const BuyConnectsView({super.key});
@@ -13,35 +21,24 @@ class BuyConnectsView extends StatefulWidget {
 }
 
 class _BuyConnectsViewState extends State<BuyConnectsView> {
-  String selectedPackage = '10 for MAD 1.50';
   double currentBalance = 0.0;
   bool isLoading = true;
+  bool isPurchasing = false;
 
-  final Map<String, int> packageAmounts = {
-    '10 for MAD 1.50': 10,
-    '20 for MAD 3.00': 20,
-    '40 for MAD 6.00': 40,
-    '60 for MAD 9.00': 60,
-    '80 for MAD 12.00': 80,
-    '100 for MAD 15.00': 100,
-    '150 for MAD 22.50': 150,
-    '200 for MAD 30.00': 200,
-    '250 for MAD 37.50': 250,
-    '300 for MAD 45.00': 300,
-  };
+  static const List<_ConnectPackage> _packages = [
+    _ConnectPackage(connects: 10, price: 1.50),
+    _ConnectPackage(connects: 20, price: 3.00),
+    _ConnectPackage(connects: 40, price: 6.00),
+    _ConnectPackage(connects: 60, price: 9.00),
+    _ConnectPackage(connects: 80, price: 12.00),
+    _ConnectPackage(connects: 100, price: 15.00),
+    _ConnectPackage(connects: 150, price: 22.50),
+    _ConnectPackage(connects: 200, price: 30.00),
+    _ConnectPackage(connects: 250, price: 37.50),
+    _ConnectPackage(connects: 300, price: 45.00),
+  ];
 
-  final Map<String, double> packagePrices = {
-    '10 for MAD 1.50': 1.50,
-    '20 for MAD 3.00': 3.00,
-    '40 for MAD 6.00': 6.00,
-    '60 for MAD 9.00': 9.00,
-    '80 for MAD 12.00': 12.00,
-    '100 for MAD 15.00': 15.00,
-    '150 for MAD 22.50': 22.50,
-    '200 for MAD 30.00': 30.00,
-    '250 for MAD 37.50': 37.50,
-    '300 for MAD 45.00': 45.00,
-  };
+  _ConnectPackage _selectedPackage = _packages.first;
 
   @override
   void initState() {
@@ -49,7 +46,8 @@ class _BuyConnectsViewState extends State<BuyConnectsView> {
     _fetchBalance();
   }
 
-  Future<void> _fetchBalance() async {
+  Future<void> _fetchBalance({bool silent = false}) async {
+    if (!silent && mounted) setState(() => isLoading = true);
     try {
       final walletService = Get.find<WalletService>();
       final res = await walletService.getWalletBalance();
@@ -64,13 +62,56 @@ class _BuyConnectsViewState extends State<BuyConnectsView> {
     }
   }
 
+  Future<void> _startPurchase() async {
+    if (isPurchasing || isLoading) return;
+    setState(() => isPurchasing = true);
+    try {
+      final walletService = Get.find<WalletService>();
+      final amount = _selectedPackage.price;
+      final res = await walletService.topupWallet(amount);
+      final sessId = res['sessionId']?.toString() ?? '';
+      // Prefer real orderId (topup_*). Older backends only return
+      // transactionId (init_*) — webhook still resolves that via legacy lookup.
+      var orderId = res['orderId']?.toString() ?? '';
+      if (orderId.isEmpty) {
+        orderId = res['transactionId']?.toString() ?? '';
+      }
+      if (orderId.isEmpty) {
+        throw Exception('Payment session missing orderId');
+      }
+
+      if (!mounted) return;
+      final paid = await Get.toNamed(
+        Routes.checkout,
+        arguments: {
+          'orderId': orderId,
+          'orderType': 'wallet_topup',
+          'amount': amount,
+          'currency': 'MAD',
+          'title': 'Recharge Wallet Top-Up',
+          'sessionId': sessId,
+        },
+      );
+
+      if (paid == true && mounted) {
+        await _fetchBalance(silent: true);
+      }
+    } catch (e) {
+      AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => isPurchasing = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: !isPurchasing,
+      child: Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Get.back(),
+          onPressed: isPurchasing ? null : () => Get.back(),
         ),
         title: Text(
           'connects_buy'.tr,
@@ -109,19 +150,27 @@ class _BuyConnectsViewState extends State<BuyConnectsView> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: selectedPackage,
+                      child: DropdownButton<_ConnectPackage>(
+                        value: _selectedPackage,
                         dropdownColor: context.cardColor,
                         isExpanded: true,
-                        items: packageAmounts.keys.map((String item) {
-                          return DropdownMenuItem<String>(
-                            value: item,
-                            child: Text(item, style: AppStyles.bodyMedium.copyWith(color: context.textPrimaryColor)),
+                        items: _packages.map((pkg) {
+                          return DropdownMenuItem<_ConnectPackage>(
+                            value: pkg,
+                            child: Text(
+                              'MAD ${pkg.price.toStringAsFixed(2)}',
+                              style: AppStyles.bodyMedium.copyWith(
+                                color: context.textPrimaryColor,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           );
                         }).toList(),
-                        onChanged: (String? newValue) {
-                          if (newValue != null) setState(() => selectedPackage = newValue);
-                        },
+                        onChanged: isPurchasing
+                            ? null
+                            : (pkg) {
+                                if (pkg != null) setState(() => _selectedPackage = pkg);
+                              },
                       ),
                     ),
                   ),
@@ -132,7 +181,7 @@ class _BuyConnectsViewState extends State<BuyConnectsView> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'MAD ${(currentBalance + (packagePrices[selectedPackage] ?? 0.0)).toStringAsFixed(2)}',
+                    'MAD ${(currentBalance + _selectedPackage.price).toStringAsFixed(2)}',
                     style: AppStyles.h1Of(context).copyWith(fontSize: 28),
                   ),
                   const Spacer(),
@@ -140,7 +189,7 @@ class _BuyConnectsViewState extends State<BuyConnectsView> {
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () => Get.back(),
+                          onPressed: isPurchasing ? null : () => Get.back(),
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: AppColors.primary),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
@@ -152,30 +201,23 @@ class _BuyConnectsViewState extends State<BuyConnectsView> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () async {
-                            try {
-                              final walletService = Get.find<WalletService>();
-                              final amount = packagePrices[selectedPackage] ?? 10.0;
-                              final res = await walletService.topupWallet(amount);
-                              final checkoutUrl = res['checkoutUrl'] ?? res['paymentUrl'];
-                              if (checkoutUrl != null) {
-                                final uri = Uri.parse(checkoutUrl.toString());
-                                if (await canLaunchUrl(uri)) {
-                                  await launchUrl(uri, mode: LaunchMode.externalApplication);
-                                } else {
-                                  Get.snackbar('Top-Up Link', checkoutUrl.toString(), snackPosition: SnackPosition.BOTTOM);
-                                }
-                              }
-                            } catch (e) {
-                              Get.snackbar('Error', e.toString().replaceAll('Exception: ', ''), snackPosition: SnackPosition.BOTTOM);
-                            }
-                          },
+                          onPressed: isPurchasing ? null : _startPurchase,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
+                            disabledBackgroundColor: AppColors.primary.withOpacity(0.7),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
-                          child: Text('connects_buy'.tr, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          child: isPurchasing
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  ),
+                                )
+                              : Text('connects_buy'.tr, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                         ),
                       ),
                     ],
@@ -183,6 +225,7 @@ class _BuyConnectsViewState extends State<BuyConnectsView> {
                 ],
               ),
             ),
+      ),
     );
   }
 }

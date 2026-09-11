@@ -55,6 +55,23 @@ class ChatConversation {
     );
   }
 
+  ChatConversation copyWith({
+    int? unreadCount,
+    ChatMessage? lastMessage,
+    DateTime? lastMessageAt,
+  }) {
+    return ChatConversation(
+      id: id,
+      participants: participants,
+      otherParticipant: otherParticipant,
+      lastMessage: lastMessage ?? this.lastMessage,
+      lastMessageAt: lastMessageAt ?? this.lastMessageAt,
+      unreadCount: unreadCount ?? this.unreadCount,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
+    );
+  }
+
   String get displayName => otherParticipant?.name ?? 'Unknown';
   String get displayImage => otherParticipant?.avatar ?? '';
 }
@@ -83,6 +100,8 @@ class ChatMessage {
   final String id;
   final String conversationId;
   final String senderId;
+  final String senderName;
+  final String senderAvatar;
   final String type; // text, image, video, offer
   final String? content;
   final List<String> images;
@@ -95,6 +114,8 @@ class ChatMessage {
     required this.id,
     required this.conversationId,
     required this.senderId,
+    this.senderName = '',
+    this.senderAvatar = '',
     required this.type,
     this.content,
     this.images = const [],
@@ -105,12 +126,13 @@ class ChatMessage {
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
+    final sender = json['sender'];
     return ChatMessage(
       id: json['_id'] ?? json['id'] ?? '',
       conversationId: json['conversation'] ?? '',
-      senderId: json['sender'] is Map
-          ? json['sender']['_id'] ?? ''
-          : json['sender'] ?? '',
+      senderId: sender is Map ? sender['_id'] ?? '' : sender ?? '',
+      senderName: sender is Map ? (sender['name'] ?? '') : '',
+      senderAvatar: sender is Map ? (sender['avatar'] ?? '') : '',
       type: json['type'] ?? 'text',
       content: json['content'],
       images: (json['images'] as List?)?.cast<String>() ?? [],
@@ -130,6 +152,8 @@ class ChatMessage {
       id: id,
       conversationId: conversationId,
       senderId: senderId,
+      senderName: senderName,
+      senderAvatar: senderAvatar,
       type: type,
       content: content,
       images: images,

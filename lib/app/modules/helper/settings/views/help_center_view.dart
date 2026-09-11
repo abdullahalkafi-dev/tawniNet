@@ -167,7 +167,7 @@ class _HelpCenterViewState extends State<HelpCenterView> {
                   'settings_24x7_support'.tr,
                   Icons.chat_bubble_outline,
                   AppColors.primary,
-                  onTap: () => Get.toNamed(Routes.customerService),
+                  onTap: () => Get.toNamed(Routes.supportTicketList),
                 ),
               ),
               const SizedBox(width: 16),

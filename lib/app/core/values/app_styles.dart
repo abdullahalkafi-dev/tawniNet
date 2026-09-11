@@ -29,6 +29,12 @@ class AppStyles {
         color: AppColors.textSecondary,
       );
 
+  static TextStyle get bodySmall => GoogleFonts.inter(
+        fontSize: 12,
+        fontWeight: FontWeight.normal,
+        color: AppColors.textSecondary,
+      );
+
   static TextStyle get buttonText => GoogleFonts.inter(
         fontSize: 16,
         fontWeight: FontWeight.w600,
@@ -56,6 +62,12 @@ class AppStyles {
 
   static TextStyle bodyMediumOf(BuildContext context) => GoogleFonts.inter(
         fontSize: 14,
+        fontWeight: FontWeight.normal,
+        color: context.textSecondaryColor,
+      );
+
+  static TextStyle bodySmallOf(BuildContext context) => GoogleFonts.inter(
+        fontSize: 12,
         fontWeight: FontWeight.normal,
         color: context.textSecondaryColor,
       );

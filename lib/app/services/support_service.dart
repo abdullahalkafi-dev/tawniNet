@@ -5,8 +5,9 @@ import 'package:get/get.dart';
 class SupportService extends GetxService {
   late final ApiClient _api;
 
-  SupportService() {
+  Future<SupportService> init() async {
     _api = Get.find<ApiClient>();
+    return this;
   }
 
   Future<Map<String, dynamic>> createTicket(String subject, String message) async {
@@ -55,6 +56,24 @@ class SupportService extends GetxService {
     final response = await _api.post(
       endpoint,
       data: {'content': content},
+      fromData: (data) => data,
+    );
+
+    if (response.success && response.data != null) {
+      return response.data as Map<String, dynamic>;
+    }
+    throw Exception(response.message ?? 'Failed to send message');
+  }
+
+  Future<Map<String, dynamic>> sendSupportMessageWithImages(
+      String ticketId, String content, List<String> imageKeys) async {
+    final endpoint = '${ApiConstants.supportTickets}/$ticketId/messages';
+    final response = await _api.post(
+      endpoint,
+      data: {
+        'content': content,
+        'attachments': imageKeys,
+      },
       fromData: (data) => data,
     );
 

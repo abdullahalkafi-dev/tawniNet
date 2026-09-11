@@ -140,6 +140,14 @@ class PostJobView extends GetView<PostJobController> {
             const SizedBox(height: 20),
 
             _buildLabel(context, 'post_add_photos'.tr),
+            Text(
+              'Max 4 photos',
+              style: AppStyles.bodyMedium.copyWith(
+                fontSize: 12,
+                color: context.textHintColor,
+              ),
+            ),
+            const SizedBox(height: 8),
             _buildPhotoPicker(context),
             const SizedBox(height: 40),
 
@@ -460,91 +468,89 @@ class PostJobView extends GetView<PostJobController> {
   }
 
   Widget _buildPhotoPicker(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              GestureDetector(
-                onTap: controller.pickImage,
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: context.inputFillColor,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: context.borderSubtle,
-                      style: BorderStyle.solid,
+    return Obx(() {
+      final images = controller.selectedImages;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (var index = 0; index < images.length; index++) ...[
+                  if (index > 0) const SizedBox(width: 12),
+                  Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.file(
+                          File(images[index]),
+                          width: 80,
+                          height: 80,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: GestureDetector(
+                          onTap: () => controller.removeImage(index),
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.6),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.close,
+                              color: Colors.white,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                if (images.length < kJobMaxImages) ...[
+                  if (images.isNotEmpty) const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: controller.pickImage,
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: context.inputFillColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: context.borderSubtle,
+                          style: BorderStyle.solid,
+                        ),
+                      ),
+                      child: Icon(
+                        Icons.add_a_photo_outlined,
+                        color: context.textHintColor,
+                      ),
                     ),
                   ),
-                  child:
-                      Icon(Icons.add_a_photo_outlined, color: context.textHintColor),
-                ),
-              ),
-              Obx(
-                () => Row(
-                  children: controller.selectedImages.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final path = entry.value;
-                    return Padding(
-                      padding: const EdgeInsets.only(left: 12),
-                      child: Stack(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.file(
-                              File(path),
-                              width: 80,
-                              height: 80,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          Positioned(
-                            top: 4,
-                            right: 4,
-                            child: GestureDetector(
-                              onTap: () => controller.removeImage(index),
-                              child: Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withValues(alpha: 0.6),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.close,
-                                  color: Colors.white,
-                                  size: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ],
+                ],
+              ],
+            ),
           ),
-        ),
-        Obx(() {
-          if (controller.selectedImages.isEmpty) return const SizedBox.shrink();
-          return Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              '${controller.selectedImages.length}${'post_photos_selected'.tr}',
-              style: AppStyles.bodyMedium.copyWith(
-                color: context.textHintColor,
-                fontSize: 12,
+          if (images.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                '${images.length} / $kJobMaxImages selected',
+                style: AppStyles.bodyMedium.copyWith(
+                  color: context.textHintColor,
+                  fontSize: 12,
+                ),
               ),
             ),
-          );
-        }),
-      ],
-    );
+        ],
+      );
+    });
   }
 }

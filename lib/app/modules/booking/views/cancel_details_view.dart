@@ -1,5 +1,10 @@
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
+import 'package:awnneaapp/app/core/utils/app_feedback.dart';
+import 'package:awnneaapp/app/core/utils/datetime_format.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
+import 'package:awnneaapp/app/core/values/app_currency.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/booking_controller.dart';
@@ -10,7 +15,26 @@ class CancelDetailsView extends GetView<BookingController> {
 
   @override
   Widget build(BuildContext context) {
-    final Booking booking = Get.arguments;
+    final args = Get.arguments;
+    final Booking? booking = args is Booking ? args : null;
+    if (booking == null) {
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Get.back(),
+          ),
+          title: Text(
+            'cancel_details_title'.tr,
+            style: AppStyles.h2Of(context).copyWith(fontSize: 18),
+          ),
+          centerTitle: true,
+        ),
+        body: Center(
+          child: Text('Booking not found. Go back and try again.'),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -29,11 +53,13 @@ class CancelDetailsView extends GetView<BookingController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildCancelBanner(context, booking.date),
+            _buildCancelBanner(context, booking),
             const SizedBox(height: 20),
             _buildWorkerMiniCard(context, booking),
             const SizedBox(height: 24),
             _buildCancellationReason(context, booking),
+            const SizedBox(height: 24),
+            _buildRefundStatus(context, booking),
             const SizedBox(height: 24),
             _buildJobInfo(context, booking),
             const SizedBox(height: 24),
@@ -46,7 +72,10 @@ class CancelDetailsView extends GetView<BookingController> {
     );
   }
 
-  Widget _buildCancelBanner(BuildContext context, String date) {
+  Widget _buildCancelBanner(BuildContext context, Booking booking) {
+    final date = booking.cancelledAt.isNotEmpty
+        ? AppDateTime.formatDateDisplay(booking.cancelledAt)
+        : booking.date;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -72,10 +101,95 @@ class CancelDetailsView extends GetView<BookingController> {
                   ),
                 ),
                 Text(
-                  'cancel_job_cancelled_on'.tr + date,
+                  date.isEmpty
+                      ? 'cancel_job_cancelled'.tr
+                      : '${'cancel_job_cancelled_on'.tr} $date',
                   style: AppStyles.bodyMedium.copyWith(
                     color: Colors.red[300],
                     fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRefundStatus(BuildContext context, Booking booking) {
+    final isOnline = booking.paymentMethod.toLowerCase() == 'online';
+    final refund = booking.refundStatus.toLowerCase();
+
+    Color color;
+    IconData icon;
+    String title;
+    String body;
+
+    if (!isOnline) {
+      color = AppColors.primary;
+      icon = Icons.account_balance_wallet_outlined;
+      title = 'Cash job';
+      body =
+          'No online charge to refund. Helper commission is returned to their wallet when applicable.';
+    } else if (refund == 'refunded') {
+      color = const Color(0xFF0F766E);
+      icon = Icons.check_circle_outline;
+      title = 'Payment refunded';
+      body = booking.refundReference.isNotEmpty
+          ? 'Refunded to your original payment method.\nRef: ${booking.refundReference}'
+          : 'Refunded to your original payment method.';
+    } else if (refund == 'failed') {
+      color = Colors.orange.shade800;
+      icon = Icons.error_outline;
+      title = 'Refund needs attention';
+      body =
+          'Automatic refund did not complete. Contact support with booking ID ${booking.id}.';
+    } else if (refund == 'pending') {
+      color = Colors.blueGrey;
+      icon = Icons.hourglass_empty;
+      title = 'Refund processing';
+      body = 'Your refund is being processed.';
+    } else {
+      color = context.textSecondaryColor;
+      icon = Icons.info_outline;
+      title = 'No charge to refund';
+      body = booking.budget > 0
+          ? 'This job was cancelled before payment completed (${formatMoney(booking.budget)}).'
+          : 'This job was cancelled before any payment.';
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.borderSubtle),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppStyles.bodyLarge.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: color,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  body,
+                  style: AppStyles.bodyMedium.copyWith(
+                    fontSize: 12,
+                    color: context.textSecondaryColor,
+                    height: 1.4,
                   ),
                 ),
               ],
@@ -96,10 +210,20 @@ class CancelDetailsView extends GetView<BookingController> {
       ),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: Colors.red[100],
-            backgroundImage: NetworkImage(booking.workerImage),
+          Builder(
+            builder: (context) {
+              final resolved =
+                  ApiConstants.resolveImageUrl(booking.workerImage);
+              final hasPhoto = resolved != null && resolved.isNotEmpty;
+              return CircleAvatar(
+                radius: 30,
+                backgroundColor: Colors.red[100],
+                backgroundImage: hasPhoto ? NetworkImage(resolved) : null,
+                child: hasPhoto
+                    ? null
+                    : const Icon(Icons.person, color: Colors.red),
+              );
+            },
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -118,9 +242,13 @@ class CancelDetailsView extends GetView<BookingController> {
                       size: 16,
                     ),
                     const SizedBox(width: 4),
-                    Text(
-                      booking.location,
-                      style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor),
+                    Expanded(
+                      child: Text(
+                        booking.location,
+                        style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
@@ -154,7 +282,9 @@ class CancelDetailsView extends GetView<BookingController> {
             style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
           ),
           Text(
-            booking.workerName,
+            booking.workerUserId.isEmpty
+                ? 'You'
+                : booking.workerName,
             style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
@@ -163,7 +293,9 @@ class CancelDetailsView extends GetView<BookingController> {
             style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
           ),
           Text(
-            'cancel_reason_default'.tr,
+            (booking.cancellationReason != null && booking.cancellationReason!.isNotEmpty)
+                ? booking.cancellationReason!
+                : 'cancel_reason_default'.tr,
             style: AppStyles.bodyLarge.copyWith(
               color: Colors.red[400],
               fontWeight: FontWeight.bold,
@@ -187,9 +319,23 @@ class CancelDetailsView extends GetView<BookingController> {
         children: [
           Text('cancel_job_info'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 18)),
           const SizedBox(height: 16),
-          _buildInfoRow(context, Icons.calendar_today, 'Sunday, Feb 11, 2026'),
-          _buildInfoRow(context, Icons.access_time, '10:00 AM - 12:00 PM'),
-          _buildInfoRow(context, Icons.monetization_on_outlined, 'cancel_service_fee'.tr + '85'),
+          _buildInfoRow(
+            context,
+            Icons.calendar_today,
+            booking.date.isEmpty ? '—' : booking.date,
+          ),
+          _buildInfoRow(
+            context,
+            Icons.access_time,
+            booking.time.isEmpty ? 'Flexible' : booking.time,
+          ),
+          _buildInfoRow(
+            context,
+            Icons.monetization_on_outlined,
+            formatMoney(booking.budget),
+          ),
+          if (booking.location.isNotEmpty)
+            _buildInfoRow(context, Icons.location_on_outlined, booking.location),
         ],
       ),
     );
@@ -212,13 +358,14 @@ class CancelDetailsView extends GetView<BookingController> {
   }
 
   Widget _buildServiceDescription(BuildContext context, Booking booking) {
+    final desc = booking.description.trim();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('cancel_service_description'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 18)),
         const SizedBox(height: 12),
         Text(
-          'Lorem ipsum dolor sit amet consectetur. Elit ac gravida augue suspendisse in scelerisque pellentesque diam elementum. Lorem quam vitae mus metus tortor turpis at. Cras accumsan pharetra odio euismod metus leo neque duis. more',
+          desc.isEmpty ? 'No description provided.' : desc,
           style: AppStyles.bodyMediumOf(context).copyWith(
             color: context.textSecondaryColor,
             height: 1.5,
@@ -233,9 +380,15 @@ class CancelDetailsView extends GetView<BookingController> {
       width: double.infinity,
       height: 55,
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: () {
+          try {
+            Get.toNamed(Routes.supportTicketList);
+          } catch (_) {
+            AppFeedback.error('Support is unavailable right now.');
+          }
+        },
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary.withOpacity(0.5),
+          backgroundColor: AppColors.primary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
           ),

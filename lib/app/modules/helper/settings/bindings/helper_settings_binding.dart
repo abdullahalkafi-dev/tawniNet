@@ -6,6 +6,7 @@ class HelperSettingsBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<HelperHomeController>(() => HelperHomeController());
-    Get.lazyPut<CustomerServiceController>(() => CustomerServiceController());
+    // Keep support controller alive so socket listeners survive route changes
+    Get.put<CustomerServiceController>(CustomerServiceController(), permanent: true);
   }
 }

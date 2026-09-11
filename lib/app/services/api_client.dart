@@ -50,6 +50,7 @@ class ApiClient {
   }
 
   Dio get dio => _dio;
+  Dio get client => _dio;
 
   // ─── Convenience Methods ────────────────────────────────
 

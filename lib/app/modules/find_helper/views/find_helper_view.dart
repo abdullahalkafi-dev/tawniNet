@@ -131,7 +131,7 @@ class FindHelperView extends GetView<FindHelperController> {
             divisions: 49,
             label: '${controller.distanceValue.value.toInt()}km',
             onChanged: (val) => controller.updateDistance(val),
-            onChangeEnd: (_) => controller.applyFilters(),
+            onChangeEnd: (_) => controller.applyFiltersInPlace(),
           ),
         ),
       ],
@@ -161,7 +161,7 @@ class FindHelperView extends GetView<FindHelperController> {
           child: SizedBox(
             height: 45,
             child: ElevatedButton(
-              onPressed: controller.applyFilters,
+              onPressed: () => controller.applyFilters(closeScreen: false),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 shape: RoundedRectangleBorder(

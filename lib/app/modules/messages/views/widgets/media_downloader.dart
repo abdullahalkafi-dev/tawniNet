@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:awnneaapp/app/core/utils/app_feedback.dart';
 import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
@@ -30,23 +31,19 @@ class MediaDownloader {
       }
 
       if (dir == null) {
-        Get.snackbar('Error', 'Could not access storage',
-            snackPosition: SnackPosition.BOTTOM);
+        AppFeedback.error('Could not access storage');
         return;
       }
 
       final filePath = '${dir.path}/$fileName';
       await dio.download(url, filePath);
 
-      Get.snackbar(
-        'Downloaded',
+      AppFeedback.success(
         'Saved to ${Platform.isAndroid ? "Downloads" : "Files"}/$fileName',
-        snackPosition: SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 3),
+        title: 'Downloaded',
       );
     } catch (e) {
-      Get.snackbar('Error', 'Failed to download: $e',
-          snackPosition: SnackPosition.BOTTOM);
+      AppFeedback.error('Failed to download: $e');
     }
   }
 }

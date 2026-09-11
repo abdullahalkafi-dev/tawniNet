@@ -1,6 +1,10 @@
+import 'package:awnneaapp/app/core/utils/app_feedback.dart';
+import 'package:awnneaapp/app/core/utils/job_display.dart';
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/widgets/custom_button.dart';
+import 'package:awnneaapp/app/services/refetch_service.dart';
 import 'package:awnneaapp/app/services/review_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -15,10 +19,31 @@ class RateClientView extends StatefulWidget {
 class _RateClientViewState extends State<RateClientView> {
   int _rating = 0;
   final _reviewController = TextEditingController();
+  Map<String, dynamic> _job = const {};
+
+  @override
+  void initState() {
+    super.initState();
+    final args = Get.arguments;
+    if (args is Map) {
+      _job = Map<String, dynamic>.from(args);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final job = Get.arguments as Map;
+    final job = _job;
+    if (job.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Get.back(),
+          ),
+        ),
+        body: const Center(child: Text('Job not found')),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -97,17 +122,24 @@ class _RateClientViewState extends State<RateClientView> {
                 try {
                   final reviewService = Get.find<ReviewService>();
                   final jobId = (job['id'] ?? job['_id'])?.toString() ?? '';
-                  final revieweeId = (job['clientId'] ?? job['postedBy'])?.toString() ?? '';
+                  final postedBy = job['postedBy'];
+                  String revieweeId = (job['clientId'] ?? '').toString();
+                  if (revieweeId.isEmpty && postedBy is Map) {
+                    revieweeId = (postedBy['_id'] ?? postedBy['id'] ?? '').toString();
+                  }
                   await reviewService.submitReview(
                     jobId: jobId,
                     revieweeId: revieweeId,
                     rating: _rating.toDouble(),
                     comment: _reviewController.text,
                   );
+                  try {
+                    await Get.find<RefetchService>().invalidateJobPipeline();
+                  } catch (_) {}
                   Get.back();
                   Get.snackbar('rate_thank_you'.tr, 'rate_submitted'.tr, snackPosition: SnackPosition.BOTTOM);
                 } catch (e) {
-                  Get.snackbar('Error', e.toString().replaceAll('Exception: ', ''), snackPosition: SnackPosition.BOTTOM);
+                  AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
                 }
               },
             ),
@@ -118,6 +150,15 @@ class _RateClientViewState extends State<RateClientView> {
   }
 
   Widget _buildClientInfo(BuildContext context, Map job) {
+    final name = JobDisplay.personName(
+      job['postedBy'],
+      fallback: JobDisplay.safeText(job['clientName'], fallback: 'Client'),
+    );
+    final avatar = JobDisplay.personAvatar(job['postedBy'],
+        fallback: JobDisplay.safeText(job['clientImage']));
+    final resolvedAvatar = ApiConstants.resolveImageUrl(avatar) ?? avatar;
+    final location = JobDisplay.safeLocation(job);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -131,7 +172,7 @@ class _RateClientViewState extends State<RateClientView> {
           ClipRRect(
             borderRadius: BorderRadius.circular(40),
             child: Image.network(
-              job['clientImage'] ?? 'https://i.pravatar.cc/150?u=default',
+              resolvedAvatar,
               width: 60,
               height: 60,
               fit: BoxFit.cover,
@@ -150,19 +191,30 @@ class _RateClientViewState extends State<RateClientView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(job['clientName'] ?? '', style: AppStyles.h2Of(context).copyWith(fontSize: 16)),
-                Row(
-                  children: [
-                    Icon(Icons.location_on, size: 14, color: Colors.orange[400]),
-                    const SizedBox(width: 4),
-                    Text(job['location'] ?? '', style: AppStyles.bodyMedium.copyWith(fontSize: 13, color: context.textSecondaryColor)),
-                  ],
-                ),
+                Text(name, style: AppStyles.h2Of(context).copyWith(fontSize: 16)),
+                if (location.isNotEmpty)
+                  Row(
+                    children: [
+                      Icon(Icons.location_on, size: 14, color: Colors.orange[400]),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          location,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppStyles.bodyMedium.copyWith(
+                            fontSize: 13,
+                            color: context.textSecondaryColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 const SizedBox(height: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.5),
+                    color: AppColors.primary,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(

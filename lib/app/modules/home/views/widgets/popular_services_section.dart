@@ -179,13 +179,18 @@ class PopularServicesSection extends GetView<HomeController> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            service.name,
-                            style: AppStyles.bodyLargeOf(context).copyWith(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                          Expanded(
+                            child: Text(
+                              service.name,
+                              style: AppStyles.bodyLargeOf(context).copyWith(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,

@@ -1,3 +1,4 @@
+import 'package:awnneaapp/app/core/constants/refetch_keys.dart';
 import 'package:get/get.dart';
 
 class RefetchService extends GetxService {
@@ -29,6 +30,11 @@ class RefetchService extends GetxService {
         await cb();
       }
     }
+  }
+
+  /// Call after any job mutation (cancel / complete / pay / review).
+  Future<void> invalidateJobPipeline() {
+    return invalidateMany(RefetchKeys.jobPipeline);
   }
 
   /// Refetch everything registered.

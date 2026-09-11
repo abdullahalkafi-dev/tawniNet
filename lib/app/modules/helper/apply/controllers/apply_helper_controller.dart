@@ -13,7 +13,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
 import 'package:awnneaapp/app/core/utils/morocco_postal_helper.dart';
 
-class ApplyHelperController extends GetxController {
+class ApplyHelperController extends GetxController with WidgetsBindingObserver {
   late final ApiClient _api;
   final _picker = ImagePicker();
 
@@ -31,39 +31,45 @@ class ApplyHelperController extends GetxController {
   // Dropdown state
   final selectedLanguage = 'English'.obs;
   final selectedServiceType = Rxn<Category>();
-  final selectedIdType = 'NID'.obs;
 
   // Upload state
   final profilePhotoPath = RxnString();
   final profilePhotoKey = RxnString();
   final selectedPhotoPaths = <String>[].obs;
   final uploadedPhotoKeys = <String>[].obs;
-  final documentPath = RxnString();
-  final documentKey = RxnString();
-  final documentFileName = RxnString();
-  final documentFileSize = RxnString();
 
   // Didit KYC state
   final isStartingKyc = false.obs;
+  final isSyncingKyc = false.obs;
   final activeDiditSessionId = RxnString();
 
   // Loading states
   final isLoading = false.obs;
   final isLoadingCategories = false.obs;
   final isUploadingPhoto = false.obs;
-  final isUploadingDocument = false.obs;
 
   // Options
   final languages = ['English', 'Moroccan Arabic'].obs;
-  final idTypes = ['NID', 'Passport', 'Driving License', 'Residence Permit'].obs;
   final categories = <Category>[].obs;
 
   @override
   void onInit() {
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
     _api = Get.find<ApiClient>();
     _loadUserProfile();
     fetchCategories();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // When user returns from the Didit verification browser
+      final user = Get.find<AuthService>().currentUser.value;
+      if (activeDiditSessionId.value != null || user?.diditSessionId != null) {
+        syncKycStatus(showFeedback: false);
+      }
+    }
   }
 
   void _loadUserProfile() {
@@ -71,9 +77,22 @@ class ApplyHelperController extends GetxController {
       final authService = Get.find<AuthService>();
       final user = authService.currentUser.value;
       if (user != null) {
+        if (!user.hasLocation) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Get.offAllNamed(Routes.locationAllow);
+          });
+          return;
+        }
+
         fullNameController.text = user.name;
         phoneController.text = user.phone ?? '';
         emailController.text = user.email ?? '';
+        if (user.avatar != null && user.avatar!.isNotEmpty) {
+          profilePhotoKey.value = user.avatar;
+        }
+        if (user.profilePhotos != null && user.profilePhotos!.isNotEmpty) {
+          uploadedPhotoKeys.assignAll(user.profilePhotos!);
+        }
         if (user.city != null && user.city!.isNotEmpty) {
           final match = RegExp(r'\b\d{5}\b').firstMatch(user.city!);
           cityController.text = match != null ? match.group(0)! : user.city!;
@@ -100,6 +119,10 @@ class ApplyHelperController extends GetxController {
       final categoryService = Get.find<CategoryService>();
       final result = await categoryService.getActiveCategories();
       categories.assignAll(result);
+      final user = Get.find<AuthService>().currentUser.value;
+      if (user?.serviceType != null && categories.isNotEmpty) {
+        selectedServiceType.value = categories.firstWhereOrNull((c) => c.id == user!.serviceType || c.name == user.serviceType);
+      }
     } catch (e) {
       // Fallback categories with mock IDs
       categories.assignAll([
@@ -138,6 +161,11 @@ class ApplyHelperController extends GetxController {
       final key = await _uploadFile(image.path, 'image');
       if (key != null) {
         profilePhotoKey.value = key;
+        // Also save to user profile
+        try {
+          final authService = Get.find<AuthService>();
+          await authService.updateProfile({'avatar': key});
+        } catch (_) {}
       }
     } catch (e) {
       _showError('Failed to pick image');
@@ -173,6 +201,10 @@ class ApplyHelperController extends GetxController {
     final key = await _uploadFile(path, 'image');
     if (key != null) {
       uploadedPhotoKeys.add(key);
+      try {
+        final authService = Get.find<AuthService>();
+        await authService.updateProfile({'profilePhotos': uploadedPhotoKeys.toList()});
+      } catch (_) {}
     }
   }
 
@@ -185,38 +217,51 @@ class ApplyHelperController extends GetxController {
     }
   }
 
-  // ─── Document ───────────────────────────────────────────
+  // ─── Save Form Fields Helper ────────────────────────────
 
-  Future<void> pickDocument() async {
+  Future<void> saveFormFieldsToBackend() async {
     try {
-      final XFile? file = await _picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 2048,
-        maxHeight: 2048,
-        imageQuality: 100,
-      );
-      if (file == null) return;
-
-      documentPath.value = file.path;
-      documentFileName.value = file.name;
-
-      final size = await File(file.path).length();
-      documentFileSize.value = _formatFileSize(size);
-
-      final key = await _uploadFile(file.path, 'document');
-      if (key != null) {
-        documentKey.value = key;
+      final updateData = <String, dynamic>{};
+      if (emailController.text.trim().isNotEmpty) {
+        updateData['email'] = emailController.text.trim();
       }
-    } catch (e) {
-      _showError('Failed to pick document');
-    }
-  }
+      if (bioController.text.trim().isNotEmpty) {
+        updateData['bio'] = bioController.text.trim();
+      }
+      if (ageController.text.trim().isNotEmpty) {
+        final age = int.tryParse(ageController.text.trim());
+        if (age != null) updateData['age'] = age;
+      }
+      if (cityController.text.trim().isNotEmpty) {
+        updateData['city'] = cityController.text.trim();
+      }
+      if (priceController.text.trim().isNotEmpty) {
+        final price = double.tryParse(priceController.text.trim());
+        if (price != null) updateData['pricePerHour'] = price;
+      }
+      if (experienceController.text.trim().isNotEmpty) {
+        final exp = int.tryParse(experienceController.text.trim());
+        if (exp != null) updateData['experience'] = exp;
+      }
+      if (serviceRadiusController.text.trim().isNotEmpty) {
+        final rad = double.tryParse(serviceRadiusController.text.trim());
+        if (rad != null) updateData['serviceRadius'] = rad;
+      }
+      if (selectedServiceType.value != null) {
+        updateData['serviceType'] = selectedServiceType.value!.id;
+      }
+      if (profilePhotoKey.value != null && profilePhotoKey.value!.isNotEmpty) {
+        updateData['avatar'] = profilePhotoKey.value;
+      }
+      if (uploadedPhotoKeys.isNotEmpty) {
+        updateData['profilePhotos'] = uploadedPhotoKeys.toList();
+      }
 
-  void removeDocument() {
-    documentPath.value = null;
-    documentKey.value = null;
-    documentFileName.value = null;
-    documentFileSize.value = null;
+      if (updateData.isNotEmpty) {
+        final authService = Get.find<AuthService>();
+        await authService.updateProfile(updateData);
+      }
+    } catch (_) {}
   }
 
   // ─── Upload Helper ──────────────────────────────────────
@@ -250,17 +295,14 @@ class ApplyHelperController extends GetxController {
     }
   }
 
-  String _formatFileSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
-
-  // ─── Didit Automated KYC Launcher ───────────────────────
+  // ─── Didit Automated KYC Launcher & Sync ────────────────
 
   Future<void> launchDiditKyc() async {
     isStartingKyc.value = true;
     try {
+      // First save any filled form fields so they are preserved
+      await saveFormFieldsToBackend();
+
       final authService = Get.find<AuthService>();
       final sessionData = await authService.createDiditSession();
       final sessionUrl = sessionData['url'] as String?;
@@ -270,13 +312,23 @@ class ApplyHelperController extends GetxController {
         activeDiditSessionId.value = sessionId;
       }
 
-      if (sessionUrl != null && await canLaunchUrl(Uri.parse(sessionUrl))) {
-        await launchUrl(
-          Uri.parse(sessionUrl),
-          mode: LaunchMode.externalApplication,
-        );
+      if (sessionUrl != null && sessionUrl.isNotEmpty) {
+        final uri = Uri.parse(sessionUrl);
+        bool launched = false;
+        try {
+          launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } catch (_) {
+          try {
+            launched = await launchUrl(uri, mode: LaunchMode.inAppBrowserView);
+          } catch (_) {
+            launched = await launchUrl(uri, mode: LaunchMode.platformDefault);
+          }
+        }
+        if (!launched) {
+          throw Exception('Could not open verification browser session. Please check your browser.');
+        }
       } else {
-        throw Exception('Could not open verification browser session');
+        throw Exception('Verification session URL was not returned by the server');
       }
     } catch (e) {
       _showError(e);
@@ -287,21 +339,60 @@ class ApplyHelperController extends GetxController {
     }
   }
 
-  Future<void> syncKycStatus() async {
-    final sessionId = activeDiditSessionId.value;
-    if (sessionId == null || sessionId.isEmpty) return;
-
+  Future<void> syncKycStatus({bool showFeedback = true}) async {
+    isSyncingKyc.value = true;
     try {
       final authService = Get.find<AuthService>();
-      await authService.syncDiditSession(sessionId);
-    } catch (_) {}
+      final user = authService.currentUser.value;
+      final sessionId = activeDiditSessionId.value ?? user?.diditSessionId;
+      if (sessionId != null && sessionId.isNotEmpty) {
+        await authService.syncDiditSession(sessionId);
+      }
+      await authService.getMe();
+      final updatedUser = authService.currentUser.value;
+
+      if (updatedUser?.helperApplicationStatus == 'approved') {
+        AppSnackbar.showSuccess('KYC verification approved! Welcome to Tarik.');
+        Get.offAllNamed(Routes.helperHome);
+        return;
+      } else if (updatedUser?.helperApplicationStatus == 'rejected') {
+        AppSnackbar.showError(updatedUser?.rejectionReason ?? 'Verification was not approved');
+        Get.offAllNamed(Routes.applicationRejected);
+        return;
+      } else if (updatedUser?.diditStatus == 'In Review' || updatedUser?.helperApplicationStatus == 'pending_appeal') {
+        Get.offAllNamed(Routes.applicationPending);
+        return;
+      }
+
+      if (showFeedback) {
+        AppSnackbar.showSuccess('Verification status: ${updatedUser?.diditStatus ?? "In Progress"}');
+      }
+    } catch (e) {
+      if (showFeedback) {
+        _showError(e);
+      }
+    } finally {
+      if (!isClosed) {
+        isSyncingKyc.value = false;
+      }
+    }
   }
 
-  // ─── Submit Application ─────────────────────────────────
+  // ─── Step 1: Submit Form & Proceed to KYC ────────────────
 
-  Future<void> submitApplication() async {
-    if (ageController.text.isEmpty) {
+  Future<void> submitFormStep() async {
+    // 1. Rigorous Frontend Validations
+    if (profilePhotoKey.value == null || profilePhotoKey.value!.isEmpty) {
+      _showError('Please upload a profile photo');
+      return;
+    }
+    if (ageController.text.trim().isEmpty) {
       _showError('Please enter your age');
+      return;
+    }
+    final age = int.tryParse(ageController.text.trim());
+    if (age == null || age < 13) {
+      _showError('Must be 13 years or older to apply');
       return;
     }
     final zipCode = cityController.text.trim();
@@ -318,36 +409,55 @@ class ApplyHelperController extends GetxController {
       return;
     }
     if (selectedServiceType.value == null) {
-      _showError('Please select a service type');
+      _showError('Please select a service category');
       return;
     }
-    if (priceController.text.isEmpty) {
-      _showError('Please enter your price per hour');
+    if (priceController.text.trim().isEmpty) {
+      _showError('Please enter your hourly rate (MAD)');
       return;
     }
-    if (serviceRadiusController.text.isEmpty) {
-      _showError('Please enter your service radius');
+    final price = double.tryParse(priceController.text.trim());
+    if (price == null || price <= 0) {
+      _showError('Hourly rate must be greater than 0 MAD');
+      return;
+    }
+    if (experienceController.text.trim().isEmpty) {
+      _showError('Please enter your experience in years');
+      return;
+    }
+    final experience = int.tryParse(experienceController.text.trim());
+    if (experience == null || experience < 0) {
+      _showError('Experience cannot be negative');
+      return;
+    }
+    if (serviceRadiusController.text.trim().isEmpty) {
+      _showError('Please enter your service radius (km)');
+      return;
+    }
+    final radius = double.tryParse(serviceRadiusController.text.trim());
+    if (radius == null || radius <= 0) {
+      _showError('Service radius must be greater than 0 km');
       return;
     }
 
     isLoading.value = true;
     try {
+      final authService = Get.find<AuthService>();
+
       final response = await _api.post(
         ApiConstants.helperApply,
         data: {
-          'age': int.tryParse(ageController.text) ?? 0,
-          'city': cityController.text.trim(),
+          'age': age,
+          'city': zipCode,
           'language': selectedLanguage.value,
           'serviceType': selectedServiceType.value!.id,
-          'pricePerHour': double.tryParse(priceController.text) ?? 0,
-          'experience': int.tryParse(experienceController.text) ?? 0,
-          'serviceRadius': double.tryParse(serviceRadiusController.text) ?? 0,
-          'documentType': selectedIdType.value.toLowerCase().replaceAll(' ', '_'),
-          'documentUrl': documentKey.value ?? 'placeholder/document',
+          'pricePerHour': price,
+          'experience': experience,
+          'serviceRadius': radius,
           'profilePhotos': uploadedPhotoKeys.toList(),
           if (profilePhotoKey.value != null)
             'avatar': profilePhotoKey.value,
-          if (phoneController.text.isNotEmpty)
+          if (phoneController.text.trim().isNotEmpty)
             'phone': phoneController.text.trim(),
           if (emailController.text.trim().isNotEmpty)
             'email': emailController.text.trim(),
@@ -359,13 +469,12 @@ class ApplyHelperController extends GetxController {
       if (isClosed) return;
 
       if (response.success) {
-        final authService = Get.find<AuthService>();
         await authService.getMe();
-
         if (isClosed) return;
-        Get.offAllNamed(Routes.applicationPending);
+        AppSnackbar.showSuccess('Information saved. Proceeding to ID verification.');
+        Get.toNamed(Routes.helperKycVerification);
       } else {
-        throw Exception(response.message ?? 'Application failed');
+        throw Exception(response.message ?? 'Failed to save application information');
       }
     } catch (e) {
       if (isClosed) return;
@@ -376,6 +485,9 @@ class ApplyHelperController extends GetxController {
       }
     }
   }
+
+  // Alias for backward compatibility if any old view references submitApplication
+  Future<void> submitApplication() => submitFormStep();
 
   // ─── Other ──────────────────────────────────────────────
 
@@ -394,6 +506,7 @@ class ApplyHelperController extends GetxController {
 
   @override
   void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
     fullNameController.dispose();
     ageController.dispose();
     cityController.dispose();

@@ -1,5 +1,8 @@
+import 'package:awnneaapp/app/core/constants/refetch_keys.dart';
+import 'package:awnneaapp/app/core/utils/app_feedback.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:awnneaapp/app/services/job_service.dart';
+import 'package:awnneaapp/app/services/refetch_service.dart';
 import 'package:get/get.dart';
 
 class HelperJobsController extends GetxController {
@@ -8,41 +11,106 @@ class HelperJobsController extends GetxController {
   final cancelledJobs = <dynamic>[].obs;
   final isLoading = false.obs;
 
+  String? _pendingOpenJobId;
+
   @override
   void onInit() {
     super.onInit();
+    try {
+      Get.find<RefetchService>().register(
+        RefetchKeys.helperJobs,
+        fetchJobs,
+      );
+    } catch (_) {}
     fetchJobs();
+  }
+
+  @override
+  void onClose() {
+    try {
+      Get.find<RefetchService>().unregister(RefetchKeys.helperJobs);
+    } catch (_) {}
+    super.onClose();
+  }
+
+  /// Queue a job id to auto-open after the next successful fetch (push deep-link).
+  void setPendingOpenJobId(String? jobId) {
+    if (jobId == null || jobId.isEmpty) return;
+    _pendingOpenJobId = jobId;
+    if (activeJobs.isNotEmpty || completedJobs.isNotEmpty || cancelledJobs.isNotEmpty) {
+      _openPendingJobDetails();
+    }
   }
 
   Future<void> fetchJobs() async {
     isLoading.value = true;
     try {
       final jobService = Get.find<JobService>();
-      final jobs = await jobService.getNearbyJobs();
+      final res = await jobService.getMyAssignedJobs();
 
-      final active = <dynamic>[];
-      final completed = <dynamic>[];
-      final cancelled = <dynamic>[];
-
-      for (var job in jobs) {
-        final status = (job['status'] ?? '').toString().toUpperCase();
-        if (status == 'COMPLETED') {
-          completed.add(job);
-        } else if (status == 'CANCELLED') {
-          cancelled.add(job);
-        } else if (status == 'IN_PROGRESS' || status == 'ASSIGNED') {
-          active.add(job);
-        }
+      activeJobs.assignAll(res['active'] ?? []);
+      completedJobs.assignAll(res['completed'] ?? []);
+      cancelledJobs.assignAll(res['cancelled'] ?? []);
+      _openPendingJobDetails();
+    } catch (e) {
+      if (activeJobs.isEmpty && completedJobs.isEmpty && cancelledJobs.isEmpty) {
+        AppFeedback.error(
+          'Could not load jobs. Pull down to retry.',
+          title: 'My Job',
+        );
       }
-
-      activeJobs.assignAll(active);
-      completedJobs.assignAll(completed);
-      cancelledJobs.assignAll(cancelled);
-    } catch (_) {
-      // Retain previous list or clear
     } finally {
       isLoading.value = false;
     }
+  }
+
+  void _openPendingJobDetails() {
+    final id = _pendingOpenJobId;
+    if (id == null || id.isEmpty) return;
+    _pendingOpenJobId = null;
+
+    Map? match;
+    String type = 'active';
+
+    bool matches(dynamic job) {
+      try {
+        final map = Map<String, dynamic>.from(job as Map);
+        final jid = (map['id'] ?? map['_id'] ?? '').toString();
+        return jid == id;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    for (final job in activeJobs) {
+      if (matches(job)) {
+        match = Map<String, dynamic>.from(job as Map);
+        type = 'active';
+        break;
+      }
+    }
+    match ??= () {
+      for (final job in completedJobs) {
+        if (matches(job)) {
+          type = 'completed';
+          return Map<String, dynamic>.from(job as Map);
+        }
+      }
+      for (final job in cancelledJobs) {
+        if (matches(job)) {
+          type = 'cancelled';
+          return Map<String, dynamic>.from(job as Map);
+        }
+      }
+      return null;
+    }();
+
+    if (match == null) return;
+    Future.delayed(const Duration(milliseconds: 250), () {
+      if (Get.isRegistered<HelperJobsController>()) {
+        onJobTap(match, type);
+      }
+    });
   }
 
   void onJobTap(dynamic job, String type) {
@@ -55,18 +123,35 @@ class HelperJobsController extends GetxController {
     }
   }
 
-  Future<void> cancelJob(String id) async {
+  Future<void> _invalidatePipeline() async {
+    try {
+      await Get.find<RefetchService>().invalidateJobPipeline();
+    } catch (_) {
+      await fetchJobs();
+    }
+  }
+
+  Future<bool> cancelJob(String id, {String reason = 'Helper cancelled'}) async {
     try {
       final jobService = Get.find<JobService>();
-      await jobService.updateJobStatus(id, 'cancelled');
-      Get.back();
-      Get.back();
-      Get.snackbar('Cancelled', 'Job has been cancelled',
-          snackPosition: SnackPosition.BOTTOM);
-      fetchJobs();
+      await jobService.cancelJob(id, reason);
+      AppFeedback.success('Job has been cancelled', title: 'Cancelled');
+      await _invalidatePipeline();
+      return true;
     } catch (e) {
-      Get.snackbar('Error', e.toString().replaceAll('Exception: ', ''),
-          snackPosition: SnackPosition.BOTTOM);
+      AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
+      return false;
+    }
+  }
+
+  Future<void> completeJob(String id) async {
+    try {
+      final jobService = Get.find<JobService>();
+      await jobService.completeJob(id);
+      AppFeedback.success('Job marked as completed', title: 'Completed');
+      await _invalidatePipeline();
+    } catch (e) {
+      AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
     }
   }
 }

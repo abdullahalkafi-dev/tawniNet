@@ -29,6 +29,14 @@ class HomeController extends GetxController {
       RefetchKeys.categories,
       fetchCategories,
     );
+    Get.find<RefetchService>().register(
+      RefetchKeys.popularHelpers,
+      fetchPopularServices,
+    );
+    Get.find<RefetchService>().register(
+      RefetchKeys.nearbyJobs,
+      fetchNearbyHelpers,
+    );
     fetchCategories();
     fetchNearbyHelpers();
     fetchPopularServices();
@@ -37,6 +45,8 @@ class HomeController extends GetxController {
   @override
   void onClose() {
     Get.find<RefetchService>().unregister(RefetchKeys.categories);
+    Get.find<RefetchService>().unregister(RefetchKeys.popularHelpers);
+    Get.find<RefetchService>().unregister(RefetchKeys.nearbyJobs);
     super.onClose();
   }
 
@@ -158,27 +168,38 @@ class HomeController extends GetxController {
         final helpersList = data['helpers'] as List? ?? [];
 
         final services = helpersList.map((h) {
-          final serviceType = h['serviceType'];
+          final map = h is Map ? Map<String, dynamic>.from(h) : <String, dynamic>{};
+          final serviceType = map['serviceType'];
           String category = 'General';
           if (serviceType is Map) {
-            category = serviceType['name'] as String? ?? 'General';
+            category = serviceType['name']?.toString() ?? 'General';
           } else if (serviceType is String) {
             category = serviceType;
           }
 
-          String avatar = 'https://i.pravatar.cc/150';
-          if (h['avatar'] != null && (h['avatar'] as String).isNotEmpty) {
-            avatar = h['avatar'];
+          String avatar = '';
+          final rawAvatar = map['avatar'];
+          if (rawAvatar is String && rawAvatar.isNotEmpty) {
+            avatar = rawAvatar;
           }
 
+          final ratingRaw = map['rating'];
+          final rating = ratingRaw is num
+              ? ratingRaw.toDouble()
+              : (double.tryParse(ratingRaw?.toString() ?? '') ?? 0);
+          final reviewRaw = map['reviewCount'];
+          final reviews = reviewRaw is num
+              ? reviewRaw.toInt()
+              : (int.tryParse(reviewRaw?.toString() ?? '') ?? 0);
+
           return PopularService(
-            id: h['_id'] ?? '',
-            name: h['name'] ?? 'Helper',
+            id: map['_id']?.toString() ?? '',
+            name: map['name']?.toString() ?? 'Helper',
             category: category,
-            rating: 4.5,
-            reviews: 10,
-            pricePerHour: (h['pricePerHour'] as num?)?.toDouble() ?? 0.0,
-            distance: h['address'] ?? 'Nearby',
+            rating: rating,
+            reviews: reviews,
+            pricePerHour: (map['pricePerHour'] as num?)?.toDouble() ?? 0.0,
+            distance: map['address']?.toString() ?? 'Nearby',
             image: avatar,
           );
         }).toList();

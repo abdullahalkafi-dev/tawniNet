@@ -1,3 +1,4 @@
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/data/models/message_model.dart';
@@ -57,24 +58,42 @@ Widget buildMessageWidget(
   required VoidCallback? onCancelOffer,
   required VoidCallback? onEditOffer,
 }) {
+  // Prefer the resolved sender avatar from the message payload.
+  final avatar = ApiConstants.resolveImageUrl(
+            message.senderAvatar.isNotEmpty ? message.senderAvatar : chatAvatar,
+          ) ??
+      '';
   switch (message.type) {
     case 'image':
-      return buildImageMessage(context, message, isSent, chatAvatar: chatAvatar);
+      return buildImageMessage(context, message, isSent, chatAvatar: avatar);
     case 'video':
-      return buildVideoMessage(context, message, isSent, chatAvatar: chatAvatar);
+      return buildVideoMessage(context, message, isSent, chatAvatar: avatar);
     case 'offer':
       return buildOfferMessage(
         message,
         isSent,
-        chatAvatar: chatAvatar,
+        chatAvatar: avatar,
         onAccept: onAcceptOffer,
         onReject: onRejectOffer,
         onCancel: onCancelOffer,
         onEdit: onEditOffer,
       );
     default:
-      return buildTextMessage(context, message, isSent, chatAvatar: chatAvatar);
+      return buildTextMessage(context, message, isSent, chatAvatar: avatar);
   }
+}
+
+Widget _peerAvatar(String chatAvatar) {
+  return CircleAvatar(
+    radius: 16,
+    backgroundColor: AppColors.primary.withOpacity(0.25),
+    backgroundImage:
+        chatAvatar.isNotEmpty ? NetworkImage(chatAvatar) : null,
+    onBackgroundImageError: (_, __) {},
+    child: chatAvatar.isEmpty
+        ? const Icon(Icons.person, size: 16, color: AppColors.primary)
+        : null,
+  );
 }
 
 Widget buildTextMessage(
@@ -91,12 +110,7 @@ Widget buildTextMessage(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         if (!isSent) ...[
-          CircleAvatar(
-            radius: 16,
-            backgroundImage:
-                chatAvatar.isNotEmpty ? NetworkImage(chatAvatar) : null,
-            child: chatAvatar.isEmpty ? const Icon(Icons.person, size: 16) : null,
-          ),
+          _peerAvatar(chatAvatar),
           const SizedBox(width: 8),
         ],
         Flexible(
@@ -159,12 +173,7 @@ Widget buildImageMessage(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         if (!isSent) ...[
-          CircleAvatar(
-            radius: 16,
-            backgroundImage:
-                chatAvatar.isNotEmpty ? NetworkImage(chatAvatar) : null,
-            child: chatAvatar.isEmpty ? const Icon(Icons.person, size: 16) : null,
-          ),
+          _peerAvatar(chatAvatar),
           const SizedBox(width: 8),
         ],
         Flexible(
@@ -212,12 +221,7 @@ Widget buildVideoMessage(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         if (!isSent) ...[
-          CircleAvatar(
-            radius: 16,
-            backgroundImage:
-                chatAvatar.isNotEmpty ? NetworkImage(chatAvatar) : null,
-            child: chatAvatar.isEmpty ? const Icon(Icons.person, size: 16) : null,
-          ),
+          _peerAvatar(chatAvatar),
           const SizedBox(width: 8),
         ],
         Flexible(
@@ -287,12 +291,7 @@ Widget buildOfferMessage(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         if (!isSent) ...[
-          CircleAvatar(
-            radius: 16,
-            backgroundImage:
-                chatAvatar.isNotEmpty ? NetworkImage(chatAvatar) : null,
-            child: chatAvatar.isEmpty ? const Icon(Icons.person, size: 16) : null,
-          ),
+          _peerAvatar(chatAvatar),
           const SizedBox(width: 8),
         ],
         Flexible(
@@ -331,7 +330,7 @@ Widget _buildImageGrid(BuildContext context, List<String> images) {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: Image.network(
-          images[0],
+          ApiConstants.resolveImageUrl(images[0]) ?? images[0],
           width: 200,
           height: 250,
           fit: BoxFit.cover,
@@ -360,7 +359,9 @@ Widget _buildImageGrid(BuildContext context, List<String> images) {
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: Image.network(
-                        images[index],
+                        ApiConstants.resolveImageUrl(images[index]) ??
+                            ApiConstants.resolveImageUrl(images[index]) ??
+                                images[index],
                         height: 150,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Container(
@@ -389,7 +390,9 @@ Widget _buildImageGrid(BuildContext context, List<String> images) {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: Image.network(
-                            images[index],
+                            ApiConstants.resolveImageUrl(images[index]) ??
+                            ApiConstants.resolveImageUrl(images[index]) ??
+                                images[index],
                             height: 100,
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
@@ -418,7 +421,9 @@ Widget _buildImageGrid(BuildContext context, List<String> images) {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: Image.network(
-                            images[index],
+                            ApiConstants.resolveImageUrl(images[index]) ??
+                            ApiConstants.resolveImageUrl(images[index]) ??
+                                images[index],
                             height: 100,
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
@@ -439,5 +444,9 @@ Widget _buildImageGrid(BuildContext context, List<String> images) {
 }
 
 String _formatTime(DateTime dateTime) {
-  return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  final hour24 = dateTime.hour;
+  final hour12 = hour24 % 12 == 0 ? 12 : hour24 % 12;
+  final minute = dateTime.minute.toString().padLeft(2, '0');
+  final period = hour24 >= 12 ? 'PM' : 'AM';
+  return '$hour12:$minute $period';
 }
