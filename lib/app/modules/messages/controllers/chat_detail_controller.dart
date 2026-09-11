@@ -347,6 +347,9 @@ class ChatDetailController extends GetxController {
     String? date,
     String? startTime,
     String? endTime,
+    String? address,
+    double? latitude,
+    double? longitude,
     String paymentMethod = 'cash',
     List<String>? images,
   }) async {
@@ -364,6 +367,9 @@ class ChatDetailController extends GetxController {
           if (date != null) 'date': date,
           if (startTime != null) 'startTime': startTime,
           if (endTime != null) 'endTime': endTime,
+          if (address != null && address.isNotEmpty) 'address': address,
+          if (latitude != null) 'latitude': latitude,
+          if (longitude != null) 'longitude': longitude,
           'paymentMethod': paymentMethod,
           if (images != null) 'images': images,
         },
@@ -496,8 +502,12 @@ class ChatDetailController extends GetxController {
     String? description,
     double? price,
     String? priceType,
+    String? date,
     String? startTime,
     String? endTime,
+    String? address,
+    double? latitude,
+    double? longitude,
     String? paymentMethod,
     List<String>? images,
   }) async {
@@ -510,8 +520,12 @@ class ChatDetailController extends GetxController {
       if (description != null) data['description'] = description;
       if (price != null) data['price'] = price;
       if (priceType != null) data['priceType'] = priceType;
+      if (date != null) data['date'] = date;
       if (startTime != null) data['startTime'] = startTime;
       if (endTime != null) data['endTime'] = endTime;
+      if (address != null && address.isNotEmpty) data['address'] = address;
+      if (latitude != null) data['latitude'] = latitude;
+      if (longitude != null) data['longitude'] = longitude;
       if (paymentMethod != null) data['paymentMethod'] = paymentMethod;
       if (images != null) data['images'] = images;
 
@@ -554,6 +568,9 @@ class ChatDetailController extends GetxController {
           date: existing.date,
           startTime: existing.startTime,
           endTime: existing.endTime,
+          address: existing.address,
+          latitude: existing.latitude,
+          longitude: existing.longitude,
           paymentMethod: existing.paymentMethod,
           images: existing.images,
           status: status,

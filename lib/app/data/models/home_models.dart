@@ -54,6 +54,7 @@ class HelperJob {
   final String title;
   final String description;
   final String distance;
+  final double? distanceKm;
 
   // Additional fields from backend
   final String name;
@@ -85,6 +86,7 @@ class HelperJob {
     required this.title,
     required this.description,
     required this.distance,
+    this.distanceKm,
     String? name,
     this.avatar,
     this.bio,
@@ -130,7 +132,26 @@ class HelperJob {
     }
 
     final bio = json['description'] as String?;
-    final address = json['address'] as String?;
+    // Short public address only — extra detail lives in chat.
+    final rawAddress = json['address'] as String? ?? '';
+    String? address;
+    if (rawAddress.isNotEmpty) {
+      final parts =
+          rawAddress.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      if (parts.length >= 2) {
+        address = '${parts[0]}, ${parts[1]}';
+      } else {
+        address = parts.isNotEmpty ? parts.first : null;
+      }
+    }
+
+    String distanceText = '';
+    double? distanceKm;
+    final distKm = json['distanceKm'];
+    if (distKm is num) {
+      distanceKm = distKm.toDouble();
+      distanceText = '${distanceKm.toStringAsFixed(1)} km';
+    }
 
     // Parse job-specific fields
     DateTime? date;
@@ -155,7 +176,8 @@ class HelperJob {
       category: category,
       title: json['title'] ?? 'Available for hire',
       description: bio ?? 'Professional helper in your area',
-      distance: address ?? 'Nearby',
+      distance: distanceText,
+      distanceKm: distanceKm,
       name: helperName,
       avatar: avatarUrl,
       bio: bio,

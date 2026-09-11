@@ -1,9 +1,40 @@
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class PrivacyPolicyView extends StatelessWidget {
+class PrivacyPolicyView extends StatefulWidget {
   const PrivacyPolicyView({super.key});
+
+  @override
+  State<PrivacyPolicyView> createState() => _PrivacyPolicyViewState();
+}
+
+class _PrivacyPolicyViewState extends State<PrivacyPolicyView> {
+  String _content = '';
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final api = Get.find<ApiClient>();
+      final res = await api.get(ApiConstants.legal);
+      if (res.success && res.data is Map) {
+        final data = Map<String, dynamic>.from(res.data as Map);
+        _content = (data['privacyPolicy'] ?? '').toString();
+      }
+    } catch (_) {
+      _content = '';
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,33 +50,24 @@ class PrivacyPolicyView extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSection(context, '1. Information We Collect', 'Lorem ipsum dolor sit amet consectetur. Elit ac gravida augue suspendisse in scelerisque pellentesque diam elementum. Lorem quam vitae mus metus tortor turpis at. Cras accumsan pharetra odio euismod metus leo neque dui.'),
-            _buildSection(context, '2. How We Use Your Data', 'Lorem ipsum dolor sit amet consectetur. Mattis et commodo lacus nisl vitae id. Fames egestas etiam risus ultrices risus. Porta nisl commodo sit id purus senectus ultrices.'),
-            _buildSection(context, '3. Data Sharing', 'Lorem ipsum dolor sit amet consectetur. Elementum amet netus magna justo duis netus. Porttitor nulla erat sodales faucibus. Massa turpis nibh vel sit enim porta a.'),
-            _buildSection(context, '4. Data Security', 'Lorem ipsum dolor sit amet consectetur. Massa suscipit euismod interdum suspendisse id. Vitae sed quam amet dictumst vel sed integer morbi. Vel sed aenean ultricies in volutpat scelerisque id eget hendrerit.'),
-            _buildSection(context, '5. Your Rights', 'Lorem ipsum dolor sit amet consectetur. Id feugiat pretum ipsum sit amet consectetur.'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSection(BuildContext context, String title, String content) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: AppStyles.h2Of(context).copyWith(fontSize: 16)),
-          const SizedBox(height: 12),
-          Text(content, style: AppStyles.bodyMediumOf(context).copyWith(height: 1.6, color: context.textSecondaryColor)),
-        ],
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(20),
+                child: Text(
+                  _content.isEmpty
+                      ? 'Privacy policy will appear here once published by the admin.'
+                      : _content,
+                  style: AppStyles.bodyMediumOf(context).copyWith(
+                    height: 1.6,
+                    color: context.textSecondaryColor,
+                  ),
+                ),
+              ),
+            ),
     );
   }
 }

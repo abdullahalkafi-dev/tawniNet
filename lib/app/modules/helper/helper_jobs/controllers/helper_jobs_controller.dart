@@ -171,12 +171,49 @@ class HelperJobsController extends GetxController {
     try {
       final jobService = Get.find<JobService>();
       await jobService.cashReceived(id);
+      // Update local lists immediately so open detail pages re-render.
+      patchJobLocally(id, {
+        'paymentStatus': 'paid',
+        'status': 'completed',
+      });
       AppFeedback.success('Cash payment confirmed', title: 'Cash received');
-      await _invalidatePipeline();
+      // Full pipeline refresh in background — do not block UI.
+      _invalidatePipeline().catchError((_) {});
       return true;
     } catch (e) {
       AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
       return false;
     }
+  }
+
+  /// Merge fields into the first matching local job map (by id).
+  void patchJobLocally(String id, Map<String, dynamic> fields) {
+    if (id.isEmpty || fields.isEmpty) return;
+    for (final list in [activeJobs, completedJobs, cancelledJobs]) {
+      for (var i = 0; i < list.length; i++) {
+        final job = list[i];
+        if (job is! Map) continue;
+        final map = Map<String, dynamic>.from(job);
+        final jid = (map['id'] ?? map['_id'] ?? '').toString();
+        if (jid != id) continue;
+        map.addAll(fields);
+        list[i] = map;
+        return;
+      }
+    }
+  }
+
+  /// Latest local copy of a job from any tab list.
+  Map<String, dynamic>? findJobById(String id) {
+    if (id.isEmpty) return null;
+    for (final list in [activeJobs, completedJobs, cancelledJobs]) {
+      for (final job in list) {
+        if (job is! Map) continue;
+        final map = Map<String, dynamic>.from(job);
+        final jid = (map['id'] ?? map['_id'] ?? '').toString();
+        if (jid == id) return map;
+      }
+    }
+    return null;
   }
 }

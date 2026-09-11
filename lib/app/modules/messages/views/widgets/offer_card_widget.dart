@@ -214,6 +214,24 @@ class OfferCardWidget extends StatelessWidget {
 
                 const SizedBox(height: 4),
 
+                if (offer.address.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.location_on_outlined, size: 14, color: context.textHintColor),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          offer.address,
+                          style: TextStyle(fontSize: 12, color: context.textHintColor),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+
                 // Payment method
                 Row(
                   children: [

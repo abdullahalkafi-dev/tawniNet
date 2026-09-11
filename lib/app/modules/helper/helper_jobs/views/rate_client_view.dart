@@ -4,6 +4,7 @@ import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/widgets/custom_button.dart';
+import 'package:awnneaapp/app/modules/helper/helper_jobs/controllers/helper_jobs_controller.dart';
 import 'package:awnneaapp/app/services/refetch_service.dart';
 import 'package:awnneaapp/app/services/review_service.dart';
 import 'package:flutter/material.dart';
@@ -118,7 +119,10 @@ class _RateClientViewState extends State<RateClientView> {
               isLoading: _isSubmitting,
               onPressed: () async {
                 if (_rating == 0) {
-                  AppFeedback.error('Please select a star rating', title: 'Rating Required');
+                  AppFeedback.error(
+                    'Please select a star rating',
+                    title: 'Rating Required',
+                  );
                   return;
                 }
                 if (_isSubmitting) return;
@@ -129,14 +133,14 @@ class _RateClientViewState extends State<RateClientView> {
                   final postedBy = job['postedBy'];
                   String revieweeId = (job['clientId'] ?? '').toString();
                   if (revieweeId.isEmpty && postedBy is Map) {
-                    revieweeId = (postedBy['_id'] ?? postedBy['id'] ?? '').toString();
+                    revieweeId =
+                        (postedBy['_id'] ?? postedBy['id'] ?? '').toString();
                   }
                   if (jobId.isEmpty || revieweeId.isEmpty) {
                     AppFeedback.error(
                       'Could not identify this job for review.',
                       title: 'Review failed',
                     );
-                    setState(() => _isSubmitting = false);
                     return;
                   }
                   await reviewService.submitReview(
@@ -145,11 +149,17 @@ class _RateClientViewState extends State<RateClientView> {
                     rating: _rating.toDouble(),
                     comment: _reviewController.text,
                   );
-                  try {
-                    Get.find<RefetchService>()
-                        .invalidateJobPipeline()
-                        .catchError((_) {});
-                  } catch (_) {}
+                  // Patch local job list so completed details hide Review button.
+                  if (Get.isRegistered<HelperJobsController>()) {
+                    Get.find<HelperJobsController>().patchJobLocally(jobId, {
+                      'hasMyReview': true,
+                      'myReview': {
+                        'rating': _rating,
+                        'comment': _reviewController.text,
+                        'createdAt': DateTime.now().toIso8601String(),
+                      },
+                    });
+                  }
                   if (!mounted) return;
                   Get.back();
                   AppFeedback.success(
@@ -160,10 +170,17 @@ class _RateClientViewState extends State<RateClientView> {
                         ? 'rate_thank_you'.tr
                         : 'Review Submitted',
                   );
+                  try {
+                    Get.find<RefetchService>()
+                        .invalidateJobPipeline()
+                        .catchError((_) {});
+                  } catch (_) {}
                 } catch (e) {
-                  if (!mounted) return;
-                  setState(() => _isSubmitting = false);
                   AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
+                } finally {
+                  if (mounted) {
+                    setState(() => _isSubmitting = false);
+                  }
                 }
               },
             ),
@@ -181,7 +198,7 @@ class _RateClientViewState extends State<RateClientView> {
     final avatar = JobDisplay.personAvatar(job['postedBy'],
         fallback: JobDisplay.safeText(job['clientImage']));
     final resolvedAvatar = ApiConstants.resolveImageUrl(avatar) ?? avatar;
-    final location = JobDisplay.safeLocation(job);
+    final location = JobDisplay.publicAddress(job);
 
     return Container(
       width: double.infinity,

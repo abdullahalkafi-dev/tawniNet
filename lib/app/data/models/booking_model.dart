@@ -117,7 +117,8 @@ class Booking {
       }
     }
 
-    final rawDate = json['date']?.toString() ?? json['createdAt']?.toString() ?? '';
+    // Prefer the job/offer work day. Do not fall back to createdAt.
+    final rawDate = json['date']?.toString() ?? '';
     final startRaw = json['startTime']?.toString() ?? '';
     final endRaw = json['endTime']?.toString() ?? '';
     final start12 = AppDateTime.formatTime12h(startRaw);
@@ -126,20 +127,11 @@ class Booking {
         ? (end12.isNotEmpty ? '$start12 - $end12' : start12)
         : (json['preferredTime']?.toString() ?? 'Flexible');
 
-    // address is string; location may be GeoJSON — never cast Map to String.
+    // Text address only — never display raw lat/lng or GeoJSON.
     String address = (json['address'] ?? '').toString();
-    if (address.isEmpty) {
-      final loc = json['location'];
-      if (loc is String) {
-        address = loc;
-      } else if (loc is Map) {
-        final coords = loc['coordinates'];
-        if (coords is List && coords.length >= 2) {
-          address = '${coords[1]}, ${coords[0]}';
-        }
-      }
+    if (address == 'null' || address.trim().isEmpty) {
+      address = '';
     }
-    if (address.isEmpty) address = 'Morocco';
 
     final budgetRaw = json['budget'];
     double budget = 0;

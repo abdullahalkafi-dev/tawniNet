@@ -110,7 +110,8 @@ class HelperJobsTabView extends GetView<HelperJobsController> {
 
         if (isLoading) {
           return ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
+            primary: false,
+            physics: AppAlwaysScrollPhysics,
             children: const [
               SizedBox(height: 160),
               Center(child: CircularProgressIndicator()),
@@ -120,7 +121,8 @@ class HelperJobsTabView extends GetView<HelperJobsController> {
 
         if (jobs.isEmpty) {
           return ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
+            primary: false,
+            physics: AppAlwaysScrollPhysics,
             children: [
               SizedBox(height: MediaQuery.of(context).size.height * 0.25),
               Center(
@@ -144,7 +146,8 @@ class HelperJobsTabView extends GetView<HelperJobsController> {
         }
 
         return ListView.separated(
-                    physics: const AlwaysScrollableScrollPhysics(),
+                    primary: false,
+                    physics: AppAlwaysScrollPhysics,
                     padding: const EdgeInsets.all(20),
                     itemCount: jobs.length,
                     separatorBuilder: (context, index) => const SizedBox(height: 16),

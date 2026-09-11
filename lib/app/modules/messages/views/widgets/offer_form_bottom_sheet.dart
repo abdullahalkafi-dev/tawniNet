@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
 import 'package:awnneaapp/app/core/utils/datetime_format.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
@@ -6,6 +8,7 @@ import 'package:awnneaapp/app/core/widgets/simple_time_picker.dart';
 import 'package:awnneaapp/app/data/models/message_model.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
+import 'package:awnneaapp/app/services/location_service.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -35,12 +38,18 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
   late final TextEditingController _dateController;
   late final TextEditingController _startTimeController;
   late final TextEditingController _endTimeController;
+  late final TextEditingController _addressController;
 
   String _priceType = 'fixed';
   String _paymentMethod = 'cash';
   final List<String> _selectedImages = [];
   String? _isoDate;
   bool _isUploadingImages = false;
+  double? _selectedLatitude;
+  double? _selectedLongitude;
+  List<Map<String, dynamic>> _addressSuggestions = [];
+  bool _isSearchingAddress = false;
+  Timer? _addressDebounce;
 
   @override
   void initState() {
@@ -50,6 +59,9 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
     _priceController = TextEditingController(
       text: widget.editOffer?.price.toString() ?? '',
     );
+    _addressController = TextEditingController(text: widget.editOffer?.address ?? '');
+    _selectedLatitude = widget.editOffer?.latitude;
+    _selectedLongitude = widget.editOffer?.longitude;
 
     final rawDate = widget.editOffer?.date ?? '';
     final parsedDate = AppDateTime.tryParseDate(rawDate);
@@ -84,7 +96,45 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
     _dateController.dispose();
     _startTimeController.dispose();
     _endTimeController.dispose();
+    _addressController.dispose();
+    _addressDebounce?.cancel();
     super.dispose();
+  }
+
+  void _onAddressChanged(String value) {
+    _addressDebounce?.cancel();
+    _addressDebounce = Timer(const Duration(milliseconds: 350), () async {
+      final q = value.trim();
+      if (q.length < 3) {
+        if (mounted) setState(() => _addressSuggestions = []);
+        return;
+      }
+      if (!mounted) return;
+      setState(() => _isSearchingAddress = true);
+      try {
+        final locService = Get.find<LocationService>();
+        final results = await locService.searchPlaces(q);
+        if (!mounted) return;
+        setState(() => _addressSuggestions = results);
+      } catch (_) {
+        if (mounted) setState(() => _addressSuggestions = []);
+      } finally {
+        if (mounted) setState(() => _isSearchingAddress = false);
+      }
+    });
+  }
+
+  void _selectAddressSuggestion(Map<String, dynamic> suggestion) {
+    final address =
+        (suggestion['displayName'] ?? suggestion['address'])?.toString() ?? '';
+    final lat = ((suggestion['lat'] ?? suggestion['latitude']) as num?)?.toDouble();
+    final lng = ((suggestion['lon'] ?? suggestion['longitude']) as num?)?.toDouble();
+    setState(() {
+      _addressController.text = address;
+      _selectedLatitude = lat;
+      _selectedLongitude = lng;
+      _addressSuggestions = [];
+    });
   }
 
   @override
@@ -190,7 +240,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                   const SizedBox(height: 16),
 
                   // Date
-                  _buildDateField(context, 'Date', _dateController),
+                  _buildDateField(context, 'Date *', _dateController),
                   const SizedBox(height: 16),
 
                   // Time Range
@@ -205,6 +255,11 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 16),
+
+                  // Work location (search — no GPS)
+                  _buildLabel(context, 'Work location *'),
+                  _buildLocationField(context),
                   const SizedBox(height: 16),
 
                   // Payment Method
@@ -400,6 +455,83 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildLocationField(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: context.inputFillColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: context.borderSubtle),
+          ),
+          child: TextField(
+            controller: _addressController,
+            style: TextStyle(color: context.textPrimaryColor),
+            onChanged: _onAddressChanged,
+            decoration: InputDecoration(
+              hintText: 'Search street, city, landmark…',
+              hintStyle: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+              prefixIcon: Icon(Icons.location_on_outlined, color: context.textHintColor, size: 20),
+              suffixIcon: _isSearchingAddress
+                  ? const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    )
+                  : null,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+          ),
+        ),
+        if (_addressSuggestions.isNotEmpty) ...[
+          const SizedBox(height: 6),
+          Container(
+            constraints: const BoxConstraints(maxHeight: 160),
+            decoration: BoxDecoration(
+              color: context.cardColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: context.borderSubtle),
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              itemCount: _addressSuggestions.length,
+              itemBuilder: (context, index) {
+                final result = _addressSuggestions[index];
+                final displayName = (result['displayName'] ?? '').toString();
+                return InkWell(
+                  onTap: () => _selectAddressSuggestion(result),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined, color: AppColors.primary, size: 18),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            displayName,
+                            style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 13),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -626,15 +758,40 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
       final parsed = AppDateTime.tryParseDate(_dateController.text);
       if (parsed != null) isoDate = AppDateTime.toIsoDate(parsed);
     }
+    if (isoDate == null || isoDate.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a date for this job')),
+      );
+      return;
+    }
+
+    final address = _addressController.text.trim();
+    if (address.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a work location')),
+      );
+      return;
+    }
+    if (_selectedLatitude == null || _selectedLongitude == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pick a location from the search results'),
+        ),
+      );
+      return;
+    }
 
     widget.onOfferSent({
       'title': title,
       'description': _descController.text.trim(),
       'price': price,
       'priceType': _priceType,
-      'date': isoDate ?? '',
+      'date': isoDate,
       'startTime': AppDateTime.formatTime12h(_startTimeController.text),
       'endTime': AppDateTime.formatTime12h(_endTimeController.text),
+      'address': address,
+      if (_selectedLatitude != null) 'latitude': _selectedLatitude,
+      if (_selectedLongitude != null) 'longitude': _selectedLongitude,
       'paymentMethod': _paymentMethod,
       'images': _selectedImages,
     });

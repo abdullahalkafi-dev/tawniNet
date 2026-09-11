@@ -208,7 +208,8 @@ class FindHelperView extends GetView<FindHelperController> {
         onRefresh: controller.refreshData,
         child: ListView.separated(
           controller: controller.scrollController,
-          physics: const AlwaysScrollableScrollPhysics(),
+          primary: false,
+          physics: AppAlwaysScrollPhysics,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           itemCount: controller.helpers.length + (controller.isLoadingMore.value ? 1 : 0),
           separatorBuilder: (_, __) => const SizedBox(height: 12),

@@ -77,7 +77,48 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(job.title, style: AppStyles.h2Of(context).copyWith(fontSize: 18)),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  job.title,
+                  style: AppStyles.h2Of(context).copyWith(fontSize: 18),
+                ),
+              ),
+              if (job.distanceKm != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.primary),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.near_me,
+                        size: 14,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        job.distance,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -97,10 +138,12 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
-                  job.address ?? 'Not specified',
+                  (job.address != null && job.address!.isNotEmpty)
+                      ? job.address!
+                      : 'Not specified',
                   style: AppStyles.bodyMedium.copyWith(fontSize: 13, color: context.textSecondaryColor),
                   overflow: TextOverflow.ellipsis,
-                  maxLines: 2,
+                  maxLines: 1,
                 ),
               ),
             ],

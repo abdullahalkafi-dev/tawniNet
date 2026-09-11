@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'app/core/theme/app_theme.dart';
+import 'app/core/widgets/app_pull_to_refresh.dart';
 import 'app/core/localization/app_translations.dart';
 import 'app/core/localization/locale_service.dart';
 import 'app/routes/app_pages.dart';
@@ -130,6 +131,14 @@ void main() async {
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
+        // Make pull-to-refresh work with touch + mouse (emulator/desktop)
+        // and with short lists / TabBarView children.
+        builder: (context, child) {
+          return ScrollConfiguration(
+            behavior: const AppScrollBehavior(),
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
       ),
     ),
   );

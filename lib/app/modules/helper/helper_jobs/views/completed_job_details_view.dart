@@ -10,22 +10,61 @@ import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class CompletedJobDetailsView extends StatelessWidget {
+class CompletedJobDetailsView extends StatefulWidget {
   const CompletedJobDetailsView({super.key});
 
   @override
+  State<CompletedJobDetailsView> createState() =>
+      _CompletedJobDetailsViewState();
+}
+
+class _CompletedJobDetailsViewState extends State<CompletedJobDetailsView> {
+  Map<String, dynamic> _job = <String, dynamic>{};
+  late final String _jobId;
+  bool _isConfirmingCash = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final args = Get.arguments;
+    if (args is Map) {
+      _job = Map<String, dynamic>.from(args);
+    }
+    _jobId = (_job['id'] ?? _job['_id'] ?? '').toString();
+
+    // Keep this page in sync when lists refresh (cash / review / pipeline).
+    if (Get.isRegistered<HelperJobsController>()) {
+      final controller = Get.find<HelperJobsController>();
+      ever(controller.completedJobs, (_) => _syncFromController());
+      ever(controller.activeJobs, (_) => _syncFromController());
+    }
+  }
+
+  void _syncFromController() {
+    if (!Get.isRegistered<HelperJobsController>() || !mounted) return;
+    final fresh = Get.find<HelperJobsController>().findJobById(_jobId);
+    if (fresh == null) return;
+    setState(() {
+      _job = fresh;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final job = Get.arguments is Map
-        ? Map<String, dynamic>.from(Get.arguments as Map)
-        : <String, dynamic>{};
+    final job = _job;
     final budgetRaw = job['budget'];
     final budget = budgetRaw is num
         ? budgetRaw.toDouble()
         : (double.tryParse(budgetRaw?.toString() ?? '') ?? 0.0);
     final isCash = job['paymentMethod'] == 'cash';
     final paymentStatus = (job['paymentStatus'] ?? '').toString();
-    final needsCashConfirm = isCash && paymentStatus != 'paid';
-    final earned = (job['earnedAmount'] as num?)?.toDouble() ?? (isCash ? budget : budget * 0.8);
+    final needsCashConfirm =
+        isCash && paymentStatus != 'paid' && !_isConfirmingCash;
+    final earned = (job['earnedAmount'] as num?)?.toDouble() ??
+        (isCash ? budget : budget * 0.8);
+    final hasMyReview = job['hasMyReview'] == true || job['myReview'] is Map;
+    final hasOtherReview =
+        job['hasReviewFromOther'] == true || job['reviewFromOther'] is Map;
 
     return Scaffold(
       appBar: AppBar(
@@ -53,7 +92,8 @@ class CompletedJobDetailsView extends StatelessWidget {
               ),
               child: Text(
                 'completed_earned'.tr.replaceAll('@amount', formatMoney(earned)),
-                style: AppStyles.bodyLarge.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
+                style: AppStyles.bodyLarge
+                    .copyWith(color: AppColors.primary, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -66,6 +106,26 @@ class CompletedJobDetailsView extends StatelessWidget {
             const SizedBox(height: 16),
             _buildJobStatusTimeline(context, job),
             const SizedBox(height: 24),
+            if (isCash && !needsCashConfirm && paymentStatus == 'paid') ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.primary),
+                ),
+                child: Text(
+                  'Cash payment confirmed',
+                  textAlign: TextAlign.center,
+                  style: AppStyles.bodyMedium.copyWith(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             if (needsCashConfirm) ...[
               Container(
                 width: double.infinity,
@@ -83,14 +143,34 @@ class CompletedJobDetailsView extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               ElevatedButton(
-                onPressed: () async {
-                  final jobId = (job['id'] ?? job['_id'] ?? '').toString();
-                  final controller = Get.find<HelperJobsController>();
-                  final ok = await controller.confirmCashReceived(jobId);
-                  if (ok) {
-                    Get.back();
-                  }
-                },
+                onPressed: _isConfirmingCash
+                    ? null
+                    : () async {
+                        if (_jobId.isEmpty) return;
+                        setState(() => _isConfirmingCash = true);
+                        try {
+                          final controller = Get.find<HelperJobsController>();
+                          final ok =
+                              await controller.confirmCashReceived(_jobId);
+                          if (!mounted) return;
+                          // Stay on page — list patch + ever() hide the button.
+                          setState(() => _isConfirmingCash = false);
+                          if (!ok) return;
+                          // Prefer freshest local copy after patch.
+                          final fresh = controller.findJobById(_jobId);
+                          if (fresh != null) {
+                            setState(() => _job = fresh);
+                          } else {
+                            setState(() {
+                              _job = {..._job, 'paymentStatus': 'paid'};
+                            });
+                          }
+                        } catch (_) {
+                          if (mounted) {
+                            setState(() => _isConfirmingCash = false);
+                          }
+                        }
+                      },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   minimumSize: const Size(double.infinity, 50),
@@ -98,27 +178,34 @@ class CompletedJobDetailsView extends StatelessWidget {
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
-                child: const Text(
-                  'Cash received',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
+                child: _isConfirmingCash
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Cash received',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
               ),
               const SizedBox(height: 16),
             ],
-            if (job['hasReviewFromOther'] == true && job['reviewFromOther'] is Map)
+            if (hasOtherReview && job['reviewFromOther'] is Map)
               _buildReviewCard(
                 context,
                 title: 'Client review',
                 review: Map<String, dynamic>.from(job['reviewFromOther'] as Map),
               ),
-            if (job['hasReviewFromOther'] == true &&
-                job['hasMyReview'] != true)
-              const SizedBox(height: 12),
-            if (job['hasMyReview'] == true && job['myReview'] is Map)
+            if (hasOtherReview && !hasMyReview) const SizedBox(height: 12),
+            if (hasMyReview && job['myReview'] is Map)
               _buildReviewCard(
                 context,
                 title: 'Your review',
@@ -127,7 +214,11 @@ class CompletedJobDetailsView extends StatelessWidget {
             else
               CustomButton(
                 text: 'btn_review'.tr,
-                onPressed: () => Get.toNamed(Routes.rateClient, arguments: job),
+                onPressed: () async {
+                  await Get.toNamed(Routes.rateClient, arguments: _job);
+                  // After rate page pops, pull latest (hasMyReview, etc.).
+                  _syncFromController();
+                },
               ),
           ],
         ),
@@ -208,8 +299,10 @@ class CompletedJobDetailsView extends StatelessWidget {
               AppDateTime.formatTime12h(job['endTime']?.toString()),
           ].where((t) => t.isNotEmpty).join(' - ')
         : JobDisplay.safeText(job['preferredTime']);
-    final location = JobDisplay.safeLocation(job);
+    final location = JobDisplay.publicAddress(job);
     final budget = job['budget'] != null ? 'MAD ${job['budget']}' : '';
+    final distKm = job['distanceKm'];
+    final distanceText = distKm is num ? '${distKm.toStringAsFixed(1)} km' : '';
 
     return Container(
       width: double.infinity,
@@ -225,16 +318,14 @@ class CompletedJobDetailsView extends StatelessWidget {
           _buildInfoRow(context, 'label_job_type'.tr, categoryName),
           _buildInfoRow(context, 'label_booking_date'.tr, bookingDate),
           _buildInfoRow(context, 'label_preferred_time'.tr, preferredTime),
-          _buildInfoRow(context, 'label_location'.tr, location),
+          _buildInfoRow(
+            context,
+            'label_location'.tr,
+            location.isEmpty ? 'Not provided' : location,
+          ),
+          if (distanceText.isNotEmpty)
+            _buildInfoRow(context, 'Distance', distanceText),
           _buildInfoRow(context, 'label_budget'.tr, budget),
-          if (job['distance'] != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(job['distance'], style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: context.textHintColor)),
-              ),
-            ),
         ],
       ),
     );

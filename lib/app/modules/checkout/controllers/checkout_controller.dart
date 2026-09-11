@@ -132,13 +132,15 @@ class CheckoutController extends GetxController {
         isSuccess.value = true;
 
         if (orderType.value == 'wallet_topup') {
-          try {
-            final walletService = Get.find<WalletService>();
-            await walletService.getWalletBalance();
-          } catch (_) {}
+          unawaited(() async {
+            try {
+              await Get.find<WalletService>().getWalletBalance();
+            } catch (_) {}
+          }());
         }
 
-        await Future.delayed(const Duration(milliseconds: 1400));
+        // Short pause so user sees success — don't block on heavy refetch.
+        await Future.delayed(const Duration(milliseconds: 700));
         Get.back(result: true);
       } else {
         errorMessage.value = response.message ?? 'Payment failed. Please try again.';

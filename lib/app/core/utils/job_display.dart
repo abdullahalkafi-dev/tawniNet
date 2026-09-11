@@ -4,36 +4,28 @@ import 'package:awnneaapp/app/core/utils/datetime_format.dart';
 class JobDisplay {
   JobDisplay._();
 
-  /// `address` is a string; `location` may be GeoJSON Point.
+  /// Text address only. Never surface raw lat/lng or GeoJSON.
   static String safeLocation(Map job) {
     final address = job['address']?.toString() ?? '';
     if (address.isNotEmpty && address != 'null') return address;
-    final loc = job['location'];
-    if (loc is String && loc.isNotEmpty && loc != 'null') return loc;
-    if (loc is Map) {
-      final coords = loc['coordinates'];
-      if (coords is List && coords.length >= 2) {
-        return '${coords[1]}, ${coords[0]}';
-      }
-    }
-    return '';
+    final city = job['city']?.toString() ?? '';
+    if (city.isNotEmpty && city != 'null') return city;
+    return 'Not provided';
   }
 
-  /// Never surface raw GeoJSON to users.
+  /// Street + area only (first 2 comma parts). Extra details belong in chat.
   static String publicAddress(Map job) {
     final address = job['address']?.toString() ?? '';
     if (address.isNotEmpty && address != 'null') {
       final parts =
           address.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-      // Drop trailing house/building segments — keep city + street-ish prefix.
-      if (parts.length >= 3) {
-        return parts.take(parts.length - 1).join(', ');
-      }
-      return address;
+      if (parts.isEmpty) return 'Not provided';
+      if (parts.length == 1) return parts.first;
+      return '${parts[0]}, ${parts[1]}';
     }
     final city = job['city']?.toString() ?? '';
     if (city.isNotEmpty && city != 'null') return city;
-    return '';
+    return 'Not provided';
   }
 
   static String safeText(dynamic value, {String fallback = ''}) {

@@ -63,7 +63,8 @@ class BookingView extends GetView<BookingController> {
 
         if (isLoading) {
           return ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
+            primary: false,
+            physics: AppAlwaysScrollPhysics,
             children: const [
               SizedBox(height: 160),
               Center(child: CircularProgressIndicator()),
@@ -73,7 +74,8 @@ class BookingView extends GetView<BookingController> {
 
         if (bookings.isEmpty) {
           return ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
+            primary: false,
+            physics: AppAlwaysScrollPhysics,
             children: [
               SizedBox(height: MediaQuery.of(context).size.height * 0.25),
               Center(child: Text('booking_no_bookings'.tr)),
@@ -92,7 +94,8 @@ class BookingView extends GetView<BookingController> {
         }
 
         return ListView.separated(
-          physics: const AlwaysScrollableScrollPhysics(),
+          primary: false,
+          physics: AppAlwaysScrollPhysics,
           padding: const EdgeInsets.all(20),
           itemCount: bookings.length,
           separatorBuilder: (context, index) => const SizedBox(height: 16),
@@ -225,7 +228,7 @@ class BookingView extends GetView<BookingController> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    booking.location,
+                    booking.location.isEmpty ? 'Not provided' : booking.location,
                     style: AppStyles.bodyMedium.copyWith(
                       fontSize: 12,
                       color: context.textSecondaryColor,

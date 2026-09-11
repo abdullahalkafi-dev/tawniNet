@@ -280,13 +280,6 @@ class BookingController extends GetxController {
         rating: rating.toDouble(),
         comment: comment,
       );
-      AppFeedback.success(
-        'Thank you! Your feedback has been recorded.',
-        title: 'Review Submitted',
-      );
-      // Refresh lists in background — never block the review modal
-      _invalidatePipeline().catchError((_) {});
-      return true;
     } catch (e) {
       AppFeedback.error(
         e.toString().replaceAll('Exception: ', ''),
@@ -294,6 +287,18 @@ class BookingController extends GetxController {
       );
       return false;
     }
+
+    // Close UI first (caller pops modal), then toast + refresh in background.
+    scheduleMicrotask(() {
+      try {
+        AppFeedback.success(
+          'Thank you! Your feedback has been recorded.',
+          title: 'Review Submitted',
+        );
+      } catch (_) {}
+      _invalidatePipeline().catchError((_) {});
+    });
+    return true;
   }
 }
 

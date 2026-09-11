@@ -26,8 +26,13 @@ class ReviewService extends GetxService {
       fromData: (data) => data,
     );
 
-    if (response.success && response.data != null) {
-      return response.data as Map<String, dynamic>;
+    if (response.success) {
+      final data = response.data;
+      if (data is Map) {
+        return Map<String, dynamic>.from(data);
+      }
+      // Success even if body shape is unexpected — review was saved.
+      return <String, dynamic>{};
     }
     throw Exception(response.message ?? 'Failed to submit review');
   }
@@ -39,8 +44,11 @@ class ReviewService extends GetxService {
       fromData: (data) => data,
     );
 
-    if (response.success && response.data != null) {
-      return response.data as List<dynamic>;
+    if (!response.success) return [];
+    final data = response.data;
+    if (data is List) return data;
+    if (data is Map && data['docs'] is List) {
+      return data['docs'] as List;
     }
     return [];
   }

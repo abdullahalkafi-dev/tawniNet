@@ -16,6 +16,7 @@ import 'package:awnneaapp/app/services/role_service.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/video_compressor.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
+import 'package:awnneaapp/app/core/widgets/emoji_picker_panel.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -573,8 +574,12 @@ class _ChatDetailViewState extends State<ChatDetailView> {
             description: data['description'],
             price: data['price']?.toDouble(),
             priceType: data['priceType'],
+            date: data['date'],
             startTime: data['startTime'],
             endTime: data['endTime'],
+            address: data['address'],
+            latitude: (data['latitude'] as num?)?.toDouble(),
+            longitude: (data['longitude'] as num?)?.toDouble(),
             paymentMethod: data['paymentMethod'],
             images: data['images']?.cast<String>(),
           );
@@ -604,6 +609,11 @@ class _ChatDetailViewState extends State<ChatDetailView> {
             IconButton(
               icon: const Icon(Icons.image_outlined, color: AppColors.primary),
               onPressed: () => _showMediaOptions(),
+            ),
+            // Emoji picker
+            IconButton(
+              icon: const Icon(Icons.sentiment_satisfied_alt_outlined, color: AppColors.primary),
+              onPressed: () => _showEmojiPicker(context),
             ),
             // Offer button — only visible for helpers
             if (Get.find<RoleService>().isHelper)
@@ -653,6 +663,19 @@ class _ChatDetailViewState extends State<ChatDetailView> {
     );
   }
 
+  void _showEmojiPicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => EmojiPickerPanel(
+        controller: chatController.messageController,
+      ),
+    );
+  }
+
   void _showMediaOptions() {
     showModalBottomSheet(
       context: context,
@@ -662,8 +685,16 @@ class _ChatDetailViewState extends State<ChatDetailView> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
+              leading: const Icon(Icons.photo_camera_outlined, color: AppColors.primary),
+              title: const Text('Take Photo'),
+              onTap: () async {
+                Navigator.pop(context);
+                await _pickAndSendCameraPhoto();
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.photo, color: AppColors.primary),
-              title: const Text('Send Image'),
+              title: const Text('Choose from Gallery'),
               onTap: () async {
                 Navigator.pop(context);
                 await _pickAndSendImages();
@@ -683,15 +714,24 @@ class _ChatDetailViewState extends State<ChatDetailView> {
     );
   }
 
+  Future<void> _pickAndSendCameraPhoto() async {
+    final picker = ImagePicker();
+    final file = await picker.pickImage(
+      source: ImageSource.camera,
+      imageQuality: 80,
+    );
+    if (file == null) return;
+    await _uploadAndSendImageFiles([file]);
+  }
+
   Future<void> _pickAndSendImages() async {
     final picker = ImagePicker();
     final pickedFiles = await picker.pickMultiImage(imageQuality: 80);
-
     if (pickedFiles.isEmpty) return;
+    await _uploadAndSendImageFiles(pickedFiles.take(4).toList());
+  }
 
-    // Limit to 4 images
-    final files = pickedFiles.take(4).toList();
-
+  Future<void> _uploadAndSendImageFiles(List<XFile> files) async {
     try {
       final api = Get.find<ApiClient>();
       final imageKeys = <String>[];
@@ -712,7 +752,6 @@ class _ChatDetailViewState extends State<ChatDetailView> {
             imageKeys.add(data['key']);
           }
         } else {
-          // If any image fails, abort all
           if (mounted) {
             AppFeedback.error('Failed to upload image ${imageKeys.length + 1}');
           }
@@ -815,8 +854,12 @@ class _ChatDetailViewState extends State<ChatDetailView> {
             description: data['description'],
             price: (data['price'] ?? 0).toDouble(),
             priceType: data['priceType'] ?? 'fixed',
+            date: data['date'],
             startTime: data['startTime'],
             endTime: data['endTime'],
+            address: data['address'],
+            latitude: (data['latitude'] as num?)?.toDouble(),
+            longitude: (data['longitude'] as num?)?.toDouble(),
             paymentMethod: data['paymentMethod'] ?? 'cash',
             images: data['images']?.cast<String>(),
           );

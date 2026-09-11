@@ -173,6 +173,9 @@ class OfferData {
   final String date;
   final String startTime;
   final String endTime;
+  final String address;
+  final double? latitude;
+  final double? longitude;
   final String paymentMethod; // cash, online
   final List<String> images;
   final String status; // pending, accepted, rejected, cancelled
@@ -185,12 +188,28 @@ class OfferData {
     this.date = '',
     this.startTime = '',
     this.endTime = '',
+    this.address = '',
+    this.latitude,
+    this.longitude,
     this.paymentMethod = 'cash',
     this.images = const [],
     this.status = 'pending',
   });
 
   factory OfferData.fromJson(Map<String, dynamic> json) {
+    double? lat;
+    double? lng;
+    final loc = json['location'];
+    if (loc is Map) {
+      final coords = loc['coordinates'];
+      if (coords is List && coords.length >= 2) {
+        lng = (coords[0] as num?)?.toDouble();
+        lat = (coords[1] as num?)?.toDouble();
+      }
+    }
+    lat = (json['latitude'] as num?)?.toDouble() ?? lat;
+    lng = (json['longitude'] as num?)?.toDouble() ?? lng;
+
     return OfferData(
       title: json['title'] ?? '',
       description: json['description'] ?? '',
@@ -199,6 +218,9 @@ class OfferData {
       date: json['date'] ?? '',
       startTime: json['startTime'] ?? '',
       endTime: json['endTime'] ?? '',
+      address: json['address'] ?? '',
+      latitude: lat,
+      longitude: lng,
       paymentMethod: json['paymentMethod'] ?? 'cash',
       images: (json['images'] as List?)?.cast<String>() ?? [],
       status: json['status'] ?? 'pending',
@@ -211,10 +233,15 @@ class OfferData {
       'description': description,
       'price': price,
       'priceType': priceType,
+      'date': date,
       'startTime': startTime,
       'endTime': endTime,
+      'address': address,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
       'paymentMethod': paymentMethod,
       'images': images,
+      'status': status,
     };
   }
 }

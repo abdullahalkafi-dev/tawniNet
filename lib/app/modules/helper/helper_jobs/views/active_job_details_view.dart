@@ -94,18 +94,22 @@ class ActiveJobDetailsView extends StatelessWidget {
         fallback: JobDisplay.safeText(job['clientName']));
     final categoryName = JobDisplay.categoryName(job['category'],
         fallback: JobDisplay.safeText(job['jobType'], fallback: 'Service'));
-    final bookingDate = job['date'] != null
-        ? AppDateTime.formatDateDisplay(job['date'].toString())
-        : AppDateTime.formatDateDisplay(job['bookingDate']?.toString() ?? '');
+    final bookingDate = AppDateTime.formatDateDisplay(
+      job['date']?.toString() ?? '',
+    );
     final preferredTime = job['startTime'] != null
         ? [
             AppDateTime.formatTime12h(job['startTime']?.toString()),
             if (job['endTime'] != null)
               AppDateTime.formatTime12h(job['endTime']?.toString()),
           ].where((t) => t.isNotEmpty).join(' - ')
-        : JobDisplay.safeText(job['preferredTime']);
+        : JobDisplay.safeText(job['preferredTime'], fallback: '');
     final location = JobDisplay.publicAddress(job);
     final budget = job['budget'] != null ? 'MAD ${job['budget']}' : '';
+    final distKm = job['distanceKm'];
+    final distanceText = distKm is num
+        ? '${distKm.toStringAsFixed(1)} km'
+        : '';
 
     return Container(
       width: double.infinity,
@@ -119,18 +123,24 @@ class ActiveJobDetailsView extends StatelessWidget {
         children: [
           _buildInfoRow(context, 'label_order_by'.tr, clientName),
           _buildInfoRow(context, 'label_job_type'.tr, categoryName),
-          _buildInfoRow(context, 'label_booking_date'.tr, bookingDate),
-          _buildInfoRow(context, 'label_preferred_time'.tr, preferredTime),
-          _buildInfoRow(context, 'label_location'.tr, location),
+          _buildInfoRow(
+            context,
+            'label_booking_date'.tr,
+            bookingDate.isEmpty ? 'Not provided' : bookingDate,
+          ),
+          _buildInfoRow(
+            context,
+            'label_preferred_time'.tr,
+            preferredTime.isEmpty ? 'Not provided' : preferredTime,
+          ),
+          _buildInfoRow(
+            context,
+            'label_location'.tr,
+            location.isEmpty ? 'Not provided' : location,
+          ),
+          if (distanceText.isNotEmpty)
+            _buildInfoRow(context, 'Distance', distanceText),
           _buildInfoRow(context, 'label_budget'.tr, budget),
-          if (job['distance'] != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(job['distance'], style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: context.textHintColor)),
-              ),
-            ),
         ],
       ),
     );

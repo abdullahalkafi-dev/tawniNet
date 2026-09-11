@@ -61,7 +61,8 @@ class HelperMessagesTabView extends GetView<MessagesController> {
         child: Obx(() {
           if (controller.isLoading.value && controller.filteredChats.isEmpty) {
             return ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
+              primary: false,
+              physics: AppAlwaysScrollPhysics,
               children: const [
                 SizedBox(height: 160),
                 Center(child: CircularProgressIndicator()),
@@ -75,7 +76,8 @@ class HelperMessagesTabView extends GetView<MessagesController> {
           }
 
           return ListView.separated(
-            physics: const AlwaysScrollableScrollPhysics(),
+            primary: false,
+            physics: AppAlwaysScrollPhysics,
             padding: const EdgeInsets.symmetric(vertical: 10),
             itemCount: list.length,
             separatorBuilder: (context, index) =>
@@ -93,7 +95,8 @@ class HelperMessagesTabView extends GetView<MessagesController> {
     return LayoutBuilder(
       builder: (context, constraints) {
         return SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
+          primary: false,
+          physics: AppAlwaysScrollPhysics,
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
             child: Center(

@@ -19,7 +19,8 @@ class HomeTabView extends GetView<HomeController> {
     return AppPullToRefresh(
       onRefresh: controller.refreshData,
       child: SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
+      primary: false,
+      physics: AppAlwaysScrollPhysics,
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -244,7 +244,7 @@ class CancelDetailsView extends GetView<BookingController> {
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        booking.location,
+                        booking.location.isEmpty ? 'Not provided' : booking.location,
                         style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

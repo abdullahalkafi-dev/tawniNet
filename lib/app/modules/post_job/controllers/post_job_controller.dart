@@ -341,6 +341,16 @@ class PostJobController extends GetxController {
       return;
     }
 
+    String? isoDate = _isoDate;
+    if (isoDate == null && dateController.text.trim().isNotEmpty) {
+      final parsed = AppDateTime.tryParseDate(dateController.text);
+      if (parsed != null) isoDate = AppDateTime.toIsoDate(parsed);
+    }
+    if (isoDate == null || isoDate.isEmpty) {
+      _showError('Please select a preferred date');
+      return;
+    }
+
     // Show payment dialog
     _showPaymentDialog();
   }

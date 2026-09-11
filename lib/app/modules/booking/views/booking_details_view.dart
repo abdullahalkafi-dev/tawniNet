@@ -69,10 +69,26 @@ class BookingDetailsView extends GetView<BookingController> {
           children: [
             _buildWorkerCard(context, booking),
             const SizedBox(height: 24),
-            _buildJobDetailRow(context, 'label_job_type'.tr, booking.jobType),
-            _buildJobDetailRow(context, 'label_booking_date'.tr, booking.date),
-            _buildJobDetailRow(context, 'label_preferred_time'.tr, booking.time),
-            _buildJobDetailRow(context, 'label_location'.tr, booking.location),
+            _buildJobDetailRow(
+              context,
+              'label_job_type'.tr,
+              booking.jobType.isEmpty ? 'Not provided' : booking.jobType,
+            ),
+            _buildJobDetailRow(
+              context,
+              'label_booking_date'.tr,
+              booking.date.isEmpty ? 'Not provided' : booking.date,
+            ),
+            _buildJobDetailRow(
+              context,
+              'label_preferred_time'.tr,
+              booking.time.isEmpty ? 'Not provided' : booking.time,
+            ),
+            _buildJobDetailRow(
+              context,
+              'label_location'.tr,
+              booking.location.isEmpty ? 'Not provided' : booking.location,
+            ),
             _buildJobDetailRow(context, 'label_budget'.tr, formatMoney(booking.budget)),
             const SizedBox(height: 24),
             _buildJobDescription(context, booking),
@@ -713,7 +729,7 @@ class BookingDetailsView extends GetView<BookingController> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'rate_title'.tr.isNotEmpty ? 'rate_title'.tr : 'Rate Helper',
+                    'Rate Helper',
                     style: AppStyles.h1Of(dialogContext).copyWith(fontSize: 22),
                   ),
                   const SizedBox(height: 8),
@@ -863,16 +879,21 @@ class BookingDetailsView extends GetView<BookingController> {
                                       comment: commentController.text.trim(),
                                     );
                                     if (success) {
-                                      Get.back();
-                                    } else {
+                                      // Close sheet first — never leave spinner stuck.
+                                      if (dialogContext.mounted) {
+                                        Navigator.of(dialogContext).pop();
+                                      }
+                                    } else if (dialogContext.mounted) {
                                       setModalState(() {
                                         isSubmitting = false;
                                       });
                                     }
                                   } catch (_) {
-                                    setModalState(() {
-                                      isSubmitting = false;
-                                    });
+                                    if (dialogContext.mounted) {
+                                      setModalState(() {
+                                        isSubmitting = false;
+                                      });
+                                    }
                                   }
                                 },
                           style: ElevatedButton.styleFrom(

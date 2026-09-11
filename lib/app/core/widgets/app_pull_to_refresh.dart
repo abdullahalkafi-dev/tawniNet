@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import '../values/app_colors.dart';
 
@@ -18,8 +19,9 @@ class AppPullToRefresh extends StatelessWidget {
     return RefreshIndicator(
       color: AppColors.primary,
       backgroundColor: Theme.of(context).cardColor,
-      edgeOffset: 28,
+      edgeOffset: 16,
       strokeWidth: 3.0,
+      // Use dragDisplacement default; works with Bouncing parent physics.
       onRefresh: () async {
         try {
           await onRefresh();
@@ -30,4 +32,28 @@ class AppPullToRefresh extends StatelessWidget {
       child: child,
     );
   }
+}
+
+/// Scroll physics that always allow pull-to-refresh (short or long lists)
+/// and work inside TabBarView / PageView.
+const AppAlwaysScrollPhysics = AlwaysScrollableScrollPhysics(
+  parent: BouncingScrollPhysics(),
+);
+
+/// ScrollConfiguration that also allows mouse/trackpad drag (emulator/desktop).
+class AppScrollBehavior extends ScrollBehavior {
+  const AppScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.trackpad,
+      };
+
+  @override
+  ScrollPhysics getScrollPhysics(BuildContext context) =>
+      const AlwaysScrollableScrollPhysics(
+        parent: BouncingScrollPhysics(),
+      );
 }

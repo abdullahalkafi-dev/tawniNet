@@ -114,6 +114,9 @@ class ApiConstants {
   static String cancelJob(String id) => '/jobs/$id/cancel';
   static String jobCheckout(String id) => '/jobs/$id/checkout';
 
+  // ─── Legal (public) ────────────────────────────────────
+  static const String legal = '/legal';
+
   // ─── Wallet & Payment ────────────────────────────────────
   static const String walletBalance = '/wallet/balance';
   static const String walletTransactions = '/wallet/transactions';

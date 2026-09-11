@@ -276,26 +276,66 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
                     style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 13),
                   ),
                 ],
-                if (job.address != null && job.address!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.location_on_outlined, size: 14, color: Colors.orange[400]),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          job.address!,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppStyles.bodyMedium.copyWith(
-                            fontSize: 12,
-                            color: context.textSecondaryColor,
-                          ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    if (job.distanceKm != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.near_me,
+                              size: 12,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              job.distance,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ],
+                    if (job.distanceKm != null) const SizedBox(width: 8),
+                    if (job.address != null && job.address!.isNotEmpty)
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.location_on_outlined,
+                              size: 14,
+                              color: Colors.orange[400],
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                job.address!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppStyles.bodyMedium.copyWith(
+                                  fontSize: 12,
+                                  color: context.textSecondaryColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
