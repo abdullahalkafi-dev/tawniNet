@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
@@ -110,17 +111,21 @@ class CheckoutController extends GetxController {
       );
 
       if (sessionId.value.isNotEmpty) {
-        try {
-          final simHost = ApiConstants.serverHost;
-          final simUrl = 'http://$simHost:5099/simulator/v1/process-payment';
-          await _api.client.post(
-            simUrl,
-            data: {
-              'sessionId': sessionId.value,
-              'action': 'success',
-            },
-          );
-        } catch (_) {}
+        // Best-effort notify simulator container in the background without blocking the UI
+        final simHost = ApiConstants.serverHost;
+        final simUrl = 'http://$simHost:5099/simulator/v1/process-payment';
+        unawaited(
+          _api.client
+              .post(
+                simUrl,
+                data: {
+                  'sessionId': sessionId.value,
+                  'action': 'success',
+                },
+              )
+              .timeout(const Duration(seconds: 2))
+              .catchError((_) => null as dynamic),
+        );
       }
 
       if (response.success) {
