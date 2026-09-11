@@ -1,3 +1,4 @@
+import 'package:awnneaapp/app/core/widgets/app_pull_to_refresh.dart';
 import 'package:awnneaapp/app/modules/home/views/widgets/categories_section.dart';
 import 'package:awnneaapp/app/modules/home/views/widgets/home_header.dart';
 import 'package:awnneaapp/app/modules/home/views/widgets/nearby_helpers.dart';
@@ -15,7 +16,7 @@ class HomeTabView extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
+    return AppPullToRefresh(
       onRefresh: controller.refreshData,
       child: SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),

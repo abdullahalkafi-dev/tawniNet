@@ -173,8 +173,12 @@ class _WalletViewState extends State<WalletView> {
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _load,
+              displacement: 20,
+              edgeOffset: 24,
+              color: AppColors.primary,
               child: ListView(
                 controller: _scroll,
+                physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),
                 children: [
                   Container(

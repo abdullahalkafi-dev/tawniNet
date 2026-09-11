@@ -1,6 +1,7 @@
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/widgets/app_pull_to_refresh.dart';
 import 'package:awnneaapp/app/modules/messages/controllers/messages_controller.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:flutter/material.dart';
@@ -55,19 +56,26 @@ class HelperMessagesTabView extends GetView<MessagesController> {
           const SizedBox(width: 8),
         ],
       ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
+      body: AppPullToRefresh(
+        onRefresh: controller.refreshData,
+        child: Obx(() {
+          if (controller.isLoading.value && controller.filteredChats.isEmpty) {
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: const [
+                SizedBox(height: 160),
+                Center(child: CircularProgressIndicator()),
+              ],
+            );
+          }
 
-        final list = controller.filteredChats;
-        if (list.isEmpty) {
-          return _buildEmptyState(context);
-        }
+          final list = controller.filteredChats;
+          if (list.isEmpty) {
+            return _buildEmptyState(context);
+          }
 
-        return RefreshIndicator(
-          onRefresh: controller.refreshData,
-          child: ListView.separated(
+          return ListView.separated(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(vertical: 10),
             itemCount: list.length,
             separatorBuilder: (context, index) =>
@@ -75,41 +83,59 @@ class HelperMessagesTabView extends GetView<MessagesController> {
             itemBuilder: (context, index) {
               return _buildChatItem(context, list[index]);
             },
-          ),
-        );
-      }),
+          );
+        }),
+      ),
     );
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.chat_bubble_outline,
-            size: 80,
-            color: context.textHintColor,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No conversations yet',
-            style: AppStyles.h2Of(context).copyWith(
-              color: context.textSecondaryColor,
-              fontSize: 18,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.chat_bubble_outline,
+                    size: 80,
+                    color: context.textHintColor,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No conversations yet',
+                    style: AppStyles.h2Of(context).copyWith(
+                      color: context.textSecondaryColor,
+                      fontSize: 18,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Messages from clients will appear here\nwhen they start a conversation',
+                    textAlign: TextAlign.center,
+                    style: AppStyles.bodyMedium.copyWith(
+                      color: context.textHintColor,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Pull down to refresh',
+                    style: AppStyles.bodyMedium.copyWith(
+                      color: context.textHintColor,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Messages from clients will appear here\nwhen they start a conversation',
-            textAlign: TextAlign.center,
-            style: AppStyles.bodyMedium.copyWith(
-              color: context.textHintColor,
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

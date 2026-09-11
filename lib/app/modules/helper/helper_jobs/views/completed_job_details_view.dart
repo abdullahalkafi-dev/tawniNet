@@ -5,6 +5,7 @@ import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/values/app_currency.dart';
 import 'package:awnneaapp/app/core/widgets/custom_button.dart';
 import 'package:awnneaapp/app/core/widgets/job_status_timeline.dart';
+import 'package:awnneaapp/app/modules/helper/helper_jobs/controllers/helper_jobs_controller.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -22,6 +23,8 @@ class CompletedJobDetailsView extends StatelessWidget {
         ? budgetRaw.toDouble()
         : (double.tryParse(budgetRaw?.toString() ?? '') ?? 0.0);
     final isCash = job['paymentMethod'] == 'cash';
+    final paymentStatus = (job['paymentStatus'] ?? '').toString();
+    final needsCashConfirm = isCash && paymentStatus != 'paid';
     final earned = (job['earnedAmount'] as num?)?.toDouble() ?? (isCash ? budget : budget * 0.8);
 
     return Scaffold(
@@ -63,6 +66,49 @@ class CompletedJobDetailsView extends StatelessWidget {
             const SizedBox(height: 16),
             _buildJobStatusTimeline(context, job),
             const SizedBox(height: 24),
+            if (needsCashConfirm) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.orange.shade700),
+                ),
+                child: Text(
+                  'Client completed this cash job. Confirm once you have received payment.',
+                  textAlign: TextAlign.center,
+                  style: AppStyles.bodyMedium.copyWith(fontSize: 13),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () async {
+                  final jobId = (job['id'] ?? job['_id'] ?? '').toString();
+                  final controller = Get.find<HelperJobsController>();
+                  final ok = await controller.confirmCashReceived(jobId);
+                  if (ok) {
+                    Get.back();
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+                child: const Text(
+                  'Cash received',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             if (job['hasReviewFromOther'] == true && job['reviewFromOther'] is Map)
               _buildReviewCard(
                 context,

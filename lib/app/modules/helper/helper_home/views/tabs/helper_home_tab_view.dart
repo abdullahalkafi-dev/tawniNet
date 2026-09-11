@@ -1,5 +1,6 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/widgets/app_pull_to_refresh.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/notification_badge_controller.dart';
 import 'package:flutter/material.dart';
@@ -13,7 +14,7 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
+    return AppPullToRefresh(
       onRefresh: controller.refreshData,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),

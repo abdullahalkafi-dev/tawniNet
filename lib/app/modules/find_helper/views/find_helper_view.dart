@@ -1,5 +1,6 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/widgets/app_pull_to_refresh.dart';
 import 'package:awnneaapp/app/data/models/home_models.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -203,10 +204,11 @@ class FindHelperView extends GetView<FindHelperController> {
         );
       }
 
-      return RefreshIndicator(
+      return AppPullToRefresh(
         onRefresh: controller.refreshData,
         child: ListView.separated(
           controller: controller.scrollController,
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           itemCount: controller.helpers.length + (controller.isLoadingMore.value ? 1 : 0),
           separatorBuilder: (_, __) => const SizedBox(height: 12),

@@ -2,6 +2,7 @@ import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/utils/job_display.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/widgets/app_pull_to_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:awnneaapp/app/modules/helper/helper_jobs/controllers/helper_jobs_controller.dart';
@@ -101,43 +102,48 @@ class HelperJobsTabView extends GetView<HelperJobsController> {
   }
 
   Widget _buildJobList(BuildContext context, List jobs, String type) {
-    return Obx(() {
-      final isLoading = controller.isLoading.value && jobs.isEmpty;
+    // Keep RefreshIndicator outside Obx so load-state rebuilds don't cancel pull.
+    return AppPullToRefresh(
+      onRefresh: () => controller.fetchJobs(userInitiated: true),
+      child: Obx(() {
+        final isLoading = controller.isLoading.value && jobs.isEmpty;
 
-      return RefreshIndicator(
-        onRefresh: () => controller.fetchJobs(),
-        child: isLoading
-            ? ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: const [
-                  SizedBox(height: 160),
-                  Center(child: CircularProgressIndicator()),
-                ],
-              )
-            : jobs.isEmpty
-                ? ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: [
-                      SizedBox(height: MediaQuery.of(context).size.height * 0.25),
-                      Center(
-                        child: Text(
-                          'helper_no_jobs'.tr,
-                          style: TextStyle(color: context.textHintColor),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Center(
-                        child: Text(
-                          'Pull down to refresh',
-                          style: TextStyle(
-                            color: context.textHintColor,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                : ListView.separated(
+        if (isLoading) {
+          return ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: const [
+              SizedBox(height: 160),
+              Center(child: CircularProgressIndicator()),
+            ],
+          );
+        }
+
+        if (jobs.isEmpty) {
+          return ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+              Center(
+                child: Text(
+                  'helper_no_jobs'.tr,
+                  style: TextStyle(color: context.textHintColor),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Center(
+                child: Text(
+                  'Pull down to refresh',
+                  style: TextStyle(
+                    color: context.textHintColor,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          );
+        }
+
+        return ListView.separated(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(20),
                     itemCount: jobs.length,
@@ -245,8 +251,8 @@ class HelperJobsTabView extends GetView<HelperJobsController> {
                         ),
                       );
                     },
-                  ),
-      );
-    });
+        );
+      }),
+    );
   }
 }

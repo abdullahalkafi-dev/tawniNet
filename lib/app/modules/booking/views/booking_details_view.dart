@@ -855,15 +855,21 @@ class BookingDetailsView extends GetView<BookingController> {
                                   setModalState(() {
                                     isSubmitting = true;
                                   });
-                                  final success = await controller.submitReview(
-                                    jobId: booking.id,
-                                    helperId: booking.workerUserId,
-                                    rating: rating.toDouble(),
-                                    comment: commentController.text.trim(),
-                                  );
-                                  if (success) {
-                                    Get.back();
-                                  } else {
+                                  try {
+                                    final success = await controller.submitReview(
+                                      jobId: booking.id,
+                                      helperId: booking.workerUserId,
+                                      rating: rating.toDouble(),
+                                      comment: commentController.text.trim(),
+                                    );
+                                    if (success) {
+                                      Get.back();
+                                    } else {
+                                      setModalState(() {
+                                        isSubmitting = false;
+                                      });
+                                    }
+                                  } catch (_) {
                                     setModalState(() {
                                       isSubmitting = false;
                                     });

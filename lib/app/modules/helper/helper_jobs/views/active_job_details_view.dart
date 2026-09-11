@@ -16,7 +16,6 @@ class ActiveJobDetailsView extends StatelessWidget {
     final job = Get.arguments is Map
         ? Map<String, dynamic>.from(Get.arguments as Map)
         : <String, dynamic>{};
-    final jobId = (job['id'] ?? job['_id'] ?? '').toString();
 
     return Scaffold(
       appBar: AppBar(
@@ -41,20 +40,19 @@ class ActiveJobDetailsView extends StatelessWidget {
             const SizedBox(height: 16),
             _buildJobStatusTimeline(context, job),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () {
-                final controller = Get.find<HelperJobsController>();
-                controller.completeJob(jobId);
-                Get.back();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: context.isDarkMode
+                    ? Colors.blueGrey.withOpacity(0.15)
+                    : const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: const Text(
-                'Mark as Completed',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+              child: Text(
+                'Waiting for the client to confirm service is complete.',
+                textAlign: TextAlign.center,
+                style: AppStyles.bodyMedium.copyWith(fontSize: 13),
               ),
             ),
             const SizedBox(height: 12),

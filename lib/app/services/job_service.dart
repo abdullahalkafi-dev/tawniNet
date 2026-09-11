@@ -118,6 +118,18 @@ class JobService extends GetxService {
     throw Exception(response.message ?? 'Failed to complete job');
   }
 
+  Future<Map<String, dynamic>> cashReceived(String jobId) async {
+    final response = await _api.post(
+      ApiConstants.cashReceived(jobId),
+      fromData: (data) => data,
+    );
+
+    if (response.success && response.data != null) {
+      return response.data as Map<String, dynamic>;
+    }
+    throw Exception(response.message ?? 'Failed to confirm cash payment');
+  }
+
   Future<Map<String, dynamic>> cancelJob(String jobId, String reason) async {
     final endpoint = ApiConstants.cancelJob(jobId);
     final response = await _api.post(

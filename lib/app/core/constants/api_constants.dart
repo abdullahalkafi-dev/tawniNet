@@ -110,6 +110,7 @@ class ApiConstants {
   static String jobById(String id) => '/jobs/$id';
   static String acceptJob(String id) => '/jobs/$id/accept';
   static String completeJob(String id) => '/jobs/$id/complete';
+  static String cashReceived(String id) => '/jobs/$id/cash-received';
   static String cancelJob(String id) => '/jobs/$id/cancel';
   static String jobCheckout(String id) => '/jobs/$id/checkout';
 

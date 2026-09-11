@@ -1,6 +1,7 @@
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/widgets/app_pull_to_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -54,22 +55,26 @@ class MessagesView extends GetView<MessagesController> {
           const SizedBox(width: 8),
         ],
       ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
-        }
+      body: AppPullToRefresh(
+        onRefresh: controller.refreshData,
+        child: Obx(() {
+          if (controller.isLoading.value && controller.filteredChats.isEmpty) {
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: const [
+                SizedBox(height: 160),
+                Center(child: CircularProgressIndicator()),
+              ],
+            );
+          }
 
-        final list = controller.filteredChats;
-        if (list.isEmpty) {
-          return RefreshIndicator(
-            onRefresh: controller.refreshData,
-            child: _buildEmptyState(context),
-          );
-        }
+          final list = controller.filteredChats;
+          if (list.isEmpty) {
+            return _buildEmptyState(context);
+          }
 
-        return RefreshIndicator(
-          onRefresh: controller.refreshData,
-          child: ListView.separated(
+          return ListView.separated(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(vertical: 10),
             itemCount: list.length,
             separatorBuilder: (context, index) =>
@@ -77,9 +82,9 @@ class MessagesView extends GetView<MessagesController> {
             itemBuilder: (context, index) {
               return _buildChatItem(context, list[index]);
             },
-          ),
-        );
-      }),
+          );
+        }),
+      ),
     );
   }
 

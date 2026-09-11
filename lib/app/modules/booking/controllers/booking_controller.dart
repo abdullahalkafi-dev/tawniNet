@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
 import 'package:awnneaapp/app/core/constants/refetch_keys.dart';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
@@ -34,7 +33,7 @@ class BookingController extends GetxController {
     try {
       Get.find<RefetchService>().register(
         RefetchKeys.activeBookings,
-        fetchBookings,
+        () => fetchBookings(),
       );
     } catch (_) {}
     fetchBookings();
@@ -91,7 +90,22 @@ class BookingController extends GetxController {
     return out;
   }
 
-  Future<void> fetchBookings() async {
+  Future<void>? _fetchInFlight;
+
+  /// Safe for pull-to-refresh: joins an in-flight fetch instead of stacking.
+  Future<void> fetchBookings({bool userInitiated = false}) {
+    final existing = _fetchInFlight;
+    if (existing != null) return existing;
+    final future = _fetchBookingsImpl(userInitiated: userInitiated);
+    _fetchInFlight = future;
+    return future.whenComplete(() {
+      if (identical(_fetchInFlight, future)) {
+        _fetchInFlight = null;
+      }
+    });
+  }
+
+  Future<void> _fetchBookingsImpl({bool userInitiated = false}) async {
     isLoading.value = true;
     try {
       final jobService = Get.find<JobService>();
@@ -120,14 +134,20 @@ class BookingController extends GetxController {
 
       _openPendingJobDetails();
     } catch (e) {
-      if (!isClosed && activeBookings.isEmpty && unpaidBookings.isEmpty) {
+      if (!isClosed &&
+          (userInitiated ||
+              (activeBookings.isEmpty && unpaidBookings.isEmpty))) {
         AppFeedback.error(
-          'Could not load bookings. Pull down to retry.',
+          e.toString().replaceAll('Exception: ', '').isEmpty
+              ? 'Could not load bookings. Pull down to retry.'
+              : e.toString().replaceAll('Exception: ', ''),
           title: 'Bookings',
         );
       }
     } finally {
-      isLoading.value = false;
+      if (!isClosed) {
+        isLoading.value = false;
+      }
     }
   }
 
@@ -260,20 +280,17 @@ class BookingController extends GetxController {
         rating: rating.toDouble(),
         comment: comment,
       );
-      Get.snackbar(
-        'Review Submitted',
+      AppFeedback.success(
         'Thank you! Your feedback has been recorded.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green.shade100,
-        colorText: Colors.green.shade900,
+        title: 'Review Submitted',
       );
-      await _invalidatePipeline();
+      // Refresh lists in background — never block the review modal
+      _invalidatePipeline().catchError((_) {});
       return true;
     } catch (e) {
-      Get.snackbar(
-        'Error',
+      AppFeedback.error(
         e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
+        title: 'Could not submit review',
       );
       return false;
     }

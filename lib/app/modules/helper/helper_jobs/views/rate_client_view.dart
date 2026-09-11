@@ -18,6 +18,7 @@ class RateClientView extends StatefulWidget {
 
 class _RateClientViewState extends State<RateClientView> {
   int _rating = 0;
+  bool _isSubmitting = false;
   final _reviewController = TextEditingController();
   Map<String, dynamic> _job = const {};
 
@@ -114,11 +115,14 @@ class _RateClientViewState extends State<RateClientView> {
             const SizedBox(height: 30),
             CustomButton(
               text: 'rate_submit'.tr,
+              isLoading: _isSubmitting,
               onPressed: () async {
                 if (_rating == 0) {
-                  Get.snackbar('Rating Required', 'Please select a star rating', snackPosition: SnackPosition.BOTTOM);
+                  AppFeedback.error('Please select a star rating', title: 'Rating Required');
                   return;
                 }
+                if (_isSubmitting) return;
+                setState(() => _isSubmitting = true);
                 try {
                   final reviewService = Get.find<ReviewService>();
                   final jobId = (job['id'] ?? job['_id'])?.toString() ?? '';
@@ -127,6 +131,14 @@ class _RateClientViewState extends State<RateClientView> {
                   if (revieweeId.isEmpty && postedBy is Map) {
                     revieweeId = (postedBy['_id'] ?? postedBy['id'] ?? '').toString();
                   }
+                  if (jobId.isEmpty || revieweeId.isEmpty) {
+                    AppFeedback.error(
+                      'Could not identify this job for review.',
+                      title: 'Review failed',
+                    );
+                    setState(() => _isSubmitting = false);
+                    return;
+                  }
                   await reviewService.submitReview(
                     jobId: jobId,
                     revieweeId: revieweeId,
@@ -134,11 +146,23 @@ class _RateClientViewState extends State<RateClientView> {
                     comment: _reviewController.text,
                   );
                   try {
-                    await Get.find<RefetchService>().invalidateJobPipeline();
+                    Get.find<RefetchService>()
+                        .invalidateJobPipeline()
+                        .catchError((_) {});
                   } catch (_) {}
+                  if (!mounted) return;
                   Get.back();
-                  Get.snackbar('rate_thank_you'.tr, 'rate_submitted'.tr, snackPosition: SnackPosition.BOTTOM);
+                  AppFeedback.success(
+                    'rate_submitted'.tr.isNotEmpty
+                        ? 'rate_submitted'.tr
+                        : 'Thank you!',
+                    title: 'rate_thank_you'.tr.isNotEmpty
+                        ? 'rate_thank_you'.tr
+                        : 'Review Submitted',
+                  );
                 } catch (e) {
+                  if (!mounted) return;
+                  setState(() => _isSubmitting = false);
                   AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
                 }
               },

@@ -2,6 +2,7 @@ import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_currency.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/widgets/app_pull_to_refresh.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -53,48 +54,54 @@ class BookingView extends GetView<BookingController> {
   }
 
   Widget _buildBookingList(BuildContext context, RxList<Booking> bookings) {
-    return Obx(() {
-      final isLoading = controller.isLoading.value && bookings.isEmpty;
+    // RefreshIndicator must stay OUTSIDE Obx — otherwise isLoading flips
+    // rebuild the indicator and cancel the pull gesture.
+    return AppPullToRefresh(
+      onRefresh: () => controller.fetchBookings(userInitiated: true),
+      child: Obx(() {
+        final isLoading = controller.isLoading.value && bookings.isEmpty;
 
-      return RefreshIndicator(
-        onRefresh: () => controller.fetchBookings(),
-        child: isLoading
-            ? ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: const [
-                  SizedBox(height: 160),
-                  Center(child: CircularProgressIndicator()),
-                ],
-              )
-            : bookings.isEmpty
-                ? ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: [
-                      SizedBox(height: MediaQuery.of(context).size.height * 0.25),
-                      Center(child: Text('booking_no_bookings'.tr)),
-                      const SizedBox(height: 8),
-                      Center(
-                        child: Text(
-                          'Pull down to refresh',
-                          style: TextStyle(
-                            color: context.textHintColor,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                : ListView.separated(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(20),
-                    itemCount: bookings.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 16),
-                    itemBuilder: (context, index) {
-                      return _buildBookingCard(context, bookings[index]);
-                    },
+        if (isLoading) {
+          return ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: const [
+              SizedBox(height: 160),
+              Center(child: CircularProgressIndicator()),
+            ],
+          );
+        }
+
+        if (bookings.isEmpty) {
+          return ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+              Center(child: Text('booking_no_bookings'.tr)),
+              const SizedBox(height: 8),
+              Center(
+                child: Text(
+                  'Pull down to refresh',
+                  style: TextStyle(
+                    color: context.textHintColor,
+                    fontSize: 12,
                   ),
-      );
-    });
+                ),
+              ),
+            ],
+          );
+        }
+
+        return ListView.separated(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20),
+          itemCount: bookings.length,
+          separatorBuilder: (context, index) => const SizedBox(height: 16),
+          itemBuilder: (context, index) {
+            return _buildBookingCard(context, bookings[index]);
+          },
+        );
+      }),
+    );
   }
 
   Widget _buildBookingCard(BuildContext context, Booking booking) {

@@ -19,7 +19,7 @@ class HelperJobsController extends GetxController {
     try {
       Get.find<RefetchService>().register(
         RefetchKeys.helperJobs,
-        fetchJobs,
+        () => fetchJobs(),
       );
     } catch (_) {}
     fetchJobs();
@@ -42,7 +42,22 @@ class HelperJobsController extends GetxController {
     }
   }
 
-  Future<void> fetchJobs() async {
+  Future<void>? _fetchInFlight;
+
+  /// Safe for pull-to-refresh: joins an in-flight fetch instead of stacking.
+  Future<void> fetchJobs({bool userInitiated = false}) {
+    final existing = _fetchInFlight;
+    if (existing != null) return existing;
+    final future = _fetchJobsImpl(userInitiated: userInitiated);
+    _fetchInFlight = future;
+    return future.whenComplete(() {
+      if (identical(_fetchInFlight, future)) {
+        _fetchInFlight = null;
+      }
+    });
+  }
+
+  Future<void> _fetchJobsImpl({bool userInitiated = false}) async {
     isLoading.value = true;
     try {
       final jobService = Get.find<JobService>();
@@ -53,14 +68,22 @@ class HelperJobsController extends GetxController {
       cancelledJobs.assignAll(res['cancelled'] ?? []);
       _openPendingJobDetails();
     } catch (e) {
-      if (activeJobs.isEmpty && completedJobs.isEmpty && cancelledJobs.isEmpty) {
+      if (!isClosed &&
+          (userInitiated ||
+              (activeJobs.isEmpty &&
+                  completedJobs.isEmpty &&
+                  cancelledJobs.isEmpty))) {
         AppFeedback.error(
-          'Could not load jobs. Pull down to retry.',
+          e.toString().replaceAll('Exception: ', '').isEmpty
+              ? 'Could not load jobs. Pull down to retry.'
+              : e.toString().replaceAll('Exception: ', ''),
           title: 'My Job',
         );
       }
     } finally {
-      isLoading.value = false;
+      if (!isClosed) {
+        isLoading.value = false;
+      }
     }
   }
 
@@ -144,14 +167,16 @@ class HelperJobsController extends GetxController {
     }
   }
 
-  Future<void> completeJob(String id) async {
+  Future<bool> confirmCashReceived(String id) async {
     try {
       final jobService = Get.find<JobService>();
-      await jobService.completeJob(id);
-      AppFeedback.success('Job marked as completed', title: 'Completed');
+      await jobService.cashReceived(id);
+      AppFeedback.success('Cash payment confirmed', title: 'Cash received');
       await _invalidatePipeline();
+      return true;
     } catch (e) {
       AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
+      return false;
     }
   }
 }

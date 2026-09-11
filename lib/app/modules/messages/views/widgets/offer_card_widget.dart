@@ -34,7 +34,12 @@ class OfferCardWidget extends StatelessWidget {
 
     final isPending = offer.status == 'pending';
     final isAwaitingPayment = offer.status == 'awaiting_payment';
-    final showActions = isPending || (isAwaitingPayment && !isHelper && !isSentByMe);
+    // Accept / Reject / Pay now — client (non-sender) only
+    final canClientAct = !isHelper && !isSentByMe;
+    // Edit / Cancel — helper (offer sender) while still pending
+    final canHelperAct = (isHelper || isSentByMe) && isPending;
+    final showActions =
+        (canClientAct && (isPending || isAwaitingPayment)) || canHelperAct;
 
     return Container(
       width: 280,
@@ -239,7 +244,7 @@ class OfferCardWidget extends StatelessWidget {
                   top: BorderSide(color: context.borderSubtle),
                 ),
               ),
-              child: isAwaitingPayment
+              child: canClientAct && isAwaitingPayment
                   ? SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -306,8 +311,8 @@ class OfferCardWidget extends StatelessWidget {
   }
 
   Widget _buildActionButtons(String status) {
-    if (isHelper) {
-      // Helper can cancel or edit (only if pending)
+    // Helper (sender): only Cancel / Edit while pending — never Accept/Pay
+    if (isHelper || isSentByMe) {
       return Row(
         children: [
           Expanded(
