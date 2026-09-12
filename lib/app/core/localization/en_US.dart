@@ -197,6 +197,7 @@ const Map<String, String> enUS = {
 
   // ─── Booking ───────────────────────────────────────────
   "booking_my_bookings": "My Bookings",
+  "booking_awaiting": "Awaiting",
   "booking_active": "Active Order",
   "booking_unpaid": "Awaiting Payment",
   "booking_completed": "Completed",

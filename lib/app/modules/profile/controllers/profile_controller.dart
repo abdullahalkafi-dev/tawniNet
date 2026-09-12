@@ -47,6 +47,8 @@ class ProfileController extends GetxController {
       fetchProfile,
     );
     fetchProfile();
+    // Keep controllers in sync when fetch finishes (Edit Profile page).
+    ever(userProfile, (_) => _syncFieldsFromProfile());
   }
 
   @override
@@ -101,16 +103,21 @@ class ProfileController extends GetxController {
     String? newName,
     String? newBio,
     String? newPhone,
+    String? newEmail,
     String? newAddress,
   }) async {
     isUpdating.value = true;
     try {
+      final trimmedEmail = newEmail?.trim() ?? '';
       final response = await _api.patch(
         ApiConstants.userMe,
         data: {
-          if (newName != null) 'name': newName,
+          if (newName != null && newName.trim().isNotEmpty)
+            'name': newName.trim(),
           if (newBio != null) 'bio': newBio,
           if (newPhone != null) 'phone': newPhone,
+          // Email is optional for clients — omit empty instead of sending "".
+          if (trimmedEmail.isNotEmpty) 'email': trimmedEmail,
           if (newAddress != null) 'address': newAddress,
         },
       );

@@ -118,22 +118,22 @@ class CategoriesSection extends GetView<HomeController> {
                               ],
                             ),
                             alignment: Alignment.center,
-                            child: Container(
-                              width: itemWidth * 0.65,
-                              height: itemWidth * 0.65,
-                              decoration: BoxDecoration(
-                                color: context.isDarkMode
-                                    ? AppColors.primary.withOpacity(0.12)
-                                    : const Color(0xFFF0FDF8),
-                                shape: BoxShape.circle,
+                              child: Container(
+                                width: itemWidth * 0.82,
+                                height: itemWidth * 0.82,
+                                decoration: BoxDecoration(
+                                  color: context.isDarkMode
+                                      ? AppColors.primary.withOpacity(0.12)
+                                      : const Color(0xFFF0FDF8),
+                                  shape: BoxShape.circle,
+                                ),
+                                alignment: Alignment.center,
+                                child: _buildCategoryIcon(
+                                  cat.resolvedIconUrl,
+                                  cat.name,
+                                  30,
+                                ),
                               ),
-                              alignment: Alignment.center,
-                              child: _buildCategoryIcon(
-                                cat.resolvedIconUrl,
-                                cat.name,
-                                24,
-                              ),
-                            ),
                           ),
                           const SizedBox(height: 8),
                           Text(

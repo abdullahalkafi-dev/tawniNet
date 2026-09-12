@@ -5,6 +5,7 @@ import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/category_service.dart';
 import 'package:awnneaapp/app/services/refetch_service.dart';
+import 'package:awnneaapp/app/services/storage_service.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/constants/refetch_keys.dart';
 import 'package:get/get.dart';
@@ -14,6 +15,8 @@ import '../views/all_services_view.dart';
 import '../views/notifications_view.dart';
 
 class HomeController extends GetxController {
+  static const _kLastTab = 'client_last_tab';
+
   final currentIndex = 0.obs;
 
   final categories = <Category>[].obs;
@@ -26,6 +29,7 @@ class HomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _restoreLastTab();
     _applyDeepLinkArgs();
     Get.find<RefetchService>().register(
       RefetchKeys.categories,
@@ -50,6 +54,17 @@ class HomeController extends GetxController {
     Get.find<RefetchService>().unregister(RefetchKeys.popularHelpers);
     Get.find<RefetchService>().unregister(RefetchKeys.nearbyJobs);
     super.onClose();
+  }
+
+  void _restoreLastTab() {
+    final saved = Get.find<StorageService>().read(_kLastTab);
+    saved.then((raw) {
+      if (isClosed) return;
+      final tab = int.tryParse(raw ?? '');
+      if (tab != null && tab >= 0 && tab < 4) {
+        currentIndex.value = tab;
+      }
+    });
   }
 
   /// Deep link: open bookings tab and optionally auto-open a job by id
@@ -233,6 +248,7 @@ class HomeController extends GetxController {
 
   void changeIndex(int index) {
     currentIndex.value = index;
+    Get.find<StorageService>().write(_kLastTab, '$index');
   }
 
   void onCategorySelected(Category category) {

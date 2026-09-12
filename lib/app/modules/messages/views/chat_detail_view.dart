@@ -83,6 +83,8 @@ class _ChatDetailViewState extends State<ChatDetailView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Keep input above keyboard + 3-button nav on Android.
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -592,8 +594,13 @@ class _ChatDetailViewState extends State<ChatDetailView> {
   }
 
   Widget _buildInputBar(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final systemBottom = MediaQuery.of(context).viewPadding.bottom;
+    // When keyboard is open Scaffold already insets; only pad for system nav.
+    final bottomPad = bottomInset > 0 ? 8.0 : (systemBottom > 0 ? systemBottom : 8.0);
+
     return Container(
-      padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
+      padding: EdgeInsets.only(left: 16, right: 16, top: 8, bottom: bottomPad),
       decoration: BoxDecoration(
         color: context.cardColor,
         boxShadow: [
@@ -604,9 +611,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
           ),
         ],
       ),
-      child: SafeArea(
-        top: false,
-        child: Row(
+      child: Row(
           children: [
             // Image picker button
             IconButton(
@@ -661,7 +666,6 @@ class _ChatDetailViewState extends State<ChatDetailView> {
               ),
             ),
           ],
-        ),
       ),
     );
   }

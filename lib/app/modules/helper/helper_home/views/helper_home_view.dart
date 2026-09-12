@@ -23,36 +23,39 @@ class HelperHomeView extends GetView<HelperHomeController> {
     return Scaffold(
       body: SafeArea(child: Obx(() => _pages[controller.currentIndex.value])),
       bottomNavigationBar: Obx(
-        () => BottomNavigationBar(
-          currentIndex: controller.currentIndex.value,
-          onTap: controller.changeIndex,
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: context.cardColor,
-          selectedItemColor: AppColors.primary,
-          unselectedItemColor: context.textHintColor,
-          showUnselectedLabels: true,
-          items: [
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.home_outlined),
-              activeIcon: const Icon(Icons.home),
-              label: 'helper_home_tab'.tr,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.work_outline),
-              activeIcon: const Icon(Icons.work),
-              label: 'helper_jobs_tab'.tr,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.message_outlined),
-              activeIcon: const Icon(Icons.message),
-              label: 'helper_messages_tab'.tr,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.person_outline),
-              activeIcon: const Icon(Icons.person),
-              label: 'helper_profile_tab'.tr,
-            ),
-          ],
+        () => SafeArea(
+          top: false,
+          child: BottomNavigationBar(
+            currentIndex: controller.currentIndex.value,
+            onTap: controller.changeIndex,
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: context.cardColor,
+            selectedItemColor: AppColors.primary,
+            unselectedItemColor: context.textHintColor,
+            showUnselectedLabels: true,
+            items: [
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.home_outlined),
+                activeIcon: const Icon(Icons.home),
+                label: 'helper_home_tab'.tr,
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.work_outline),
+                activeIcon: const Icon(Icons.work),
+                label: 'helper_jobs_tab'.tr,
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.message_outlined),
+                activeIcon: const Icon(Icons.message),
+                label: 'helper_messages_tab'.tr,
+              ),
+              BottomNavigationBarItem(
+                icon: const Icon(Icons.person_outline),
+                activeIcon: const Icon(Icons.person),
+                label: 'helper_profile_tab'.tr,
+              ),
+            ],
+          ),
         ),
       ),
     );

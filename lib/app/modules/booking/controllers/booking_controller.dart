@@ -13,6 +13,7 @@ import '../../../data/models/booking_model.dart';
 
 class BookingController extends GetxController {
   final activeBookings = <Booking>[].obs;
+  final awaitingBookings = <Booking>[].obs;
   final completedBookings = <Booking>[].obs;
   final cancelledBookings = <Booking>[].obs;
   final unpaidBookings = <Booking>[].obs;
@@ -112,6 +113,7 @@ class BookingController extends GetxController {
       final res = await jobService.getMyBookings();
 
       final active = _mapBookings(res['active']);
+      final awaiting = _mapBookings(res['awaiting']);
       final completed = _mapBookings(res['completed']);
       final cancelled = _mapBookings(res['cancelled']);
       final unpaid = _mapBookings(res['unpaid']);
@@ -127,7 +129,18 @@ class BookingController extends GetxController {
         }
       }
 
+      // Older backends may still lump open (looking for helper) into active
+      if (awaiting.isEmpty) {
+        final stillAwaiting =
+            active.where((b) => b.status == BookingStatus.open).toList();
+        if (stillAwaiting.isNotEmpty) {
+          active.removeWhere((b) => b.status == BookingStatus.open);
+          awaiting.addAll(stillAwaiting);
+        }
+      }
+
       activeBookings.assignAll(active);
+      awaitingBookings.assignAll(awaiting);
       completedBookings.assignAll(completed);
       cancelledBookings.assignAll(cancelled);
       unpaidBookings.assignAll(unpaid);
@@ -136,7 +149,9 @@ class BookingController extends GetxController {
     } catch (e) {
       if (!isClosed &&
           (userInitiated ||
-              (activeBookings.isEmpty && unpaidBookings.isEmpty))) {
+              (activeBookings.isEmpty &&
+                  awaitingBookings.isEmpty &&
+                  unpaidBookings.isEmpty))) {
         AppFeedback.error(
           e.toString().replaceAll('Exception: ', '').isEmpty
               ? 'Could not load bookings. Pull down to retry.'
@@ -166,6 +181,7 @@ class BookingController extends GetxController {
     Booking? match;
     for (final b in [
       ...activeBookings,
+      ...awaitingBookings,
       ...unpaidBookings,
       ...completedBookings,
       ...cancelledBookings,

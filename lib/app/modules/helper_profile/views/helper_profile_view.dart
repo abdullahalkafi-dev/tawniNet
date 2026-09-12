@@ -46,7 +46,7 @@ class HelperProfileView extends GetView<HelperProfileController> {
               padding: const EdgeInsets.only(
                 left: 20,
                 right: 20,
-                bottom: 100,
+                bottom: 140,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -454,53 +454,56 @@ class HelperProfileView extends GetView<HelperProfileController> {
   Widget _buildBottomChat(BuildContext context) {
     return Align(
       alignment: Alignment.bottomCenter,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(
-          color: context.cardColor,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
+      child: SafeArea(
+        top: false,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(
-            color: context.inputFillLight,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              IconButton(
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                icon: const Icon(
-                  Icons.sentiment_satisfied_alt_outlined,
-                  color: AppColors.primary,
-                ),
-                onPressed: () => _showEmojiPicker(context),
-              ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: TextField(
-                  controller: controller.messageController,
-                  style: TextStyle(color: context.textPrimaryColor),
-                  decoration: InputDecoration(
-                    hintText: 'label_type_message'.tr,
-                    hintStyle: TextStyle(color: context.textHintColor),
-                    border: InputBorder.none,
-                  ),
-                  onSubmitted: (_) => controller.sendMessageAndOpenChat(),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.send, color: AppColors.primary),
-                onPressed: controller.sendMessageAndOpenChat,
+            color: context.cardColor,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 20,
+                offset: const Offset(0, -5),
               ),
             ],
+          ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: context.inputFillLight,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  icon: const Icon(
+                    Icons.sentiment_satisfied_alt_outlined,
+                    color: AppColors.primary,
+                  ),
+                  onPressed: () => _showEmojiPicker(context),
+                ),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: TextField(
+                    controller: controller.messageController,
+                    style: TextStyle(color: context.textPrimaryColor),
+                    decoration: InputDecoration(
+                      hintText: 'label_type_message'.tr,
+                      hintStyle: TextStyle(color: context.textHintColor),
+                      border: InputBorder.none,
+                    ),
+                    onSubmitted: (_) => controller.sendMessageAndOpenChat(),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.send, color: AppColors.primary),
+                  onPressed: controller.sendMessageAndOpenChat,
+                ),
+              ],
+            ),
           ),
         ),
       ),

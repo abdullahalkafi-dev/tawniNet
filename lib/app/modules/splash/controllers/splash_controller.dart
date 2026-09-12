@@ -12,7 +12,13 @@ class SplashController extends GetxController {
   }
 
   void _navigateToNext() async {
-    await Future.delayed(const Duration(seconds: 3));
+    final authService = Get.find<AuthService>();
+    // Returning users: short branding beat so resume feels instant.
+    // Cold first-open: keep a longer splash.
+    final delay = authService.isLoggedIn.value
+        ? const Duration(milliseconds: 400)
+        : const Duration(seconds: 3);
+    await Future.delayed(delay);
     if (isClosed) return;
 
     if (Get.currentRoute != Routes.splash) {
@@ -24,8 +30,6 @@ class SplashController extends GetxController {
         Get.find<NotificationService>().isColdStartHandling) {
       return;
     }
-
-    final authService = Get.find<AuthService>();
 
     if (authService.isLoggedIn.value) {
       // Fetch fresh profile from backend

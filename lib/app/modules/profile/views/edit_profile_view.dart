@@ -17,6 +17,7 @@ class _EditProfileViewState extends State<EditProfileView> {
   late TextEditingController nameCtl;
   late TextEditingController emailCtl;
   late TextEditingController phoneCtl;
+  final List<Worker> _workers = [];
 
   @override
   void initState() {
@@ -25,10 +26,24 @@ class _EditProfileViewState extends State<EditProfileView> {
     nameCtl = TextEditingController(text: controller.name.value);
     emailCtl = TextEditingController(text: controller.email.value);
     phoneCtl = TextEditingController(text: controller.phone.value);
+
+    // Fill fields when profile fetch completes / refreshes.
+    _workers.add(ever(controller.name, (v) {
+      if (nameCtl.text != v) nameCtl.text = v;
+    }));
+    _workers.add(ever(controller.email, (v) {
+      if (emailCtl.text != v) emailCtl.text = v;
+    }));
+    _workers.add(ever(controller.phone, (v) {
+      if (phoneCtl.text != v) phoneCtl.text = v;
+    }));
   }
 
   @override
   void dispose() {
+    for (final w in _workers) {
+      w.dispose();
+    }
     nameCtl.dispose();
     emailCtl.dispose();
     phoneCtl.dispose();
@@ -60,11 +75,9 @@ class _EditProfileViewState extends State<EditProfileView> {
             const SizedBox(height: 32),
             _buildTextField(context, 'edit_full_name'.tr, nameCtl),
             const SizedBox(height: 16),
-            _buildTextField(context, 'edit_email'.tr, emailCtl, readOnly: true),
+            _buildTextField(context, 'edit_email'.tr, emailCtl),
             const SizedBox(height: 16),
-            _buildTextField(context, 'edit_phone'.tr, phoneCtl),
-            const SizedBox(height: 16),
-            _buildGenderDropdown(context, controller),
+            _buildTextField(context, 'edit_phone'.tr, phoneCtl, readOnly: true),
             const SizedBox(height: 24),
             Text(
               'edit_address'.tr,
@@ -117,10 +130,10 @@ class _EditProfileViewState extends State<EditProfileView> {
                     ? null
                     : () async {
                         controller.name.value = nameCtl.text.trim();
-                        controller.phone.value = phoneCtl.text.trim();
+                        controller.email.value = emailCtl.text.trim();
                         await controller.updateProfile(
                           newName: nameCtl.text.trim(),
-                          newPhone: phoneCtl.text.trim(),
+                          newEmail: emailCtl.text.trim(),
                         );
                       },
                 style: ElevatedButton.styleFrom(
@@ -243,17 +256,22 @@ class _EditProfileViewState extends State<EditProfileView> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           height: 48,
           decoration: BoxDecoration(
-            color: context.inputFillColor,
+            color: readOnly ? context.inputFillLight : context.inputFillColor,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: context.borderSubtle),
           ),
           child: TextField(
             controller: ctl,
             readOnly: readOnly,
-            style: TextStyle(color: context.textPrimaryColor),
-            decoration: const InputDecoration(
+            style: TextStyle(
+              color: readOnly ? context.textHintColor : context.textPrimaryColor,
+            ),
+            decoration: InputDecoration(
               border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              suffixIcon: readOnly
+                  ? Icon(Icons.lock_outline, size: 16, color: context.textHintColor)
+                  : null,
             ),
           ),
         ),
@@ -303,39 +321,4 @@ class _EditProfileViewState extends State<EditProfileView> {
     );
   }
 
-  Widget _buildGenderDropdown(BuildContext context, ProfileController controller) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'edit_gender'.tr,
-          style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          height: 48,
-          decoration: BoxDecoration(
-            color: context.inputFillColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: context.borderSubtle),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: controller.gender.value,
-              isExpanded: true,
-              dropdownColor: context.cardColor,
-              icon: Icon(Icons.keyboard_arrow_down, color: context.textHintColor),
-              items: [
-                DropdownMenuItem(value: 'Male', child: Text('edit_male'.tr, style: TextStyle(color: context.textPrimaryColor))),
-                DropdownMenuItem(value: 'Female', child: Text('edit_female'.tr, style: TextStyle(color: context.textPrimaryColor))),
-                DropdownMenuItem(value: 'Other', child: Text('edit_other'.tr, style: TextStyle(color: context.textPrimaryColor))),
-              ].toList(),
-              onChanged: (val) => controller.gender.value = val!,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 }

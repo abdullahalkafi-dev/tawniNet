@@ -8,12 +8,15 @@ import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/job_service.dart';
 import 'package:awnneaapp/app/services/socket_service.dart';
+import 'package:awnneaapp/app/services/storage_service.dart';
 import 'package:awnneaapp/app/modules/messages/controllers/messages_controller.dart';
 import 'package:awnneaapp/app/modules/helper/helper_jobs/controllers/helper_jobs_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class HelperHomeController extends GetxController {
+  static const _kLastTab = 'helper_last_tab';
+
   final currentIndex = 0.obs;
   final searchQuery = ''.obs;
   final isLoading = false.obs;
@@ -24,9 +27,20 @@ class HelperHomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _restoreLastTab();
     _applyDeepLinkArgs();
     fetchNearbyJobs();
     _setupSocketListeners();
+  }
+
+  void _restoreLastTab() {
+    Get.find<StorageService>().read(_kLastTab).then((raw) {
+      if (isClosed) return;
+      final tab = int.tryParse(raw ?? '');
+      if (tab != null && tab >= 0 && tab < 4) {
+        currentIndex.value = tab;
+      }
+    });
   }
 
   /// Push deep-link: open jobs tab and optionally auto-open a job by id.
@@ -72,6 +86,7 @@ class HelperHomeController extends GetxController {
 
   void changeIndex(int index) {
     currentIndex.value = index;
+    Get.find<StorageService>().write(_kLastTab, '$index');
   }
 
   Future<void> fetchNearbyJobs() async {

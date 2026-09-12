@@ -1,7 +1,9 @@
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/localization/locale_service.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
+import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/theme_service.dart';
 import 'package:flutter/material.dart';
@@ -42,12 +44,6 @@ class ProfileView extends GetView<ProfileController> {
                 Icons.notifications_none,
                 'profile_notification'.tr,
                 onTap: () => Get.toNamed(Routes.notificationSettings),
-              ),
-              _buildProfileOption(
-                context,
-                Icons.account_balance_wallet_outlined,
-                'Wallet',
-                onTap: () => Get.toNamed(Routes.wallet),
               ),
               _buildProfileOption(
                 context,
@@ -670,118 +666,98 @@ class ProfileView extends GetView<ProfileController> {
   }
 
   void _showPrivacyPolicyBottomSheet(BuildContext context) {
+    String content = '';
+    bool isLoading = true;
+
+    Future<void> load() async {
+      try {
+        final api = Get.find<ApiClient>();
+        final res = await api.get(ApiConstants.legal);
+        if (res.success && res.data is Map) {
+          final data = Map<String, dynamic>.from(res.data as Map);
+          content = (data['privacyPolicy'] ?? '').toString();
+        }
+      } catch (_) {
+        content = '';
+      }
+      isLoading = false;
+    }
+
     Get.bottomSheet(
-      Container(
-        height: context.height * 0.7,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: context.cardColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: context.borderSecondary,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+      StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          if (isLoading) {
+            load().then((_) {
+              if (sheetContext.mounted) {
+                setSheetState(() {});
+              }
+            });
+          }
+          return Container(
+            height: context.height * 0.7,
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: context.cardColor,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             ),
-            const SizedBox(height: 20),
-            Text(
-              'profile_privacy'.tr,
-              style: AppStyles.h2Of(context).copyWith(
-                fontSize: 20,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'profile_privacy_updated'.tr,
-                      style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: context.borderSecondary,
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'profile_privacy_collect'.tr,
-                      style: AppStyles.bodyLargeOf(context).copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'profile_privacy_collect_desc'.tr,
-                      style: AppStyles.bodyMediumOf(context).copyWith(
-                        color: context.textSecondaryColor,
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'profile_privacy_how'.tr,
-                      style: AppStyles.bodyLargeOf(context).copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'profile_privacy_how_desc'.tr,
-                      style: AppStyles.bodyMediumOf(context).copyWith(
-                        color: context.textSecondaryColor,
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'profile_privacy_sharing'.tr,
-                      style: AppStyles.bodyLargeOf(context).copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'profile_privacy_sharing_desc'.tr,
-                      style: AppStyles.bodyMediumOf(context).copyWith(
-                        color: context.textSecondaryColor,
-                        height: 1.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: () => Get.back(),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5AB9A7),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
                   ),
-                  elevation: 0,
                 ),
-                child: Text(
-                  'profile_accept_close'.tr,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                const SizedBox(height: 20),
+                Text(
+                  'profile_privacy'.tr,
+                  style: AppStyles.h2Of(context).copyWith(fontSize: 20),
                 ),
-              ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : SingleChildScrollView(
+                          child: Text(
+                            content.isEmpty
+                                ? 'Privacy policy will appear here once published by the admin.'
+                                : content,
+                            style: AppStyles.bodyMediumOf(context).copyWith(
+                              color: context.textSecondaryColor,
+                              height: 1.5,
+                            ),
+                          ),
+                        ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () => Get.back(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF5AB9A7),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      'profile_accept_close'.tr,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
       isScrollControlled: true,
     );

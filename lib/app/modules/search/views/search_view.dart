@@ -294,7 +294,9 @@ class SearchView extends GetView<AwnneaSearchController> {
                   height: 36,
                   child: OutlinedButton(
                     onPressed: () {
-                      Get.toNamed(Routes.helperPublicProfile, arguments: helper.id);
+                      // Open the searched helper's public profile, not the
+                      // logged-in helper "my public profile" screen.
+                      Get.toNamed(Routes.helperProfile, arguments: helper.id);
                     },
                     style: OutlinedButton.styleFrom(
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),

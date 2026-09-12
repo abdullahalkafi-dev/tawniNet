@@ -401,92 +401,95 @@ class _UserCustomerServiceViewState extends State<UserCustomerServiceView> {
   }
 
   Widget _buildInputSection(BuildContext context, CustomerServiceController controller) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: context.cardColor,
-        border: Border(top: BorderSide(color: context.borderSubtle)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (_selectedMedia.isNotEmpty)
-            Container(
-              height: 80,
-              margin: const EdgeInsets.only(bottom: 8),
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: _selectedMedia.length,
-                itemBuilder: (context, index) {
-                  return Stack(
-                    children: [
-                      Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.file(
-                            _selectedMedia[index],
-                            width: 70,
-                            height: 70,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        top: 2,
-                        right: 10,
-                        child: GestureDetector(
-                          onTap: () => _removeMedia(index),
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              color: Colors.black54,
-                              shape: BoxShape.circle,
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: context.cardColor,
+          border: Border(top: BorderSide(color: context.borderSubtle)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_selectedMedia.isNotEmpty)
+              Container(
+                height: 80,
+                margin: const EdgeInsets.only(bottom: 8),
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _selectedMedia.length,
+                  itemBuilder: (context, index) {
+                    return Stack(
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.only(right: 8),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.file(
+                              _selectedMedia[index],
+                              width: 70,
+                              height: 70,
+                              fit: BoxFit.cover,
                             ),
-                            padding: const EdgeInsets.all(2),
-                            child: const Icon(Icons.close, size: 14, color: Colors.white),
                           ),
                         ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
-                onPressed: _isUploading ? null : _showMediaOptions,
-              ),
-              Expanded(
-                child: TextField(
-                  controller: messageController,
-                  style: TextStyle(color: context.textPrimaryColor),
-                  decoration: InputDecoration(
-                    hintText: 'chat_type_message'.tr,
-                    hintStyle: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
-                    border: InputBorder.none,
-                  ),
-                  onSubmitted: (_) => _sendMessage(),
+                        Positioned(
+                          top: 2,
+                          right: 10,
+                          child: GestureDetector(
+                            onTap: () => _removeMedia(index),
+                            child: Container(
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              padding: const EdgeInsets.all(2),
+                              child: const Icon(Icons.close, size: 14, color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
-              if (controller.isSending.value || _isUploading)
-                const Padding(
-                  padding: EdgeInsets.all(12),
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                )
-              else
+            Row(
+              children: [
                 IconButton(
-                  icon: const Icon(Icons.send, color: AppColors.primary),
-                  onPressed: _sendMessage,
+                  icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
+                  onPressed: _isUploading ? null : _showMediaOptions,
                 ),
-            ],
-          ),
-        ],
+                Expanded(
+                  child: TextField(
+                    controller: messageController,
+                    style: TextStyle(color: context.textPrimaryColor),
+                    decoration: InputDecoration(
+                      hintText: 'chat_type_message'.tr,
+                      hintStyle: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+                      border: InputBorder.none,
+                    ),
+                    onSubmitted: (_) => _sendMessage(),
+                  ),
+                ),
+                if (controller.isSending.value || _isUploading)
+                  const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  )
+                else
+                  IconButton(
+                    icon: const Icon(Icons.send, color: AppColors.primary),
+                    onPressed: _sendMessage,
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -197,6 +197,7 @@ const Map<String, String> arMA = {
 
   // ─── Booking ───────────────────────────────────────────
   "booking_my_bookings": "حجوزاتي",
+  "booking_awaiting": "في انتظار المساعد",
   "booking_active": "الطلبات النشطة",
   "booking_unpaid": "في انتظار الدفع",
   "booking_completed": "المكتملة",

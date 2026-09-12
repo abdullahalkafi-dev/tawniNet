@@ -16,7 +16,7 @@ class BookingView extends GetView<BookingController> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 4,
+      length: 5,
       child: Scaffold(
         appBar: AppBar(
           title: Text(
@@ -26,14 +26,18 @@ class BookingView extends GetView<BookingController> {
             ),
           ),
           bottom: TabBar(
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
             indicatorColor: AppColors.primary,
             indicatorWeight: 3,
             labelColor: AppColors.primary,
             unselectedLabelColor: context.textHintColor,
             labelStyle: AppStyles.bodyLarge.copyWith(
               fontWeight: FontWeight.bold,
+              fontSize: 13,
             ),
             tabs: [
+              Tab(text: 'booking_awaiting'.tr),
               Tab(text: 'booking_active'.tr),
               Tab(text: 'booking_unpaid'.tr),
               Tab(text: 'booking_completed'.tr),
@@ -43,6 +47,7 @@ class BookingView extends GetView<BookingController> {
         ),
         body: TabBarView(
           children: [
+            _buildBookingList(context, controller.awaitingBookings),
             _buildBookingList(context, controller.activeBookings),
             _buildBookingList(context, controller.unpaidBookings),
             _buildBookingList(context, controller.completedBookings),

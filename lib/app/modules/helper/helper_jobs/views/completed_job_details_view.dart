@@ -416,27 +416,30 @@ class _CompletedJobDetailsViewState extends State<CompletedJobDetailsView> {
   }
 
   Widget _buildInputBar(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: context.cardColor,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2))],
-      ),
+    return SafeArea(
+      top: false,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(color: context.inputFillLight, borderRadius: BorderRadius.circular(12)),
-        child: Row(
-          children: [
-            const Icon(Icons.image_outlined, color: AppColors.primary),
-            const SizedBox(width: 12),
-            Expanded(
-              child: TextField(
-                style: TextStyle(color: context.textPrimaryColor),
-                decoration: InputDecoration(hintText: 'label_type_message'.tr, hintStyle: TextStyle(color: context.textHintColor), border: InputBorder.none),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        decoration: BoxDecoration(
+          color: context.cardColor,
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2))],
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(color: context.inputFillLight, borderRadius: BorderRadius.circular(12)),
+          child: Row(
+            children: [
+              const Icon(Icons.image_outlined, color: AppColors.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  style: TextStyle(color: context.textPrimaryColor),
+                  decoration: InputDecoration(hintText: 'label_type_message'.tr, hintStyle: TextStyle(color: context.textHintColor), border: InputBorder.none),
+                ),
               ),
-            ),
-            IconButton(icon: const Icon(Icons.send, color: AppColors.primary), onPressed: () {}),
-          ],
+              IconButton(icon: const Icon(Icons.send, color: AppColors.primary), onPressed: () {}),
+            ],
+          ),
         ),
       ),
     );

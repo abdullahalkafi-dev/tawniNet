@@ -82,6 +82,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         elevation: 0.5,
         leading: IconButton(
@@ -590,8 +591,12 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
   }
 
   Widget _buildInputBar(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final systemBottom = MediaQuery.of(context).viewPadding.bottom;
+    final bottomPad = bottomInset > 0 ? 8.0 : (systemBottom > 0 ? systemBottom : 8.0);
+
     return Container(
-      padding: const EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 8),
+      padding: EdgeInsets.only(left: 16, right: 16, top: 8, bottom: bottomPad),
       decoration: BoxDecoration(
         color: context.cardColor,
         boxShadow: [
@@ -602,9 +607,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
           ),
         ],
       ),
-      child: SafeArea(
-        top: false,
-        child: Row(
+      child: Row(
           children: [
             IconButton(
               icon: const Icon(Icons.image_outlined, color: AppColors.primary),
@@ -653,7 +656,6 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
               ),
             ),
           ],
-        ),
       ),
     );
   }
