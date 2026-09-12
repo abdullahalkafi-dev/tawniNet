@@ -68,12 +68,20 @@ class JobService extends GetxService {
       final data = response.data as Map<String, dynamic>;
       return {
         'active': (data['active'] as List?) ?? [],
+        // Paid, still looking for a helper — must not be dropped.
+        'awaiting': (data['awaiting'] as List?) ?? [],
         'completed': (data['completed'] as List?) ?? [],
         'cancelled': (data['cancelled'] as List?) ?? [],
         'unpaid': (data['unpaid'] as List?) ?? [],
       };
     }
-    return {'active': [], 'completed': [], 'cancelled': [], 'unpaid': []};
+    return {
+      'active': [],
+      'awaiting': [],
+      'completed': [],
+      'cancelled': [],
+      'unpaid': [],
+    };
   }
 
   Future<Map<String, List<dynamic>>> getMyAssignedJobs() async {
