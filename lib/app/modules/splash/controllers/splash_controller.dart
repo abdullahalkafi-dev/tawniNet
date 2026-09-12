@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
+import 'package:awnneaapp/app/services/notification_service.dart';
 import 'package:get/get.dart';
 
 class SplashController extends GetxController {
@@ -13,6 +15,16 @@ class SplashController extends GetxController {
     await Future.delayed(const Duration(seconds: 3));
     if (isClosed) return;
 
+    if (Get.currentRoute != Routes.splash) {
+      debugPrint('[Splash] Route is ${Get.currentRoute} — yielding navigation');
+      return;
+    }
+
+    if (Get.isRegistered<NotificationService>() &&
+        Get.find<NotificationService>().isColdStartHandling) {
+      return;
+    }
+
     final authService = Get.find<AuthService>();
 
     if (authService.isLoggedIn.value) {
@@ -22,6 +34,10 @@ class SplashController extends GetxController {
       } catch (_) {}
 
       if (isClosed) return;
+      if (Get.currentRoute != Routes.splash) {
+        debugPrint('[Splash] Route changed to ${Get.currentRoute} — yielding navigation');
+        return;
+      }
 
       final user = authService.currentUser.value;
       if (user == null) {

@@ -15,16 +15,21 @@ import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/local_notification_helper.dart';
 import 'package:awnneaapp/app/services/role_service.dart';
+import 'package:awnneaapp/app/modules/booking/controllers/booking_controller.dart';
 
 /// Background handler — must be a top-level function.
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('[FCM][bg] ${message.messageId} data=${message.data}');
   try {
-    // Isolate-safe: init Firebase + local notifications so the tray banner shows.
+    // Isolate-safe: init Firebase + local notifications.
+    // If the message has an FCM notification payload, the OS displays the banner automatically.
+    // Only show local notification if it's a data-only payload to avoid duplicate banners.
     await Firebase.initializeApp();
-    await LocalNotificationHelper.init();
-    await LocalNotificationHelper.showFromRemoteMessage(message);
+    if (message.notification == null) {
+      await LocalNotificationHelper.init();
+      await LocalNotificationHelper.showFromRemoteMessage(message);
+    }
   } catch (e) {
     debugPrint('[FCM][bg] local notification failed: $e');
   }
@@ -43,6 +48,10 @@ class NotificationService extends GetxService {
   DateTime? _lastNavAt;
   String? _lastNavKey;
   final Map<String, RemoteMessage> _messagesByPayload = {};
+
+  /// True when a notification is handling the initial cold-start navigation.
+  /// SplashController checks this to yield navigation instead of overriding it.
+  bool isColdStartHandling = false;
 
   String? get fcmToken => _fcmToken;
 
@@ -118,8 +127,21 @@ class NotificationService extends GetxService {
     try {
       final initial = await _messaging.getInitialMessage();
       if (initial != null) {
+        isColdStartHandling = true;
         _pendingInitialMessage = initial;
         _scheduleInitialHandle();
+      } else {
+        final launchDetails = await LocalNotificationHelper.getLaunchDetails();
+        if (launchDetails != null &&
+            launchDetails.didNotificationLaunchApp &&
+            launchDetails.notificationResponse?.payload != null) {
+          final payload = launchDetails.notificationResponse!.payload!;
+          final data = _decodePayload(payload);
+          if (data.isNotEmpty) {
+            isColdStartHandling = true;
+            _scheduleInitialHandleData(data);
+          }
+        }
       }
     } catch (e) {
       debugPrint('[FCM] getInitialMessage failed: $e');
@@ -167,6 +189,34 @@ class NotificationService extends GetxService {
       _pendingInitialMessage = null;
       _initialHandled = true;
       _handleNotificationTap(msg);
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        isColdStartHandling = false;
+      });
+    });
+  }
+
+  void _scheduleInitialHandleData(Map<String, String> data) {
+    Future<void>.delayed(const Duration(milliseconds: 900), () async {
+      if (_initialHandled) return;
+      final authReady = Get.isRegistered<AuthService>() &&
+          Get.find<AuthService>().isLoggedIn.value;
+      if (!authReady) {
+        _initialAttempts++;
+        if (_initialAttempts < 10) {
+          _scheduleInitialHandleData(data);
+        } else {
+          debugPrint('[FCM] initial local message dropped — not logged in');
+          isColdStartHandling = false;
+        }
+        return;
+      }
+      await Future.delayed(const Duration(milliseconds: 350));
+      if (_initialHandled) return;
+      _initialHandled = true;
+      navigateFromData(data);
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        isColdStartHandling = false;
+      });
     });
   }
 
@@ -347,6 +397,10 @@ class NotificationService extends GetxService {
   }
 
   bool get _isHelperRole {
+    if (Get.isRegistered<AuthService>()) {
+      final user = Get.find<AuthService>().currentUser.value;
+      if (user != null && user.role.toLowerCase() == 'helper') return true;
+    }
     if (Get.isRegistered<RoleService>()) {
       return Get.find<RoleService>().isHelper;
     }
@@ -380,6 +434,9 @@ class NotificationService extends GetxService {
 
   void _openClientJob(String? jobId) {
     if (jobId != null && jobId.isNotEmpty) {
+      if (Get.isRegistered<BookingController>()) {
+        Get.find<BookingController>().setPendingOpenJobId(jobId);
+      }
       Get.toNamed(Routes.booking, arguments: {'jobId': jobId, 'id': jobId});
     } else {
       Get.toNamed(Routes.booking);
@@ -499,12 +556,38 @@ class NotificationService extends GetxService {
           }
           break;
 
-        case 'kyc_approved':
-          if (isHelper) {
-            Get.toNamed(Routes.helperHome);
+        case 'payment_failed':
+          if (orderType == 'wallet_topup') {
+            if (isHelper) {
+              Get.toNamed(Routes.helperConnects);
+            } else {
+              Get.toNamed(Routes.wallet);
+            }
           } else {
-            _goHome();
+            if (isHelper) {
+              _openHelperJob(orderId ?? jobId);
+            } else {
+              _openClientJob(orderId ?? jobId);
+            }
           }
+          break;
+
+        case 'cash_received':
+          if (isHelper) {
+            Get.toNamed(Routes.helperEarning);
+          } else {
+            _openClientJob(jobId ?? orderId);
+          }
+          break;
+
+        case 'kyc_approved':
+          if (Get.isRegistered<RoleService>()) {
+            Get.find<RoleService>().setUserRole('helper');
+          }
+          if (Get.isRegistered<AuthService>()) {
+            Get.find<AuthService>().getMe();
+          }
+          Get.toNamed(Routes.helperHome);
           break;
         case 'kyc_rejected':
           Get.toNamed(Routes.applicationRejected);

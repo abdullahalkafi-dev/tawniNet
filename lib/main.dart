@@ -23,6 +23,7 @@ import 'app/services/review_service.dart';
 import 'app/services/notification_service.dart';
 import 'app/services/notification_api.dart';
 import 'app/services/notification_badge_controller.dart';
+import 'app/services/deep_link_service.dart';
 import 'app/modules/messages/controllers/messages_controller.dart';
 
 void main() async {
@@ -95,6 +96,9 @@ void main() async {
 
   // Messages controller (permanent — needs to stay alive for online status)
   Get.put(MessagesController(), permanent: true);
+
+  // Deep Link service for external returns (Didit, Payment gateways)
+  Get.put(DeepLinkService(), permanent: true);
 
   // Locale service (depends on storage)
   final localeService = LocaleService();

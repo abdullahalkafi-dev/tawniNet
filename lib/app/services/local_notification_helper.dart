@@ -43,6 +43,10 @@ class LocalNotificationHelper {
     _initialized = true;
   }
 
+  static Future<NotificationAppLaunchDetails?> getLaunchDetails() async {
+    return _plugin.getNotificationAppLaunchDetails();
+  }
+
   /// Show a heads-up notification for a foreground FCM message.
   static Future<void> showFromRemoteMessage(RemoteMessage message) async {
     if (kIsWeb) return;

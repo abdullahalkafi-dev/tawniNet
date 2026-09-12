@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:awnneaapp/app/data/models/home_models.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
@@ -12,6 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
 import 'package:awnneaapp/app/core/utils/morocco_postal_helper.dart';
+import 'package:awnneaapp/app/services/role_service.dart';
 
 class ApplyHelperController extends GetxController with WidgetsBindingObserver {
   late final ApiClient _api;
@@ -61,14 +61,33 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
     fetchCategories();
   }
 
+  int _resumePollCount = 0;
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       // When user returns from the Didit verification browser
       final user = Get.find<AuthService>().currentUser.value;
       if (activeDiditSessionId.value != null || user?.diditSessionId != null) {
-        syncKycStatus(showFeedback: false);
+        _pollKycOnResume();
       }
+    }
+  }
+
+  void _pollKycOnResume() async {
+    _resumePollCount = 0;
+    while (_resumePollCount < 4) {
+      if (isClosed) return;
+      await syncKycStatus(showFeedback: false);
+      final user = Get.find<AuthService>().currentUser.value;
+      if (user?.helperApplicationStatus == 'approved' ||
+          user?.helperApplicationStatus == 'rejected' ||
+          user?.diditStatus == 'In Review' ||
+          user?.helperApplicationStatus == 'pending_appeal') {
+        break;
+      }
+      _resumePollCount++;
+      await Future.delayed(const Duration(seconds: 3));
     }
   }
 
@@ -352,6 +371,9 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
       final updatedUser = authService.currentUser.value;
 
       if (updatedUser?.helperApplicationStatus == 'approved') {
+        if (Get.isRegistered<RoleService>()) {
+          Get.find<RoleService>().setUserRole('helper');
+        }
         AppSnackbar.showSuccess('KYC verification approved! Welcome to Tarik.');
         Get.offAllNamed(Routes.helperHome);
         return;

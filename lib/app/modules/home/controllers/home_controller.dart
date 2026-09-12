@@ -9,6 +9,7 @@ import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/constants/refetch_keys.dart';
 import 'package:get/get.dart';
 
+import 'package:awnneaapp/app/modules/booking/controllers/booking_controller.dart';
 import '../views/all_services_view.dart';
 import '../views/notifications_view.dart';
 
@@ -25,6 +26,7 @@ class HomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _applyDeepLinkArgs();
     Get.find<RefetchService>().register(
       RefetchKeys.categories,
       fetchCategories,
@@ -48,6 +50,24 @@ class HomeController extends GetxController {
     Get.find<RefetchService>().unregister(RefetchKeys.popularHelpers);
     Get.find<RefetchService>().unregister(RefetchKeys.nearbyJobs);
     super.onClose();
+  }
+
+  /// Deep link: open bookings tab and optionally auto-open a job by id
+  void _applyDeepLinkArgs() {
+    final args = Get.arguments;
+    if (args is! Map) return;
+    final tab = args['tab'];
+    if (tab is int && tab >= 0 && tab < 4) {
+      currentIndex.value = tab;
+    }
+    final jobId = args['jobId']?.toString();
+    if (jobId != null && jobId.isNotEmpty) {
+      Future.delayed(const Duration(milliseconds: 300), () {
+        if (Get.isRegistered<BookingController>()) {
+          Get.find<BookingController>().setPendingOpenJobId(jobId);
+        }
+      });
+    }
   }
 
   // ─── Data Fetching ──────────────────────────────────────

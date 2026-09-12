@@ -379,6 +379,10 @@ class AuthService extends GetxService {
       final userJson = Map<String, dynamic>.from(response.data);
       await _storage.saveUserJson(userJson);
       currentUser.value = AuthUser.fromJson(userJson);
+      final role = currentUser.value?.role;
+      if (role != null && role.isNotEmpty) {
+        _roleService.setUserRole(role);
+      }
     }
   }
 

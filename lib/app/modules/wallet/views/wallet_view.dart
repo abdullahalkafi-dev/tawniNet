@@ -4,7 +4,9 @@ import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
+import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
+import 'package:awnneaapp/app/services/auth_service.dart';
 
 /// Client wallet: balance + paginated transaction history + top-up entry.
 class WalletView extends StatefulWidget {
@@ -137,12 +139,31 @@ class _WalletViewState extends State<WalletView> {
         fromData: (d) => d,
       );
       if (res.success && res.data is Map) {
-        final url = (res.data as Map)['checkoutUrl']?.toString();
-        if (url != null && url.isNotEmpty) {
-          AppFeedback.info('Opening payment...', title: 'Top-up');
-          // Open checkout in external browser / webview via url_launcher if wired
-        } else {
-          AppFeedback.success('Top-up started');
+        final data = res.data as Map;
+        final checkoutUrl = data['checkoutUrl']?.toString();
+        final sessionId = data['sessionId']?.toString() ?? '';
+        final orderId = data['orderId']?.toString() ?? sessionId;
+
+        final paid = await Get.toNamed(
+          Routes.checkout,
+          arguments: {
+            'orderId': orderId,
+            'orderType': 'wallet_topup',
+            'amount': amount,
+            'currency': 'MAD',
+            'title': 'Wallet Top-up',
+            'sessionId': sessionId,
+            'metadata': {
+              'userId': Get.find<AuthService>().currentUser.value?.id,
+              'orderId': orderId,
+              if (checkoutUrl != null) 'checkoutUrl': checkoutUrl,
+            },
+          },
+        );
+
+        if (paid == true) {
+          AppFeedback.success('Wallet topped up successfully!');
+          _load();
         }
       } else {
         AppFeedback.error(res.message ?? 'Top-up failed');

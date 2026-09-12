@@ -33,6 +33,13 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Custom Deep Link Scheme for Tarik (tarik://) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="tarik" />
+            </intent-filter>
         </activity>
         <!-- Default FCM notification channel (Android 8+) -->
         <meta-data
@@ -60,6 +67,10 @@
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="http" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="tarik" />
         </intent>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>

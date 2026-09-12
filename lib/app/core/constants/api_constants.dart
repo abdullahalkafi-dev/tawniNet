@@ -1,10 +1,10 @@
 class ApiConstants {
   ApiConstants._();
 
-  // Base URL — Configurable via --dart-define=API_BASE_URL=... (default: 10.0.2.2 for Android emulator)
+  // Base URL — Configurable via --dart-define=API_BASE_URL=...
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://192.168.0.200:5000/api/v1',
+    defaultValue: 'https://tarikappapi.joura.info/api/v1',
   );
 
   /// Extract host from baseUrl (e.g., '192.168.0.200')

@@ -151,13 +151,25 @@ class BookingController extends GetxController {
     }
   }
 
-  void _openPendingJobDetails() {
+  void setPendingOpenJobId(String jobId) {
+    _pendingOpenJobId = jobId;
+    if (!isLoading.value) {
+      _openPendingJobDetails();
+    }
+  }
+
+  void _openPendingJobDetails() async {
     final id = _pendingOpenJobId;
     if (id == null || id.isEmpty) return;
     _pendingOpenJobId = null;
 
     Booking? match;
-    for (final b in [...activeBookings, ...completedBookings, ...cancelledBookings]) {
+    for (final b in [
+      ...activeBookings,
+      ...unpaidBookings,
+      ...completedBookings,
+      ...cancelledBookings,
+    ]) {
       if (b.id == id) {
         match = b;
         break;
@@ -170,6 +182,20 @@ class BookingController extends GetxController {
           Get.toNamed(Routes.bookingDetails, arguments: match);
         }
       });
+    } else {
+      // Fallback: fetch from API directly if not yet in lists
+      try {
+        final jobService = Get.find<JobService>();
+        final single = await jobService.getJobById(id);
+        if (single.isNotEmpty) {
+          final b = Booking.fromJson(single);
+          Future.delayed(const Duration(milliseconds: 200), () {
+            if (Get.currentRoute == Routes.booking || Get.currentRoute == '/') {
+              Get.toNamed(Routes.bookingDetails, arguments: b);
+            }
+          });
+        }
+      } catch (_) {}
     }
   }
 

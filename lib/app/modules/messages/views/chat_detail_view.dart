@@ -42,11 +42,11 @@ class _ChatDetailViewState extends State<ChatDetailView> {
     if (args is ChatSummary) {
       chat = args;
       chatController = Get.put(ChatDetailController());
-      chatController.initConversation(chat.id, chat.otherUserId.isNotEmpty ? chat.otherUserId : chat.id);
+      chatController.initConversation(chat.id, chat.otherUserId);
     } else if (args is String) {
       chat = ChatSummary(id: args, name: 'Chat', image: '');
       chatController = Get.put(ChatDetailController());
-      chatController.initConversation(chat.id, chat.id);
+      chatController.initConversation(chat.id, '');
       _resolveChatMeta(args);
     } else {
       chat = ChatSummary(id: '', name: 'Chat', image: '');
@@ -62,6 +62,9 @@ class _ChatDetailViewState extends State<ChatDetailView> {
         setState(() {
           chat = summary;
         });
+        if (summary.otherUserId.isNotEmpty) {
+          chatController.initConversation(summary.id, summary.otherUserId);
+        }
       }
     } catch (_) {}
   }
