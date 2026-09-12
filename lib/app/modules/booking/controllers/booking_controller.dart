@@ -140,7 +140,8 @@ class BookingController extends GetxController {
       }
 
       activeBookings.assignAll(active);
-      awaitingBookings.assignAll(awaiting);
+      // Awaiting = still looking for a helper + payment not finished.
+      awaitingBookings.assignAll([...awaiting, ...unpaid]);
       completedBookings.assignAll(completed);
       cancelledBookings.assignAll(cancelled);
       unpaidBookings.assignAll(unpaid);

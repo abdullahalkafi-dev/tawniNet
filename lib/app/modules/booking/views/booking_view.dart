@@ -16,7 +16,7 @@ class BookingView extends GetView<BookingController> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 5,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: Text(
@@ -39,7 +39,6 @@ class BookingView extends GetView<BookingController> {
             tabs: [
               Tab(text: 'booking_awaiting'.tr),
               Tab(text: 'booking_active'.tr),
-              Tab(text: 'booking_unpaid'.tr),
               Tab(text: 'booking_completed'.tr),
               Tab(text: 'booking_cancelled'.tr),
             ],
@@ -49,7 +48,6 @@ class BookingView extends GetView<BookingController> {
           children: [
             _buildBookingList(context, controller.awaitingBookings),
             _buildBookingList(context, controller.activeBookings),
-            _buildBookingList(context, controller.unpaidBookings),
             _buildBookingList(context, controller.completedBookings),
             _buildBookingList(context, controller.cancelledBookings),
           ],

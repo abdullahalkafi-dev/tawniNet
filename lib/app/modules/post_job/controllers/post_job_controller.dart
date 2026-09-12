@@ -533,7 +533,8 @@ class PostJobController extends GetxController {
             },
           )?.then((paid) {
             if (paid == true) {
-              Get.offAllNamed(Routes.home);
+              // Land on Bookings so they see the job under Awaiting.
+              Get.offAllNamed(Routes.home, arguments: {'tab': 1});
             } else {
               // Stay so the client can retry payment or edit the job
               Get.snackbar(

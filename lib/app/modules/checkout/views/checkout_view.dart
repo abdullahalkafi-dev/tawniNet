@@ -9,64 +9,72 @@ class CheckoutView extends GetView<CheckoutController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Get.back(),
-        ),
-        title: Text(
-          'Secure Checkout',
-          style: AppStyles.h2Of(context).copyWith(fontSize: 18),
-        ),
-        centerTitle: true,
-      ),
-      body: Obx(() {
-        if (controller.isSuccess.value) {
-          return _buildSuccessView(context);
-        }
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildOrderSummaryCard(context),
-              const SizedBox(height: 24),
-              Text(
-                'Select Moroccan Payment Channel',
-                style: AppStyles.bodyLargeOf(context).copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 12),
-              ...controller.paymentMethods.map(
-                (method) => _buildPaymentMethodCard(context, method),
-              ),
-              const SizedBox(height: 24),
-              _buildSandboxNotice(context),
-              if (controller.errorMessage.value.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.red.shade200),
-                  ),
-                  child: Text(
-                    controller.errorMessage.value,
-                    style: TextStyle(color: Colors.red.shade800, fontSize: 13),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 32),
-              _buildActionButtons(context),
-            ],
+    return PopScope(
+      // System back must not return null after a successful payment.
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        controller.handleBack();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: controller.handleBack,
           ),
-        );
-      }),
+          title: Text(
+            'Secure Checkout',
+            style: AppStyles.h2Of(context).copyWith(fontSize: 18),
+          ),
+          centerTitle: true,
+        ),
+        body: Obx(() {
+          if (controller.isSuccess.value) {
+            return _buildSuccessView(context);
+          }
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildOrderSummaryCard(context),
+                const SizedBox(height: 24),
+                Text(
+                  'Select Moroccan Payment Channel',
+                  style: AppStyles.bodyLargeOf(context).copyWith(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...controller.paymentMethods.map(
+                  (method) => _buildPaymentMethodCard(context, method),
+                ),
+                const SizedBox(height: 24),
+                _buildSandboxNotice(context),
+                if (controller.errorMessage.value.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Text(
+                      controller.errorMessage.value,
+                      style: TextStyle(color: Colors.red.shade800, fontSize: 13),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 32),
+                _buildActionButtons(context),
+              ],
+            ),
+          );
+        }),
+      ),
     );
   }
 
@@ -346,6 +354,28 @@ class CheckoutView extends GetView<CheckoutController> {
             Text(
               'Returning to app...',
               style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 12),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: controller.completeSuccess,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: const Text(
+                  'Done',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
             ),
           ],
         ),

@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
+import 'package:awnneaapp/app/core/constants/refetch_keys.dart';
+import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
+import 'package:awnneaapp/app/services/refetch_service.dart';
 import 'package:awnneaapp/app/services/wallet_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -10,6 +13,8 @@ import 'package:get/get.dart';
 class CheckoutController extends GetxController {
   late final ApiClient _api;
   late final AuthService _authService;
+
+  bool _didComplete = false;
 
   // Order Details from arguments
   final orderId = ''.obs;
@@ -85,8 +90,47 @@ class CheckoutController extends GetxController {
     selectedMethod.value = methodId;
   }
 
+  /// Safe leave-success: always returns paid=true exactly once.
+  /// Covers auto-dismiss, Done button, AppBar back, and Android system back.
+  void completeSuccess() {
+    if (_didComplete) return;
+    _didComplete = true;
+    isSuccess.value = true;
+
+    try {
+      final refetch = Get.find<RefetchService>();
+      if (orderType.value == 'job') {
+        refetch.invalidate(RefetchKeys.activeBookings);
+      } else if (orderType.value == 'wallet_topup') {
+        unawaited(() async {
+          try {
+            await Get.find<WalletService>().getWalletBalance();
+          } catch (_) {}
+        }());
+      }
+    } catch (_) {}
+
+    if (Get.currentRoute == Routes.checkout) {
+      Get.back(result: true);
+    }
+  }
+
+  /// AppBar / system back. Never returns null after a successful payment.
+  void handleBack() {
+    if (_didComplete) return;
+    if (isSuccess.value) {
+      completeSuccess();
+      return;
+    }
+    if (isProcessing.value) {
+      showCancelConfirm();
+      return;
+    }
+    Get.back(result: false);
+  }
+
   Future<void> confirmAndPay() async {
-    if (isProcessing.value || isSuccess.value) return;
+    if (isProcessing.value || isSuccess.value || _didComplete) return;
     isProcessing.value = true;
     errorMessage.value = '';
 
@@ -111,7 +155,7 @@ class CheckoutController extends GetxController {
       );
 
       if (sessionId.value.isNotEmpty) {
-        // Best-effort notify simulator container in the background without blocking the UI
+        // Best-effort notify simulator — must never block or fail the app return.
         final simHost = ApiConstants.serverHost;
         final simUrl = 'http://$simHost:5099/simulator/v1/process-payment';
         unawaited(
@@ -130,18 +174,10 @@ class CheckoutController extends GetxController {
 
       if (response.success) {
         isSuccess.value = true;
-
-        if (orderType.value == 'wallet_topup') {
-          unawaited(() async {
-            try {
-              await Get.find<WalletService>().getWalletBalance();
-            } catch (_) {}
-          }());
-        }
-
-        // Short pause so user sees success — don't block on heavy refetch.
-        await Future.delayed(const Duration(milliseconds: 700));
-        Get.back(result: true);
+        // Brief pause so the user sees the checkmark, then leave with paid=true.
+        await Future.delayed(const Duration(milliseconds: 900));
+        if (isClosed) return;
+        completeSuccess();
       } else {
         errorMessage.value = response.message ?? 'Payment failed. Please try again.';
         AppFeedback.error(errorMessage.value, title: 'Payment failed');
@@ -150,7 +186,9 @@ class CheckoutController extends GetxController {
       errorMessage.value = e.toString().replaceAll('Exception: ', '');
       AppFeedback.error(errorMessage.value, title: 'Payment failed');
     } finally {
-      isProcessing.value = false;
+      if (!isClosed) {
+        isProcessing.value = false;
+      }
     }
   }
 
@@ -198,13 +236,18 @@ class CheckoutController extends GetxController {
         title: 'Could not update payment',
       );
     } finally {
-      isProcessing.value = false;
-      Get.back(result: false);
+      if (!isClosed) {
+        isProcessing.value = false;
+      }
+      if (!_didComplete) {
+        _didComplete = true;
+        Get.back(result: false);
+      }
     }
   }
 
   void showCancelConfirm() {
-    if (isProcessing.value || isSuccess.value) return;
+    if (isProcessing.value || isSuccess.value || _didComplete) return;
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
