@@ -15,6 +15,7 @@ class CheckoutController extends GetxController {
   late final AuthService _authService;
 
   bool _didComplete = false;
+  bool _didRefetch = false;
 
   // Order Details from arguments
   final orderId = ''.obs;
@@ -90,34 +91,51 @@ class CheckoutController extends GetxController {
     selectedMethod.value = methodId;
   }
 
-  /// Safe leave-success: always returns paid=true exactly once.
-  /// Covers auto-dismiss, Done button, AppBar back, and Android system back.
+  /// Leave checkout after a successful payment with paid=true.
+  /// Uses Navigator.pop (not Get.back) so PopScope(canPop:false) cannot swallow it.
   void completeSuccess() {
-    if (_didComplete) return;
-    _didComplete = true;
     isSuccess.value = true;
 
-    try {
-      final refetch = Get.find<RefetchService>();
-      if (orderType.value == 'job') {
-        refetch.invalidate(RefetchKeys.activeBookings);
-      } else if (orderType.value == 'wallet_topup') {
-        unawaited(() async {
-          try {
-            await Get.find<WalletService>().getWalletBalance();
-          } catch (_) {}
-        }());
-      }
-    } catch (_) {}
-
-    if (Get.currentRoute == Routes.checkout) {
-      Get.back(result: true);
+    if (!_didRefetch) {
+      _didRefetch = true;
+      try {
+        final refetch = Get.find<RefetchService>();
+        if (orderType.value == 'job') {
+          refetch.invalidate(RefetchKeys.activeBookings);
+        } else if (orderType.value == 'wallet_topup') {
+          unawaited(() async {
+            try {
+              await Get.find<WalletService>().getWalletBalance();
+            } catch (_) {}
+          }());
+        }
+      } catch (_) {}
     }
+
+    _didComplete = true;
+    _popWithResult(true);
+  }
+
+  void _popWithResult(bool paid) {
+    // 1) Preferred: force-pop the root navigator (bypasses PopScope).
+    final nav = Get.key.currentState;
+    if (nav != null && nav.canPop()) {
+      nav.pop(paid);
+      return;
+    }
+
+    // 2) Fallback: GetX
+    if (Get.currentRoute == Routes.checkout) {
+      Get.back(result: paid);
+      return;
+    }
+
+    // 3) Last resort: leave any checkout route
+    Get.until((route) => route.settings.name != Routes.checkout);
   }
 
   /// AppBar / system back. Never returns null after a successful payment.
   void handleBack() {
-    if (_didComplete) return;
     if (isSuccess.value) {
       completeSuccess();
       return;
@@ -178,6 +196,11 @@ class CheckoutController extends GetxController {
         await Future.delayed(const Duration(milliseconds: 900));
         if (isClosed) return;
         completeSuccess();
+        // Safety: if the first pop was swallowed, try again shortly.
+        await Future.delayed(const Duration(milliseconds: 400));
+        if (!isClosed && Get.currentRoute == Routes.checkout) {
+          _popWithResult(true);
+        }
       } else {
         errorMessage.value = response.message ?? 'Payment failed. Please try again.';
         AppFeedback.error(errorMessage.value, title: 'Payment failed');

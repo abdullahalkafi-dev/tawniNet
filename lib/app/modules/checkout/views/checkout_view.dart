@@ -10,7 +10,8 @@ class CheckoutView extends GetView<CheckoutController> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      // System back must not return null after a successful payment.
+      // Allow system pop only when not processing and not showing success
+      // (success uses handleBack → Navigator.pop with result true).
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
@@ -18,6 +19,7 @@ class CheckoutView extends GetView<CheckoutController> {
       },
       child: Scaffold(
         appBar: AppBar(
+          automaticallyImplyLeading: false,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             onPressed: controller.handleBack,
