@@ -5,24 +5,22 @@ class ApiConstants {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
     // Production (Cloud Server):
-    // defaultValue: 'https://tarikappapi.joura.info/api/v1',
-    // Local Docker (Physical Mobile Device on LAN):
-    defaultValue: 'http://192.168.0.200:5000/api/v1',
+    defaultValue: 'https://tarikappapi.joura.info/api/v1',
   );
 
-  /// Extract host from baseUrl (e.g., '192.168.0.200')
+  /// Extract host from baseUrl (e.g., 'tarikappapi.joura.info')
   static String get serverHost {
     try {
       final uri = Uri.parse(baseUrl);
-      return uri.host.isNotEmpty ? uri.host : '192.168.0.200';
+      return uri.host.isNotEmpty ? uri.host : 'tarikappapi.joura.info';
     } catch (_) {
-      return '192.168.0.200';
+      return 'tarikappapi.joura.info';
     }
   }
 
   /// Centralized image URL resolver.
-  /// Replaces 'localhost' or '127.0.0.1' in any URL with the current serverHost so that
-  /// physical mobile devices on the local network can resolve images correctly.
+  /// Replaces 'localhost', '127.0.0.1', or legacy local LAN IPs in any URL with the current serverHost so that
+  /// devices resolve images correctly.
   /// Also routes direct MinIO bucket URLs through the backend proxy.
   static String? resolveImageUrl(String? url) {
     if (url == null || url.trim().isEmpty) return null;
@@ -46,9 +44,22 @@ class ApiConstants {
 
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
       final host = serverHost;
-      return trimmed
+      final isProd = host.contains('joura.info');
+      var updated = trimmed
+          .replaceAll('://localhost:5000', '://$host')
+          .replaceAll('://localhost:9004', '://$host')
           .replaceAll('://localhost', '://$host')
-          .replaceAll('://127.0.0.1', '://$host');
+          .replaceAll('://127.0.0.1:5000', '://$host')
+          .replaceAll('://127.0.0.1:9004', '://$host')
+          .replaceAll('://127.0.0.1', '://$host')
+          .replaceAll('://192.168.0.200:5000', '://$host')
+          .replaceAll('://192.168.0.200:9004', '://$host')
+          .replaceAll('://192.168.0.200', '://$host');
+
+      if (isProd && updated.startsWith('http://')) {
+        updated = updated.replaceFirst('http://', 'https://');
+      }
+      return updated;
     }
 
     // If it's a relative path or raw MinIO key:

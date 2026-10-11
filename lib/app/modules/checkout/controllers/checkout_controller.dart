@@ -175,7 +175,10 @@ class CheckoutController extends GetxController {
       if (sessionId.value.isNotEmpty) {
         // Best-effort notify simulator — must never block or fail the app return.
         final simHost = ApiConstants.serverHost;
-        final simUrl = 'http://$simHost:5099/simulator/v1/process-payment';
+        final isProd = simHost.contains('joura.info');
+        final simUrl = isProd
+            ? 'https://$simHost/simulator/v1/process-payment'
+            : 'http://$simHost:5099/simulator/v1/process-payment';
         unawaited(
           _api.client
               .post(
