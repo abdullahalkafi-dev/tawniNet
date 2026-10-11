@@ -43,7 +43,7 @@ class ProfileView extends GetView<ProfileController> {
                 context,
                 Icons.notifications_none,
                 'profile_notification'.tr,
-                onTap: () => Get.toNamed(Routes.notificationSettings),
+                onTap: () => Get.toNamed(Routes.notifications),
               ),
               _buildProfileOption(
                 context,

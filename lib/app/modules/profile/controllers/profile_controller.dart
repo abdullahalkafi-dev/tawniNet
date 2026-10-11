@@ -126,8 +126,11 @@ class ProfileController extends GetxController {
       if (response.success) {
         await Get.find<RefetchService>().invalidate(RefetchKeys.userProfile);
 
-        AppSnackbar.showSuccess('Profile updated successfully');
         Get.back();
+        final msg = 'helper_profile_updated'.tr;
+        AppSnackbar.showSuccess(
+          msg == 'helper_profile_updated' ? 'Profile updated successfully' : msg,
+        );
       } else {
         throw Exception(response.message ?? 'Update failed');
       }

@@ -1,3 +1,4 @@
+import 'package:awnneaapp/app/services/job_service.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
 import 'package:awnneaapp/app/core/utils/datetime_format.dart';
@@ -11,19 +12,97 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/booking_controller.dart';
 import '../../../data/models/booking_model.dart';
+import 'live_tracking_view.dart';
 
-class BookingDetailsView extends GetView<BookingController> {
+class BookingDetailsView extends StatefulWidget {
   const BookingDetailsView({super.key});
 
-  static Booking? _readBookingArg() {
+  @override
+  State<BookingDetailsView> createState() => _BookingDetailsViewState();
+}
+
+class _BookingDetailsViewState extends State<BookingDetailsView> {
+  BookingController get controller => Get.find<BookingController>();
+
+  Booking? _booking;
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _resolveBooking();
+  }
+
+  void _resolveBooking() {
     final args = Get.arguments;
-    if (args is Booking) return args;
-    return null;
+    if (args is Booking) {
+      _booking = args;
+      return;
+    }
+    String? jobId;
+    if (args is String && args.isNotEmpty) {
+      jobId = args;
+    } else if (args is Map) {
+      if (args['booking'] is Booking) {
+        _booking = args['booking'] as Booking;
+        return;
+      }
+      jobId = args['jobId']?.toString() ?? args['id']?.toString();
+    }
+    jobId ??= Get.parameters['id'];
+
+    if (jobId != null && jobId.isNotEmpty) {
+      _fetchBooking(jobId);
+    }
+  }
+
+  Future<void> _fetchBooking(String id) async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final jobService = Get.find<JobService>();
+      final data = await jobService.getJobById(id);
+      if (mounted) {
+        setState(() {
+          _booking = Booking.fromJson(data);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = e.toString();
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final booking = _readBookingArg();
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Get.back(),
+          ),
+          title: Text(
+            'booking_my_bookings'.tr,
+            style: AppStyles.h2Of(context).copyWith(fontSize: 18),
+          ),
+          centerTitle: true,
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    final booking = _booking;
     if (booking == null) {
       return Scaffold(
         appBar: AppBar(
@@ -40,10 +119,26 @@ class BookingDetailsView extends GetView<BookingController> {
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Text(
-              'Booking not found. Go back and try again.',
-              textAlign: TextAlign.center,
-              style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  _errorMessage ?? 'booking_not_found'.tr,
+                  textAlign: TextAlign.center,
+                  style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _resolveBooking,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                  ),
+                  child: Text(
+                    'booking_retry'.tr,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -68,6 +163,8 @@ class BookingDetailsView extends GetView<BookingController> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildWorkerCard(context, booking),
+            if (booking.status == BookingStatus.inProgress)
+              _buildLiveTrackingHeroBanner(context, booking),
             const SizedBox(height: 24),
             _buildJobDetailRow(
               context,
@@ -97,7 +194,7 @@ class BookingDetailsView extends GetView<BookingController> {
             const SizedBox(height: 40),
             if (booking.status == BookingStatus.pendingPayment) ...[
               _buildActionButton(
-                'Pay now',
+                'booking_pay_now'.tr,
                 Colors.orange.shade700,
                 () => controller.payBooking(booking),
               ),
@@ -119,7 +216,7 @@ class BookingDetailsView extends GetView<BookingController> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  'Waiting for a helper to accept. Payment is already done.',
+                  'booking_waiting_helper'.tr,
                   textAlign: TextAlign.center,
                   style: AppStyles.bodyMedium.copyWith(fontSize: 13),
                 ),
@@ -132,10 +229,37 @@ class BookingDetailsView extends GetView<BookingController> {
                 isOutlined: true,
               ),
             ] else if (booking.status == BookingStatus.inProgress) ...[
-              _buildActionButton('Complete Service', AppColors.primary, () {
-                controller.completeBooking(booking.id);
-                Get.back();
-              }),
+              _buildActionButton(
+                'booking_track_helper'.tr,
+                AppColors.primary,
+                () {
+                  Get.to(
+                    () => const LiveTrackingView(),
+                    arguments: {
+                      'jobId': booking.id,
+                      'jobTitle': booking.title,
+                      'address': booking.location,
+                      'latitude': booking.latitude,
+                      'longitude': booking.longitude,
+                      'workerUserId': booking.workerUserId,
+                      'workerName': booking.workerName,
+                      'workerImage': booking.workerImage,
+                      'category': booking.category,
+                    },
+                  );
+                },
+                icon: const Icon(Icons.near_me_rounded, color: Colors.white, size: 20),
+              ),
+              const SizedBox(height: 16),
+              _buildActionButton(
+                'booking_complete_service'.tr,
+                const Color(0xFF0D9488),
+                () {
+                  controller.completeBooking(booking.id);
+                  Get.back();
+                },
+                icon: const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+              ),
               const SizedBox(height: 16),
               _buildActionButton(
                 'booking_cancel_booking'.tr,
@@ -147,7 +271,7 @@ class BookingDetailsView extends GetView<BookingController> {
               if (booking.hasReviewFromOther && booking.reviewFromOther != null)
                 _buildReviewCard(
                   context,
-                  title: 'Helper review',
+                  title: 'booking_helper_review'.tr,
                   review: booking.reviewFromOther!,
                 ),
               if (booking.hasReviewFromOther &&
@@ -157,7 +281,7 @@ class BookingDetailsView extends GetView<BookingController> {
               if (booking.hasMyReview && booking.myReview != null)
                 _buildReviewCard(
                   context,
-                  title: 'Your review',
+                  title: 'booking_your_review'.tr,
                   review: booking.myReview!,
                 )
               else
@@ -438,43 +562,181 @@ class BookingDetailsView extends GetView<BookingController> {
     return JobStatusTimeline(steps: steps);
   }
 
+  Widget _buildLiveTrackingHeroBanner(BuildContext context, Booking booking) {
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.isDarkMode
+            ? AppColors.primary.withValues(alpha: 0.12)
+            : const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.35),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF16A34A),
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Helper is on the way',
+                  style: AppStyles.h2Of(context).copyWith(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: context.isDarkMode ? Colors.white : const Color(0xFF15803D),
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.gps_fixed, size: 12, color: AppColors.primary),
+                    SizedBox(width: 4),
+                    Text(
+                      'Live GPS',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Track ${booking.workerName.isNotEmpty ? booking.workerName : "your helper"} in real-time as they travel to your service address.',
+            style: AppStyles.bodySmall.copyWith(
+              color: context.textSecondaryColor,
+              fontSize: 12,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Get.to(
+                  () => const LiveTrackingView(),
+                  arguments: {
+                    'jobId': booking.id,
+                    'jobTitle': booking.title,
+                    'address': booking.location,
+                    'latitude': booking.latitude,
+                    'longitude': booking.longitude,
+                    'workerUserId': booking.workerUserId,
+                    'workerName': booking.workerName,
+                    'workerImage': booking.workerImage,
+                    'category': booking.category,
+                  },
+                );
+              },
+              icon: const Icon(Icons.near_me_rounded, color: Colors.white, size: 18),
+              label: const Text(
+                'Track Helper Live on Map',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildActionButton(
     String text,
     Color color,
     VoidCallback onTap, {
     bool isOutlined = false,
+    Widget? icon,
   }) {
     return SizedBox(
       width: double.infinity,
-      height: 55,
+      height: 52,
       child: isOutlined
           ? OutlinedButton(
               onPressed: onTap,
               style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Colors.redAccent),
+                side: const BorderSide(color: Color(0xFFEF4444), width: 1.5),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(30),
                 ),
               ),
               child: Text(
                 text,
                 style: const TextStyle(
-                  color: Colors.redAccent,
+                  color: Color(0xFFEF4444),
                   fontWeight: FontWeight.bold,
+                  fontSize: 15,
                 ),
               ),
             )
           : ElevatedButton(
               onPressed: onTap,
               style: ElevatedButton.styleFrom(
-                backgroundColor: color.withOpacity(0.5),
+                backgroundColor: color,
+                elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(30),
                 ),
               ),
-              child: Text(
-                text,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (icon != null) ...[
+                    icon,
+                    const SizedBox(width: 8),
+                  ],
+                  Text(
+                    text,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                ],
               ),
             ),
     );

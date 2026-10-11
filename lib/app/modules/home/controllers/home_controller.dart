@@ -12,7 +12,6 @@ import 'package:get/get.dart';
 
 import 'package:awnneaapp/app/modules/booking/controllers/booking_controller.dart';
 import '../views/all_services_view.dart';
-import '../views/notifications_view.dart';
 
 class HomeController extends GetxController {
   static const _kLastTab = 'client_last_tab';
@@ -288,7 +287,7 @@ class HomeController extends GetxController {
   }
 
   void onNotificationTap() {
-    Get.to(() => const NotificationsView());
+    Get.toNamed(Routes.notifications);
   }
 
   void onFindHelperTap() {

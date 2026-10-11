@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'package:awnneaapp/app/core/constants/refetch_keys.dart';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:awnneaapp/app/services/job_service.dart';
+import 'package:awnneaapp/app/services/location_service.dart';
 import 'package:awnneaapp/app/services/refetch_service.dart';
+import 'package:awnneaapp/app/services/socket_service.dart';
 import 'package:get/get.dart';
 
 class HelperJobsController extends GetxController {
@@ -12,6 +15,8 @@ class HelperJobsController extends GetxController {
   final isLoading = false.obs;
 
   String? _pendingOpenJobId;
+  StreamSubscription? _jobCancelledSub;
+  StreamSubscription? _jobCompletedSub;
 
   @override
   void onInit() {
@@ -22,11 +27,14 @@ class HelperJobsController extends GetxController {
         () => fetchJobs(),
       );
     } catch (_) {}
+    _setupSocketListeners();
     fetchJobs();
   }
 
   @override
   void onClose() {
+    _jobCancelledSub?.cancel();
+    _jobCompletedSub?.cancel();
     try {
       Get.find<RefetchService>().unregister(RefetchKeys.helperJobs);
     } catch (_) {}
@@ -66,6 +74,21 @@ class HelperJobsController extends GetxController {
       activeJobs.assignAll(res['active'] ?? []);
       completedJobs.assignAll(res['completed'] ?? []);
       cancelledJobs.assignAll(res['cancelled'] ?? []);
+
+      // Automatically sync active job ID to location service
+      if (Get.isRegistered<LocationService>()) {
+        final loc = Get.find<LocationService>();
+        if (activeJobs.isNotEmpty) {
+          final first = activeJobs.first;
+          final jobId = (first is Map ? (first['id'] ?? first['_id']) : null)?.toString();
+          if (jobId != null && jobId.isNotEmpty) {
+            loc.setActiveJobId(jobId);
+          }
+        } else {
+          loc.setActiveJobId(null);
+        }
+      }
+
       _openPendingJobDetails();
     } catch (e) {
       if (!isClosed &&
@@ -146,6 +169,82 @@ class HelperJobsController extends GetxController {
     }
   }
 
+  void _setupSocketListeners() {
+    if (!Get.isRegistered<SocketService>()) return;
+    final socket = Get.find<SocketService>();
+
+    _jobCancelledSub = socket.onJobCancelled.listen((data) {
+      final jid = (data['id'] ?? data['_id'])?.toString();
+      if (jid != null && jid.isNotEmpty) {
+        final reason = (data['cancellationReason'] ?? data['reason'] ?? 'Cancelled by client').toString();
+        final title = (data['title'] ?? 'Job').toString();
+        final wasActive = activeJobs.any((item) {
+          if (item is! Map) return false;
+          final id = (item['id'] ?? item['_id'] ?? '').toString();
+          return id == jid;
+        });
+
+        _moveJobToCancelledLocally(jid, reason: reason, rawJob: data);
+
+        if (wasActive) {
+          AppFeedback.info('"$title" was cancelled by the client.', title: 'Job Cancelled');
+        }
+        _invalidatePipeline().catchError((_) {});
+      }
+    });
+
+    _jobCompletedSub = socket.onJobCompleted.listen((_) {
+      _invalidatePipeline().catchError((_) {});
+    });
+  }
+
+  void _moveJobToCancelledLocally(String id, {String reason = 'Cancelled', dynamic rawJob}) {
+    if (id.isEmpty) return;
+    Map<String, dynamic>? targetJob;
+
+    for (var i = 0; i < activeJobs.length; i++) {
+      final job = activeJobs[i];
+      if (job is! Map) continue;
+      final map = Map<String, dynamic>.from(job);
+      final jid = (map['id'] ?? map['_id'] ?? '').toString();
+      if (jid == id) {
+        targetJob = map;
+        activeJobs.removeAt(i);
+        break;
+      }
+    }
+
+    if (targetJob == null && rawJob is Map) {
+      targetJob = Map<String, dynamic>.from(rawJob);
+    }
+
+    if (targetJob != null) {
+      targetJob['status'] = 'cancelled';
+      targetJob['cancellationReason'] = reason;
+      targetJob['cancelledAt'] = DateTime.now().toIso8601String();
+
+      cancelledJobs.removeWhere((item) {
+        if (item is! Map) return false;
+        final jid = (item['id'] ?? item['_id'] ?? '').toString();
+        return jid == id;
+      });
+      cancelledJobs.insert(0, targetJob);
+    }
+
+    if (Get.isRegistered<LocationService>()) {
+      final loc = Get.find<LocationService>();
+      if (loc.activeJobId == id) {
+        if (activeJobs.isNotEmpty) {
+          final first = activeJobs.first;
+          final nextId = (first is Map ? (first['id'] ?? first['_id']) : null)?.toString();
+          loc.setActiveJobId(nextId);
+        } else {
+          loc.setActiveJobId(null);
+        }
+      }
+    }
+  }
+
   Future<void> _invalidatePipeline() async {
     try {
       await Get.find<RefetchService>().invalidateJobPipeline();
@@ -158,8 +257,11 @@ class HelperJobsController extends GetxController {
     try {
       final jobService = Get.find<JobService>();
       await jobService.cancelJob(id, reason);
+      // Immediately reflect cancellation in memory (0ms UI latency)
+      _moveJobToCancelledLocally(id, reason: reason);
       AppFeedback.success('Job has been cancelled', title: 'Cancelled');
-      await _invalidatePipeline();
+      // Sync with server in background
+      _invalidatePipeline().catchError((_) {});
       return true;
     } catch (e) {
       AppFeedback.error(e.toString().replaceAll('Exception: ', ''));

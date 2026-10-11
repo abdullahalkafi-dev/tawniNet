@@ -1,5 +1,8 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/widgets/gps_required_barrier.dart';
+import 'package:awnneaapp/app/services/location_service.dart';
+import 'package:awnneaapp/app/services/role_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/helper_home_controller.dart';
@@ -20,13 +23,36 @@ class HelperHomeView extends GetView<HelperHomeController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(child: Obx(() => _pages[controller.currentIndex.value])),
-      bottomNavigationBar: Obx(
-        () => SafeArea(
+    final locationService = Get.find<LocationService>();
+
+    return Obx(() {
+      final isGpsReady = locationService.isGpsReady;
+      final isHelper = Get.isRegistered<RoleService>()
+          ? Get.find<RoleService>().isHelper
+          : true;
+
+      // When the user is a helper and GPS is not enabled/ready:
+      // Lock the entire view and turn off all bottom navigation.
+      if (isHelper && !isGpsReady) {
+        return Scaffold(
+          body: SafeArea(
+            child: GpsRequiredBarrier(
+              onGpsEnabled: () => controller.checkGpsAndSync(),
+            ),
+          ),
+        );
+      }
+
+      final tabIndex = controller.currentIndex.value;
+
+      return Scaffold(
+        body: SafeArea(
+          child: _pages[tabIndex],
+        ),
+        bottomNavigationBar: SafeArea(
           top: false,
           child: BottomNavigationBar(
-            currentIndex: controller.currentIndex.value,
+            currentIndex: tabIndex,
             onTap: controller.changeIndex,
             type: BottomNavigationBarType.fixed,
             backgroundColor: context.cardColor,
@@ -57,7 +83,7 @@ class HelperHomeView extends GetView<HelperHomeController> {
             ],
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 }

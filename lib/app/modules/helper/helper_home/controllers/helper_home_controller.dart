@@ -9,12 +9,13 @@ import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/job_service.dart';
 import 'package:awnneaapp/app/services/socket_service.dart';
 import 'package:awnneaapp/app/services/storage_service.dart';
+import 'package:awnneaapp/app/services/location_service.dart';
 import 'package:awnneaapp/app/modules/messages/controllers/messages_controller.dart';
 import 'package:awnneaapp/app/modules/helper/helper_jobs/controllers/helper_jobs_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-class HelperHomeController extends GetxController {
+class HelperHomeController extends GetxController with WidgetsBindingObserver {
   static const _kLastTab = 'helper_last_tab';
 
   final currentIndex = 0.obs;
@@ -27,10 +28,33 @@ class HelperHomeController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    WidgetsBinding.instance.addObserver(this);
     _restoreLastTab();
     _applyDeepLinkArgs();
-    fetchNearbyJobs();
     _setupSocketListeners();
+    checkGpsAndSync();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      checkGpsAndSync();
+    }
+  }
+
+  Future<void> checkGpsAndSync() async {
+    if (Get.isRegistered<LocationService>()) {
+      final locationService = Get.find<LocationService>();
+      final ready = await locationService.checkGpsStatus();
+      if (ready) {
+        locationService.startPeriodicHeartbeat();
+        fetchNearbyJobs();
+      } else {
+        locationService.stopPeriodicHeartbeat();
+      }
+    } else {
+      fetchNearbyJobs();
+    }
   }
 
   void _restoreLastTab() {
@@ -67,7 +91,10 @@ class HelperHomeController extends GetxController {
       _nearbyJobSubscription = socketService.onNewNearbyJob.listen((data) {
         try {
           final job = HelperJob.fromJson(data);
-          if (!nearbyJobs.any((j) => j.id == job.id)) {
+          final existingIndex = nearbyJobs.indexWhere((j) => j.id == job.id);
+          if (existingIndex >= 0) {
+            nearbyJobs[existingIndex] = job;
+          } else {
             nearbyJobs.insert(0, job);
             Get.snackbar(
               'New Job Nearby',
@@ -89,8 +116,8 @@ class HelperHomeController extends GetxController {
     Get.find<StorageService>().write(_kLastTab, '$index');
   }
 
-  Future<void> fetchNearbyJobs() async {
-    isLoading.value = true;
+  Future<void> fetchNearbyJobs({bool silent = false}) async {
+    if (!silent) isLoading.value = true;
     try {
       final authService = Get.find<AuthService>();
       final user = authService.currentUser.value;
@@ -116,13 +143,13 @@ class HelperHomeController extends GetxController {
         nearbyJobs.assignAll(
           items.map<HelperJob>((e) => HelperJob.fromJson(e as Map<String, dynamic>)).toList(),
         );
-      } else {
+      } else if (!silent) {
         nearbyJobs.clear();
       }
     } catch (_) {
-      nearbyJobs.clear();
+      if (!silent) nearbyJobs.clear();
     } finally {
-      isLoading.value = false;
+      if (!silent) isLoading.value = false;
     }
   }
 
@@ -232,6 +259,10 @@ class HelperHomeController extends GetxController {
 
   @override
   void onClose() {
+    WidgetsBinding.instance.removeObserver(this);
+    if (Get.isRegistered<LocationService>()) {
+      Get.find<LocationService>().stopPeriodicHeartbeat();
+    }
     _nearbyJobSubscription?.cancel();
     super.onClose();
   }

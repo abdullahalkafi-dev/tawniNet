@@ -10,6 +10,7 @@ import 'package:awnneaapp/app/data/models/message_model.dart';
 import 'package:awnneaapp/app/modules/messages/controllers/messages_controller.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
+import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
 
 class ChatDetailController extends GetxController {
   late final ApiClient _api;
@@ -386,7 +387,7 @@ class ChatDetailController extends GetxController {
       }
     } catch (e) {
       if (!isClosed) {
-        AppFeedback.error('Failed to send offer');
+        AppFeedback.error(AppSnackbar.extractErrorMessage(e));
       }
     }
   }
@@ -446,7 +447,7 @@ class ChatDetailController extends GetxController {
       }
     } catch (e) {
       if (!isClosed) {
-        AppFeedback.error('Failed to accept offer');
+        AppFeedback.error(AppSnackbar.extractErrorMessage(e));
       }
     }
   }
@@ -468,7 +469,7 @@ class ChatDetailController extends GetxController {
       }
     } catch (e) {
       if (!isClosed) {
-        AppFeedback.error('Failed to reject offer');
+        AppFeedback.error(AppSnackbar.extractErrorMessage(e));
       }
     }
   }
@@ -490,7 +491,7 @@ class ChatDetailController extends GetxController {
       }
     } catch (e) {
       if (!isClosed) {
-        AppFeedback.error('Failed to cancel offer');
+        AppFeedback.error(AppSnackbar.extractErrorMessage(e));
       }
     }
   }
@@ -545,7 +546,7 @@ class ChatDetailController extends GetxController {
       }
     } catch (e) {
       if (!isClosed) {
-        AppFeedback.error('Failed to edit offer');
+        AppFeedback.error(AppSnackbar.extractErrorMessage(e));
       }
     }
   }

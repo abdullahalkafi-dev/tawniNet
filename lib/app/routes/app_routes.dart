@@ -21,6 +21,7 @@ abstract class Routes {
   static const cancelDetails = _Paths.cancelDetails;
   static const chatDetail = _Paths.chatDetail;
   static const editProfile = _Paths.editProfile;
+  static const notifications = _Paths.notifications;
   static const notificationSettings = _Paths.notificationSettings;
   static const wallet = _Paths.wallet;
 
@@ -78,6 +79,7 @@ abstract class _Paths {
   static const cancelDetails = '/cancel-details';
   static const chatDetail = '/chat-detail';
   static const editProfile = '/edit-profile';
+  static const notifications = '/notifications';
   static const notificationSettings = '/notification-settings';
   static const wallet = '/wallet';
 

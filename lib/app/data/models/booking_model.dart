@@ -58,6 +58,10 @@ class Booking {
   final MyReview? reviewFromOther;
   final String refundStatus;
   final String refundReference;
+  final double? latitude;
+  final double? longitude;
+
+  String get title => jobType;
 
   Booking({
     required this.id,
@@ -85,6 +89,8 @@ class Booking {
     this.reviewFromOther,
     this.refundStatus = 'none',
     this.refundReference = '',
+    this.latitude,
+    this.longitude,
   });
 
   factory Booking.fromJson(Map<String, dynamic> json) {
@@ -141,6 +147,20 @@ class Booking {
       budget = double.tryParse(budgetRaw) ?? 0;
     }
 
+    double? lat;
+    double? lon;
+    if (json['location'] is Map) {
+      final loc = json['location'] as Map;
+      final coords = loc['coordinates'];
+      if (coords is List && coords.length >= 2) {
+        lon = (coords[0] as num?)?.toDouble();
+        lat = (coords[1] as num?)?.toDouble();
+      }
+    } else if (json['latitude'] != null && json['longitude'] != null) {
+      lat = (json['latitude'] as num?)?.toDouble();
+      lon = (json['longitude'] as num?)?.toDouble();
+    }
+
     return Booking(
       id: (json['id'] ?? json['_id'] ?? '').toString(),
       workerUserId: assigned != null
@@ -178,6 +198,8 @@ class Booking {
           : null,
       refundStatus: (json['refundStatus'] ?? 'none').toString(),
       refundReference: (json['refundReference'] ?? '').toString(),
+      latitude: lat,
+      longitude: lon,
     );
   }
 

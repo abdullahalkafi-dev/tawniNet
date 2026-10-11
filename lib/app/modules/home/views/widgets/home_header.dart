@@ -1,6 +1,8 @@
 import 'package:awnneaapp/app/modules/home/controllers/home_controller.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/notification_badge_controller.dart';
+import 'package:awnneaapp/app/core/widgets/location_map_picker.dart';
+import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
@@ -32,33 +34,59 @@ class HomeHeader extends GetView<HomeController> {
         }),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Current Location',
-                style: AppStyles.bodyMedium.copyWith(
-                  fontSize: 12,
-                  color: Colors.grey[500],
-                ),
-              ),
-              const SizedBox(height: 2),
-              Obx(() {
-                final address = Get.find<AuthService>().currentUser.value?.address;
-                return Text(
-                  address?.isNotEmpty == true ? address! : 'No location set',
-                  style: AppStyles.bodyLargeOf(context).copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: () async {
+              final auth = Get.find<AuthService>();
+              final currentAddr = auth.currentUser.value?.address ?? '';
+              final picked = await LocationMapPicker.show(
+                context,
+                initialAddress: currentAddr,
+              );
+              if (picked != null) {
+                try {
+                  await auth.updateProfile({'address': picked.address});
+                  AppSnackbar.showSuccess('Address updated successfully');
+                } catch (_) {}
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'home_current_location'.tr,
+                        style: AppStyles.bodyMedium.copyWith(
+                          fontSize: 12,
+                          color: Colors.grey[500],
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.grey[500]),
+                    ],
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                );
-              }),
-            ],
+                  const SizedBox(height: 2),
+                  Obx(() {
+                    final address = Get.find<AuthService>().currentUser.value?.address;
+                    return Text(
+                      address?.isNotEmpty == true ? address! : 'label_no_location'.tr,
+                      style: AppStyles.bodyLargeOf(context).copyWith(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    );
+                  }),
+                ],
+              ),
+            ),
           ),
         ),
-        const Spacer(),
         GestureDetector(
           onTap: () {
             controller.onNotificationTap();

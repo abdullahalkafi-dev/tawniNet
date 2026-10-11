@@ -90,6 +90,16 @@ class DeepLinkService extends GetxService {
     final authService = Get.find<AuthService>();
     if (!authService.isLoggedIn.value) return;
 
+    final initialUser = authService.currentUser.value;
+    if (initialUser?.helperApplicationStatus == 'approved' || status == 'approved') {
+      if (Get.isRegistered<RoleService>()) {
+        Get.find<RoleService>().setUserRole('helper');
+      }
+      AppFeedback.success('KYC verification approved! Welcome to Tarik.');
+      Get.offAllNamed(Routes.helperHome);
+      return;
+    }
+
     // Give UI a moment to be active
     await Future.delayed(const Duration(milliseconds: 300));
 

@@ -25,7 +25,7 @@ class CheckoutView extends GetView<CheckoutController> {
             onPressed: controller.handleBack,
           ),
           title: Text(
-            'Secure Checkout',
+            'checkout_title'.tr,
             style: AppStyles.h2Of(context).copyWith(fontSize: 18),
           ),
           centerTitle: true,
@@ -43,7 +43,7 @@ class CheckoutView extends GetView<CheckoutController> {
                 _buildOrderSummaryCard(context),
                 const SizedBox(height: 24),
                 Text(
-                  'Select Moroccan Payment Channel',
+                  'checkout_select_channel'.tr,
                   style: AppStyles.bodyLargeOf(context).copyWith(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -54,19 +54,31 @@ class CheckoutView extends GetView<CheckoutController> {
                   (method) => _buildPaymentMethodCard(context, method),
                 ),
                 const SizedBox(height: 24),
-                _buildSandboxNotice(context),
+                _buildSecurityNotice(context),
                 if (controller.errorMessage.value.isNotEmpty) ...[
                   const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.red.shade50,
+                      color: context.isDarkMode
+                          ? const Color(0xFF7F1D1D).withValues(alpha: 0.3)
+                          : const Color(0xFFFEF2F2),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.red.shade200),
+                      border: Border.all(
+                        color: context.isDarkMode
+                            ? const Color(0xFFDC2626).withValues(alpha: 0.5)
+                            : const Color(0xFFFECACA),
+                      ),
                     ),
                     child: Text(
                       controller.errorMessage.value,
-                      style: TextStyle(color: Colors.red.shade800, fontSize: 13),
+                      style: TextStyle(
+                        color: context.isDarkMode
+                            ? const Color(0xFFFCA5A5)
+                            : const Color(0xFF991B1B),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ),
                 ],
@@ -105,7 +117,7 @@ class CheckoutView extends GetView<CheckoutController> {
                 child: Text(
                   controller.title.value.isNotEmpty
                       ? controller.title.value
-                      : 'Service Checkout',
+                      : 'checkout_service_checkout'.tr,
                   style: AppStyles.bodyLargeOf(context).copyWith(
                     fontWeight: FontWeight.bold,
                     fontSize: 17,
@@ -134,7 +146,7 @@ class CheckoutView extends GetView<CheckoutController> {
           if (controller.orderId.value.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
-              'Order ID: ${controller.orderId.value}',
+              '${'checkout_order_id'.tr}: ${controller.orderId.value}',
               style: AppStyles.bodyMediumOf(context).copyWith(
                 fontSize: 12,
                 color: context.textHintColor,
@@ -147,7 +159,7 @@ class CheckoutView extends GetView<CheckoutController> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Total to Pay',
+                'checkout_total_to_pay'.tr,
                 style: AppStyles.bodyMediumOf(context).copyWith(
                   fontWeight: FontWeight.w600,
                   fontSize: 15,
@@ -235,22 +247,32 @@ class CheckoutView extends GetView<CheckoutController> {
     });
   }
 
-  Widget _buildSandboxNotice(BuildContext context) {
+  Widget _buildSecurityNotice(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.amber.shade50,
+        color: context.isDarkMode
+            ? Colors.green.withOpacity(0.12)
+            : const Color(0xFFF0FDF4),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.amber.shade200),
+        border: Border.all(
+          color: context.isDarkMode
+              ? Colors.green.withOpacity(0.3)
+              : const Color(0xFFBBF7D0),
+        ),
       ),
       child: Row(
         children: [
-          Icon(Icons.shield_outlined, color: Colors.amber.shade800, size: 20),
+          const Icon(Icons.verified_user_outlined, color: Color(0xFF16A34A), size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Moroccan Sandbox Gateway (CashPlus / ChariBaaS). Tap below to simulate instant real-time payment confirmation.',
-              style: TextStyle(color: Colors.amber.shade900, fontSize: 12),
+              'checkout_security_guarantee'.tr,
+              style: TextStyle(
+                color: context.isDarkMode ? const Color(0xFF86EFAC) : const Color(0xFF15803D),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ],
@@ -284,7 +306,7 @@ class CheckoutView extends GetView<CheckoutController> {
                     ),
                   )
                 : Text(
-                    'Confirm & Pay MAD ${controller.amount.value.toStringAsFixed(2)}',
+                    '${'checkout_confirm_pay'.tr} MAD ${controller.amount.value.toStringAsFixed(2)}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -302,15 +324,21 @@ class CheckoutView extends GetView<CheckoutController> {
                 ? null
                 : controller.showCancelConfirm,
             style: OutlinedButton.styleFrom(
-              side: BorderSide(color: Colors.red.shade300),
+              side: BorderSide(
+                color: context.isDarkMode
+                    ? const Color(0xFFEF4444).withOpacity(0.6)
+                    : Colors.red.shade300,
+              ),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
             ),
             child: Text(
-              'Cancel payment',
+              'checkout_cancel_payment'.tr,
               style: TextStyle(
-                color: Colors.red.shade700,
+                color: context.isDarkMode
+                    ? const Color(0xFFF87171)
+                    : Colors.red.shade700,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -338,12 +366,12 @@ class CheckoutView extends GetView<CheckoutController> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Payment Successful!',
+              'checkout_payment_successful'.tr,
               style: AppStyles.h1Of(context).copyWith(fontSize: 24),
             ),
             const SizedBox(height: 8),
             Text(
-              'MAD ${controller.amount.value.toStringAsFixed(2)} has been verified and processed securely.',
+              'MAD ${controller.amount.value.toStringAsFixed(2)} ${'checkout_payment_verified'.tr}',
               textAlign: TextAlign.center,
               style: AppStyles.bodyMediumOf(context).copyWith(
                 color: context.textSecondaryColor,
@@ -354,7 +382,7 @@ class CheckoutView extends GetView<CheckoutController> {
             const CircularProgressIndicator(strokeWidth: 2),
             const SizedBox(height: 12),
             Text(
-              'Returning to app...',
+              'checkout_returning_app'.tr,
               style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 12),
             ),
             const SizedBox(height: 24),
@@ -369,9 +397,9 @@ class CheckoutView extends GetView<CheckoutController> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                child: const Text(
-                  'Done',
-                  style: TextStyle(
+                child: Text(
+                  'btn_done'.tr,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 16,

@@ -721,11 +721,30 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
                                       child: const Icon(Icons.broken_image),
                                     ),
                                   )
-                                : Image.file(
-                                    File(controller.selectedPhotoPaths[index - controller.uploadedPhotoKeys.length]),
-                                    width: 90,
-                                    height: 90,
-                                    fit: BoxFit.cover,
+                                : Stack(
+                                    children: [
+                                      Image.file(
+                                        File(controller.selectedPhotoPaths[index - controller.uploadedPhotoKeys.length]),
+                                        width: 90,
+                                        height: 90,
+                                        fit: BoxFit.cover,
+                                      ),
+                                      Positioned.fill(
+                                        child: Container(
+                                          color: Colors.black26,
+                                          child: const Center(
+                                            child: SizedBox(
+                                              width: 22,
+                                              height: 22,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                           ),
                           Positioned(

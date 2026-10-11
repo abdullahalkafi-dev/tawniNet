@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
-import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:awnneaapp/app/services/auth_service.dart';
+import 'package:awnneaapp/app/core/widgets/location_map_picker.dart';
+import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
 import 'package:get/get.dart';
 import '../controllers/profile_controller.dart';
 
@@ -129,11 +131,21 @@ class _EditProfileViewState extends State<EditProfileView> {
                 onPressed: controller.isUpdating.value
                     ? null
                     : () async {
-                        controller.name.value = nameCtl.text.trim();
-                        controller.email.value = emailCtl.text.trim();
+                        final name = nameCtl.text.trim();
+                        final email = emailCtl.text.trim();
+                        final address = controller.address.value.trim();
+
+                        if (name.isEmpty) {
+                          AppSnackbar.showError('Name cannot be empty');
+                          return;
+                        }
+
+                        controller.name.value = name;
+                        controller.email.value = email;
                         await controller.updateProfile(
-                          newName: nameCtl.text.trim(),
-                          newEmail: emailCtl.text.trim(),
+                          newName: name,
+                          newEmail: email,
+                          newAddress: address.isNotEmpty ? address : null,
                         );
                       },
                 style: ElevatedButton.styleFrom(
@@ -283,40 +295,78 @@ class _EditProfileViewState extends State<EditProfileView> {
     final addressController = TextEditingController(text: controller.address.value);
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: context.cardColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text('edit_update_address'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 18)),
-        content: TextField(
-          controller: addressController,
-          maxLines: 2,
-          style: TextStyle(color: context.textPrimaryColor),
-          decoration: InputDecoration(
-            hintText: 'edit_enter_address'.tr,
-            hintStyle: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
-            filled: true,
-            fillColor: context.inputFillColor,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: context.borderSecondary),
+      builder: (dialogCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: ctx.cardColor,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('edit_update_address'.tr, style: AppStyles.h2Of(ctx).copyWith(fontSize: 18)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: addressController,
+                maxLines: 2,
+                style: TextStyle(color: ctx.textPrimaryColor),
+                decoration: InputDecoration(
+                  hintText: 'edit_enter_address'.tr,
+                  hintStyle: AppStyles.bodyMedium.copyWith(color: ctx.textHintColor),
+                  filled: true,
+                  fillColor: ctx.inputFillColor,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: ctx.borderSecondary),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              InkWell(
+                borderRadius: BorderRadius.circular(8),
+                onTap: () async {
+                  final picked = await LocationMapPicker.show(
+                    context,
+                    initialAddress: addressController.text.trim(),
+                  );
+                  if (picked != null) {
+                    setDialogState(() {
+                      addressController.text = picked.address;
+                    });
+                  }
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.map_outlined, color: AppColors.primary, size: 18),
+                      const SizedBox(width: 8),
+                      Text(
+                        'post_choose_on_map'.tr,
+                        style: AppStyles.bodyMedium.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogCtx),
+              child: Text('btn_cancel'.tr),
             ),
-          ),
+            ElevatedButton(
+              onPressed: () {
+                final newAddress = addressController.text.trim();
+                controller.address.value = newAddress;
+                Navigator.pop(dialogCtx);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              child: Text('btn_save'.tr, style: const TextStyle(color: Colors.white)),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('btn_cancel'.tr),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final newAddress = addressController.text.trim();
-              Navigator.pop(context);
-              await controller.updateProfile(newAddress: newAddress);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-            child: Text('btn_save'.tr, style: const TextStyle(color: Colors.white)),
-          ),
-        ],
       ),
     );
   }

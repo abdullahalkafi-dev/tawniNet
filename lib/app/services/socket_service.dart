@@ -15,6 +15,7 @@ class SocketService extends GetxService {
   // Rooms to re-join after reconnect
   final Set<String> _joinedConversations = {};
   final Set<String> _joinedSupportTickets = {};
+  final Set<String> _joinedTrackingJobs = {};
 
   // Broadcast streams — multiple listeners can subscribe
   final _messageController = StreamController<ChatMessage>.broadcast();
@@ -29,6 +30,7 @@ class SocketService extends GetxService {
   final _jobCancelledController = StreamController<Map<String, dynamic>>.broadcast();
   final _walletTopupController = StreamController<Map<String, dynamic>>.broadcast();
   final _supportMessageController = StreamController<Map<String, dynamic>>.broadcast();
+  final _trackingLocationController = StreamController<Map<String, dynamic>>.broadcast();
 
   // Public streams
   Stream<ChatMessage> get onNewMessage => _messageController.stream;
@@ -43,6 +45,7 @@ class SocketService extends GetxService {
   Stream<Map<String, dynamic>> get onJobCancelled => _jobCancelledController.stream;
   Stream<Map<String, dynamic>> get onWalletTopupSuccess => _walletTopupController.stream;
   Stream<Map<String, dynamic>> get onSupportMessage => _supportMessageController.stream;
+  Stream<Map<String, dynamic>> get onTrackingLocationUpdate => _trackingLocationController.stream;
   IO.Socket? get socket => _socket;
 
   /// Connect to the socket server with JWT token.
@@ -174,6 +177,14 @@ class SocketService extends GetxService {
         _supportMessageController.add(Map<String, dynamic>.from(data));
       }
     });
+
+    _socket?.on('tracking:location_update', (data) {
+      if (data is Map<String, dynamic>) {
+        _trackingLocationController.add(data);
+      } else if (data is Map) {
+        _trackingLocationController.add(Map<String, dynamic>.from(data));
+      }
+    });
   }
 
   void _removeChatListeners() {
@@ -189,6 +200,7 @@ class SocketService extends GetxService {
     _socket?.off('job:cancelled');
     _socket?.off('wallet:topup_success');
     _socket?.off('support:message');
+    _socket?.off('tracking:location_update');
   }
 
   /// Disconnect from the socket server.
@@ -196,6 +208,7 @@ class SocketService extends GetxService {
   void disconnect() {
     _joinedConversations.clear();
     _joinedSupportTickets.clear();
+    _joinedTrackingJobs.clear();
     _socket?.disconnect();
     _socket?.dispose();
     _socket = null;
@@ -210,6 +223,9 @@ class SocketService extends GetxService {
     }
     for (final id in _joinedSupportTickets) {
       _socket?.emit('support:join', {'ticketId': id});
+    }
+    for (final id in _joinedTrackingJobs) {
+      _socket?.emit('tracking:join', {'jobId': id});
     }
   }
 
@@ -274,6 +290,25 @@ class SocketService extends GetxService {
     _socket?.emit('support:leave', {'ticketId': ticketId});
   }
 
+  /// Join a job tracking room.
+  void joinTracking(String jobId) {
+    if (jobId.isEmpty) return;
+    _joinedTrackingJobs.add(jobId);
+    _socket?.emit('tracking:join', {'jobId': jobId});
+  }
+
+  /// Leave a job tracking room.
+  void leaveTracking(String jobId) {
+    if (jobId.isEmpty) return;
+    _joinedTrackingJobs.remove(jobId);
+    _socket?.emit('tracking:leave', {'jobId': jobId});
+  }
+
+  /// Emit periodic or on-move helper location ping.
+  void emitHelperLocationPing(Map<String, dynamic> data) {
+    _socket?.emit('helper:location_ping', data);
+  }
+
   @override
   void onClose() {
     disconnect();
@@ -289,6 +324,7 @@ class SocketService extends GetxService {
     _jobCancelledController.close();
     _walletTopupController.close();
     _supportMessageController.close();
+    _trackingLocationController.close();
     super.onClose();
   }
 }

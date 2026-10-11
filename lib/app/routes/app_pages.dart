@@ -34,6 +34,7 @@ import '../modules/booking/views/booking_details_view.dart';
 import '../modules/booking/views/cancel_details_view.dart';
 import '../modules/messages/views/chat_detail_view.dart';
 import '../modules/profile/views/edit_profile_view.dart';
+import '../modules/home/views/notifications_view.dart';
 import '../modules/profile/views/notification_settings_view.dart';
 import '../modules/wallet/views/wallet_view.dart';
 
@@ -209,6 +210,13 @@ class AppPages {
     GetPage(
       name: Routes.editProfile,
       page: () => const EditProfileView(),
+      binding: HomeBinding(),
+      transition: Transition.rightToLeft,
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: Routes.notifications,
+      page: () => const NotificationsView(),
       binding: HomeBinding(),
       transition: Transition.rightToLeft,
       middlewares: [AuthMiddleware()],

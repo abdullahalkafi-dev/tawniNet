@@ -1,21 +1,84 @@
+import 'dart:async';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
 import 'package:awnneaapp/app/core/utils/datetime_format.dart';
 import 'package:awnneaapp/app/core/utils/job_display.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/widgets/job_status_timeline.dart';
+import 'package:awnneaapp/app/services/location_service.dart';
+import 'package:awnneaapp/app/services/socket_service.dart';
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
+import 'package:awnneaapp/app/modules/messages/views/widgets/image_viewer_screen.dart';
+import 'package:awnneaapp/app/modules/booking/views/live_tracking_view.dart';
 import 'package:awnneaapp/app/modules/helper/helper_jobs/controllers/helper_jobs_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class ActiveJobDetailsView extends StatelessWidget {
+class ActiveJobDetailsView extends StatefulWidget {
   const ActiveJobDetailsView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final job = Get.arguments is Map
+  State<ActiveJobDetailsView> createState() => _ActiveJobDetailsViewState();
+}
+
+class _ActiveJobDetailsViewState extends State<ActiveJobDetailsView> {
+  late final Map<String, dynamic> job;
+  StreamSubscription? _remoteCancelSub;
+
+  @override
+  void initState() {
+    super.initState();
+    job = Get.arguments is Map
         ? Map<String, dynamic>.from(Get.arguments as Map)
         : <String, dynamic>{};
+
+    final jobId = (job['id'] ?? job['_id'])?.toString();
+    if (jobId != null && jobId.isNotEmpty && Get.isRegistered<LocationService>()) {
+      Get.find<LocationService>().setActiveJobId(jobId);
+    }
+
+    if (jobId != null && jobId.isNotEmpty && Get.isRegistered<SocketService>()) {
+      _remoteCancelSub = Get.find<SocketService>().onJobCancelled.listen((data) {
+        final remoteId = (data['id'] ?? data['_id'])?.toString();
+        if (remoteId == jobId && mounted) {
+          if (Get.isRegistered<LocationService>()) {
+            Get.find<LocationService>().setActiveJobId(null);
+          }
+          Navigator.of(context).pop();
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _remoteCancelSub?.cancel();
+    // Note: Do not clear _activeJobId here so tab/background navigation
+    // keeps sending active job pings while the job is in-progress.
+    super.dispose();
+  }
+
+  Future<void> _openExternalDirections(double lat, double lon, String address) async {
+    final googleMapsUri = Uri.parse(
+      'https://www.google.com/maps/dir/?api=1&destination=$lat,$lon',
+    );
+    try {
+      if (await canLaunchUrl(googleMapsUri)) {
+        await launchUrl(googleMapsUri, mode: LaunchMode.externalApplication);
+        return;
+      }
+    } catch (_) {}
+    final fallbackUri = Uri.parse('geo:$lat,$lon?q=$lat,$lon($address)');
+    try {
+      if (await canLaunchUrl(fallbackUri)) {
+        await launchUrl(fallbackUri, mode: LaunchMode.externalApplication);
+      }
+    } catch (_) {}
+  }
+
+  @override
+  Widget build(BuildContext context) {
 
     return Scaffold(
       appBar: AppBar(
@@ -35,6 +98,85 @@ class ActiveJobDetailsView extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildJobInfoTable(context, job),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        final coords = job['location'] is Map ? job['location']['coordinates'] : null;
+                        double? lon = coords is List && coords.length >= 2 ? (coords[0] as num?)?.toDouble() : null;
+                        double? lat = coords is List && coords.length >= 2 ? (coords[1] as num?)?.toDouble() : null;
+
+                        double? helperLat;
+                        double? helperLon;
+                        if (Get.isRegistered<LocationService>()) {
+                          final loc = Get.find<LocationService>();
+                          helperLat = loc.currentLatitude.value;
+                          helperLon = loc.currentLongitude.value;
+                        }
+
+                        Get.to(
+                          () => const LiveTrackingView(),
+                          arguments: {
+                            'jobId': (job['id'] ?? job['_id'])?.toString() ?? '',
+                            'jobTitle': JobDisplay.categoryName(job['category'], fallback: 'Job Location'),
+                            'address': job['address']?.toString() ?? 'Customer Location',
+                            'latitude': lat,
+                            'longitude': lon,
+                            'helperLat': helperLat,
+                            'helperLon': helperLon,
+                          },
+                        );
+                      },
+                      icon: const Icon(Icons.map_outlined, color: Colors.white, size: 20),
+                      label: const Text(
+                        'Live Map',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: SizedBox(
+                    height: 50,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        final coords = job['location'] is Map ? job['location']['coordinates'] : null;
+                        double? lon = coords is List && coords.length >= 2 ? (coords[0] as num?)?.toDouble() : null;
+                        double? lat = coords is List && coords.length >= 2 ? (coords[1] as num?)?.toDouble() : null;
+                        if (lat != null && lon != null) {
+                          _openExternalDirections(lat, lon, job['address']?.toString() ?? 'Customer');
+                        } else {
+                          AppFeedback.info('Coordinates not available for direct navigation');
+                        }
+                      },
+                      icon: const Icon(Icons.directions, color: AppColors.primary, size: 20),
+                      label: const Text(
+                        'Directions',
+                        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.primary, width: 1.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 16),
             _buildJobDescriptionWithPhotos(context, job),
             const SizedBox(height: 16),
@@ -198,29 +340,47 @@ class ActiveJobDetailsView extends StatelessWidget {
             const SizedBox(height: 16),
             Text('label_photos'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 16)),
             const SizedBox(height: 12),
-            Row(
-              children: List.generate(photos.length.clamp(0, 3), (index) {
-                return Padding(
-                  padding: EdgeInsets.only(right: index < 2 ? 12 : 0),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      photos[index].toString(),
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
-                          width: 100,
-                          height: 100,
-                          color: context.inputFillLight,
-                          child: Icon(Icons.image, color: context.textHintColor),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                children: List.generate(photos.length, (index) {
+                  final photoList = photos.map((p) => p.toString()).toList();
+                  final rawUrl = photos[index].toString();
+                  final resolvedUrl = ApiConstants.resolveImageUrl(rawUrl) ?? rawUrl;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: GestureDetector(
+                      onTap: () {
+                        Get.to(
+                          () => ImageViewerScreen(
+                            imageUrls: photoList,
+                            initialIndex: index,
+                          ),
                         );
                       },
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          resolvedUrl,
+                          width: 95,
+                          height: 95,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 95,
+                              height: 95,
+                              color: context.inputFillLight,
+                              child: Icon(Icons.image, color: context.textHintColor),
+                            );
+                          },
+                        ),
+                      ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                }),
+              ),
             ),
           ],
         ],
@@ -348,14 +508,17 @@ class ActiveJobDetailsView extends StatelessWidget {
                                 );
                                 return;
                               }
-                              Get.back();
+                              Get.back(); // Dismiss cancel bottom sheet
                               final controller = Get.find<HelperJobsController>();
                               final ok = await controller.cancelJob(
                                 jobId,
                                 reason: reason,
                               );
-                              if (ok && Get.context != null) {
-                                Get.back();
+                              if (ok && mounted) {
+                                if (Get.isRegistered<LocationService>()) {
+                                  Get.find<LocationService>().setActiveJobId(null);
+                                }
+                                Navigator.of(context).pop();
                               }
                             },
                             style: ElevatedButton.styleFrom(

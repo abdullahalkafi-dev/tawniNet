@@ -3,6 +3,8 @@ import 'package:awnneaapp/app/core/utils/job_display.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/values/app_currency.dart';
+import 'package:awnneaapp/app/core/constants/api_constants.dart';
+import 'package:awnneaapp/app/modules/messages/views/widgets/image_viewer_screen.dart';
 import 'package:awnneaapp/app/core/widgets/custom_button.dart';
 import 'package:awnneaapp/app/core/widgets/job_status_timeline.dart';
 import 'package:awnneaapp/app/modules/helper/helper_jobs/controllers/helper_jobs_controller.dart';
@@ -388,24 +390,42 @@ class _CompletedJobDetailsViewState extends State<CompletedJobDetailsView> {
       children: [
         Text('label_photos'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 16)),
         const SizedBox(height: 12),
-        Row(
-          children: List.generate(photos.length.clamp(0, 3), (index) {
-            return Padding(
-              padding: EdgeInsets.only(right: index < 2 ? 12 : 0),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  photos[index].toString(),
-                  width: 100,
-                  height: 100,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(width: 100, height: 100, color: context.inputFillLight);
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: Row(
+            children: List.generate(photos.length, (index) {
+              final photoList = photos.map((p) => p.toString()).toList();
+              final rawUrl = photos[index].toString();
+              final resolvedUrl = ApiConstants.resolveImageUrl(rawUrl) ?? rawUrl;
+
+              return Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: GestureDetector(
+                  onTap: () {
+                    Get.to(
+                      () => ImageViewerScreen(
+                        imageUrls: photoList,
+                        initialIndex: index,
+                      ),
+                    );
                   },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.network(
+                      resolvedUrl,
+                      width: 95,
+                      height: 95,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(width: 95, height: 95, color: context.inputFillLight);
+                      },
+                    ),
+                  ),
                 ),
-              ),
-            );
-          }),
+              );
+            }),
+          ),
         ),
       ],
     );

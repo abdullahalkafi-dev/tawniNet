@@ -4,6 +4,7 @@ import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:awnneaapp/app/core/widgets/location_map_picker.dart';
 import '../controllers/post_job_controller.dart';
 
 class PostJobView extends GetView<PostJobController> {
@@ -291,21 +292,66 @@ class PostJobView extends GetView<PostJobController> {
         ),
         const SizedBox(height: 8),
 
-        // Use current location button
-        GestureDetector(
-          onTap: controller.useCurrentLocation,
-          child: Row(
-            children: [
-              const Icon(Icons.send, color: AppColors.primary, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                'post_use_location'.tr,
-                style: AppStyles.bodyLargeOf(context).copyWith(
-                  fontWeight: FontWeight.w600,
+        // Action row: Use current location & Pick on map
+        Row(
+          children: [
+            InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: controller.useCurrentLocation,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.my_location, color: AppColors.primary, size: 17),
+                    const SizedBox(width: 6),
+                    Text(
+                      'post_use_location'.tr,
+                      style: AppStyles.bodyMedium.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+            const Spacer(),
+            InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () async {
+                final picked = await LocationMapPicker.show(
+                  context,
+                  initialLatitude: controller.selectedLatitude.value,
+                  initialLongitude: controller.selectedLongitude.value,
+                  initialAddress: controller.addressController.text.trim(),
+                );
+                if (picked != null) {
+                  controller.addressController.text = picked.address;
+                  controller.selectedLatitude.value = picked.latitude;
+                  controller.selectedLongitude.value = picked.longitude;
+                  controller.searchResults.clear();
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.map_outlined, color: AppColors.primary, size: 17),
+                    const SizedBox(width: 6),
+                    Text(
+                      'post_choose_on_map'.tr,
+                      style: AppStyles.bodyMedium.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 8),
 

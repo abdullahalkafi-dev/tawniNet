@@ -115,20 +115,25 @@ class HelperJob {
     }
 
     // Helper info from postedBy or top-level
-    String avatarUrl = 'https://i.pravatar.cc/150';
-    String helperName = 'Helper';
+    String avatarUrl = '';
+    String helperName = 'Client';
     String postedByUserId = '';
     if (json['postedBy'] is Map) {
-      postedByUserId = json['postedBy']['_id'] ?? '';
-      helperName = json['postedBy']['name'] ?? 'Helper';
+      postedByUserId = json['postedBy']['_id']?.toString() ?? '';
+      helperName = json['postedBy']['name']?.toString() ?? 'Client';
       if (json['postedBy']['avatar'] != null && (json['postedBy']['avatar'] as String).isNotEmpty) {
         avatarUrl = ApiConstants.resolveImageUrl(json['postedBy']['avatar']) ?? json['postedBy']['avatar'];
       }
     } else {
+      if (json['postedBy'] is String) {
+        postedByUserId = json['postedBy'] as String;
+      }
       if (json['avatar'] != null && (json['avatar'] as String).isNotEmpty) {
         avatarUrl = ApiConstants.resolveImageUrl(json['avatar']) ?? json['avatar'];
       }
-      helperName = json['name'] ?? 'Helper';
+      if (json['name'] != null && (json['name'] as String).isNotEmpty) {
+        helperName = json['name'] as String;
+      }
     }
 
     final bio = json['description'] as String?;

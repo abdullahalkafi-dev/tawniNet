@@ -8,6 +8,7 @@ import 'package:awnneaapp/app/core/widgets/simple_time_picker.dart';
 import 'package:awnneaapp/app/data/models/message_model.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
+import 'package:awnneaapp/app/core/widgets/location_map_picker.dart';
 import 'package:awnneaapp/app/services/location_service.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
@@ -135,6 +136,25 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
       _selectedLongitude = lng;
       _addressSuggestions = [];
     });
+  }
+
+  Future<void> _useCurrentLocation() async {
+    try {
+      if (Get.isRegistered<LocationService>()) {
+        final loc = Get.find<LocationService>();
+        final address = await loc.getCurrentAddress();
+        if (address != null && address.isNotEmpty) {
+          setState(() {
+            _addressController.text = address;
+            _selectedLatitude = loc.currentLatitude.value;
+            _selectedLongitude = loc.currentLongitude.value;
+            _addressSuggestions = [];
+          });
+          return;
+        }
+      }
+    } catch (_) {}
+    AppFeedback.info('Could not fetch current location coordinates');
   }
 
   @override
@@ -275,6 +295,32 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                       }),
                     ],
                   ),
+                  if (_paymentMethod == 'cash') ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.amber.withOpacity(0.35)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline, size: 16, color: Colors.amber),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Platform commission (20%) is held from your recharge wallet when sending, and refunded if the offer is cancelled or rejected.',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: context.textPrimaryColor,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
 
                   // Images
@@ -490,6 +536,71 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
               contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
           ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: _useCurrentLocation,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.my_location, color: AppColors.primary, size: 16),
+                    const SizedBox(width: 6),
+                    Text(
+                      'post_use_location'.tr,
+                      style: AppStyles.bodyMedium.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const Spacer(),
+            InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () async {
+                final picked = await LocationMapPicker.show(
+                  context,
+                  initialLatitude: _selectedLatitude,
+                  initialLongitude: _selectedLongitude,
+                  initialAddress: _addressController.text.trim(),
+                );
+                if (picked != null) {
+                  setState(() {
+                    _addressController.text = picked.address;
+                    _selectedLatitude = picked.latitude;
+                    _selectedLongitude = picked.longitude;
+                    _addressSuggestions = [];
+                  });
+                }
+              },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.map_outlined, color: AppColors.primary, size: 16),
+                    const SizedBox(width: 6),
+                    Text(
+                      'post_choose_on_map'.tr,
+                      style: AppStyles.bodyMedium.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
         if (_addressSuggestions.isNotEmpty) ...[
           const SizedBox(height: 6),
@@ -772,13 +883,13 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
       );
       return;
     }
-    if (_selectedLatitude == null || _selectedLongitude == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pick a location from the search results'),
-        ),
-      );
-      return;
+
+    double? lat = _selectedLatitude;
+    double? lon = _selectedLongitude;
+    if ((lat == null || lon == null) && Get.isRegistered<LocationService>()) {
+      final loc = Get.find<LocationService>();
+      lat = loc.currentLatitude.value;
+      lon = loc.currentLongitude.value;
     }
 
     widget.onOfferSent({
@@ -790,8 +901,8 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
       'startTime': AppDateTime.formatTime12h(_startTimeController.text),
       'endTime': AppDateTime.formatTime12h(_endTimeController.text),
       'address': address,
-      if (_selectedLatitude != null) 'latitude': _selectedLatitude,
-      if (_selectedLongitude != null) 'longitude': _selectedLongitude,
+      if (lat != null) 'latitude': lat,
+      if (lon != null) 'longitude': lon,
       'paymentMethod': _paymentMethod,
       'images': _selectedImages,
     });

@@ -68,6 +68,8 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       // When user returns from the Didit verification browser
       final user = Get.find<AuthService>().currentUser.value;
+      if (user?.helperApplicationStatus == 'approved') return;
+      if (isSyncingKyc.value) return;
       if (activeDiditSessionId.value != null || user?.diditSessionId != null) {
         _pollKycOnResume();
       }
@@ -75,10 +77,12 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
   }
 
   void _pollKycOnResume() async {
+    final initialUser = Get.find<AuthService>().currentUser.value;
+    if (initialUser?.helperApplicationStatus == 'approved') return;
+
     _resumePollCount = 0;
     while (_resumePollCount < 4) {
       if (isClosed) return;
-      await syncKycStatus(showFeedback: false);
       final user = Get.find<AuthService>().currentUser.value;
       if (user?.helperApplicationStatus == 'approved' ||
           user?.helperApplicationStatus == 'rejected' ||
@@ -86,6 +90,7 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
           user?.helperApplicationStatus == 'pending_appeal') {
         break;
       }
+      await syncKycStatus(showFeedback: false);
       _resumePollCount++;
       await Future.delayed(const Duration(seconds: 3));
     }
@@ -203,7 +208,7 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
       if (images.isEmpty) return;
 
       for (final image in images) {
-        if (selectedPhotoPaths.length >= 5) {
+        if (uploadedPhotoKeys.length + selectedPhotoPaths.length >= 5) {
           _showError('Maximum 5 photos allowed');
           break;
         }
@@ -218,21 +223,34 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
 
   Future<void> _uploadPhotoInBackground(String path) async {
     final key = await _uploadFile(path, 'image');
+    if (!selectedPhotoPaths.contains(path)) {
+      // User removed this photo while it was uploading
+      return;
+    }
+    selectedPhotoPaths.remove(path);
     if (key != null) {
       uploadedPhotoKeys.add(key);
       try {
         final authService = Get.find<AuthService>();
         await authService.updateProfile({'profilePhotos': uploadedPhotoKeys.toList()});
       } catch (_) {}
+    } else {
+      _showError('Failed to upload an image');
     }
   }
 
-  void removePhoto(int index) {
-    if (index < selectedPhotoPaths.length) {
-      selectedPhotoPaths.removeAt(index);
-    }
+  Future<void> removePhoto(int index) async {
     if (index < uploadedPhotoKeys.length) {
       uploadedPhotoKeys.removeAt(index);
+      try {
+        final authService = Get.find<AuthService>();
+        await authService.updateProfile({'profilePhotos': uploadedPhotoKeys.toList()});
+      } catch (_) {}
+    } else {
+      final pendingIndex = index - uploadedPhotoKeys.length;
+      if (pendingIndex >= 0 && pendingIndex < selectedPhotoPaths.length) {
+        selectedPhotoPaths.removeAt(pendingIndex);
+      }
     }
   }
 
