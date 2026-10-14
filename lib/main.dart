@@ -45,7 +45,7 @@ void main() async {
   // Firebase MUST be ready before any FirebaseMessaging access
   try {
     if (Firebase.apps.isEmpty) {
-      await Firebase.initializeApp();
+      await Firebase.initializeApp().timeout(const Duration(seconds: 3));
       debugPrint('[FCM] Firebase.initializeApp OK (main)');
     }
   } catch (e) {

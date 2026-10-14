@@ -54,6 +54,10 @@ class NearbyHelpers extends GetView<HomeController> {
   }
 
   Widget _buildHelperCard(BuildContext context, HelperJob job) {
+    final bool isDuplicate = job.title.trim().toLowerCase() ==
+        job.description.trim().toLowerCase();
+    final bool showTitle = job.title.trim().isNotEmpty && !isDuplicate;
+
     return GestureDetector(
       onTap: () => controller.onJobSelected(job),
       child: Container(
@@ -141,38 +145,43 @@ class NearbyHelpers extends GetView<HomeController> {
                 ),
               ],
             ),
-            const SizedBox(height: 14),
-            Text(
-              job.title,
-              style: AppStyles.bodyLargeOf(context).copyWith(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-              ),
-            ),
-            const SizedBox(height: 6),
-            RichText(
-              text: TextSpan(
-                style: AppStyles.bodyMediumOf(context).copyWith(
-                  fontSize: 13,
-                  height: 1.4,
+            if (showTitle) ...[
+              const SizedBox(height: 12),
+              Text(
+                job.title,
+                style: AppStyles.bodyLargeOf(context).copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
                 ),
-                children: [
-                  TextSpan(
-                    text: job.description.replaceAll(' Read More', ''),
-                  ),
-                  if (job.description.contains('Read More'))
-                    const TextSpan(
-                      text: ' Read More',
-                      style: TextStyle(
-                        color: Color(0xFF5AB9A7),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                ],
               ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
+              const SizedBox(height: 6),
+            ] else ...[
+              const SizedBox(height: 12),
+            ],
+            if (job.description.trim().isNotEmpty)
+              RichText(
+                text: TextSpan(
+                  style: AppStyles.bodyMediumOf(context).copyWith(
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: job.description.replaceAll(' Read More', ''),
+                    ),
+                    if (job.description.contains('Read More'))
+                      const TextSpan(
+                        text: ' Read More',
+                        style: TextStyle(
+                          color: Color(0xFF5AB9A7),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                  ],
+                ),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
             const SizedBox(height: 14),
             Row(
               children: [

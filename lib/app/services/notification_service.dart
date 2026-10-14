@@ -96,12 +96,14 @@ class NotificationService extends GetxService {
     }
 
     try {
-      final settings = await _messaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-        provisional: false,
-      );
+      final settings = await _messaging
+          .requestPermission(
+            alert: true,
+            badge: true,
+            sound: true,
+            provisional: false,
+          )
+          .timeout(const Duration(seconds: 2));
       debugPrint('[FCM] permission: ${settings.authorizationStatus}');
     } catch (e) {
       debugPrint('[FCM] requestPermission failed: $e');
@@ -125,7 +127,9 @@ class NotificationService extends GetxService {
     }
 
     try {
-      final initial = await _messaging.getInitialMessage();
+      final initial = await _messaging
+          .getInitialMessage()
+          .timeout(const Duration(seconds: 2), onTimeout: () => null);
       if (initial != null) {
         isColdStartHandling = true;
         _pendingInitialMessage = initial;
@@ -153,7 +157,9 @@ class NotificationService extends GetxService {
         _registerTokenIfLoggedIn(token);
       });
 
-      _fcmToken = await _messaging.getToken();
+      _fcmToken = await _messaging
+          .getToken()
+          .timeout(const Duration(seconds: 2), onTimeout: () => null);
       debugPrint('[FCM] token: ${_safeTokenPreview(_fcmToken)}');
       await _registerTokenIfLoggedIn(_fcmToken);
     } catch (e) {
