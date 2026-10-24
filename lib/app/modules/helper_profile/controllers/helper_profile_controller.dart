@@ -61,7 +61,7 @@ class HelperProfileController extends GetxController {
         if (item is! Map) continue;
         final map = Map<String, dynamic>.from(item);
         final reviewer = map['reviewer'];
-        String name = 'Client';
+        String name = 'ui_client'.tr;
         String avatar = '';
         if (reviewer is Map) {
           name = (reviewer['name'] ?? name).toString();
@@ -106,7 +106,7 @@ class HelperProfileController extends GetxController {
         Routes.chatDetail,
         arguments: ChatSummary(
           id: conversation.id,
-          name: other?.name ?? helper.value?.name ?? 'Helper',
+          name: other?.name ?? helper.value?.name ?? 'ui_helper'.tr,
           image: other?.avatar ?? '',
         ),
       );
@@ -144,7 +144,7 @@ class HelperProfileController extends GetxController {
       Routes.chatDetail,
       arguments: ChatSummary(
         id: conversation.id,
-        name: other?.name ?? helper.value?.name ?? 'Helper',
+        name: other?.name ?? helper.value?.name ?? 'ui_helper'.tr,
         image: other?.avatar ?? '',
       ),
     );

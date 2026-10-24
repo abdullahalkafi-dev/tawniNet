@@ -20,7 +20,7 @@ Widget buildDateSeparator(BuildContext context, DateTime date) {
   if (messageDate == today) {
     label = 'chat_today'.tr;
   } else if (messageDate == today.subtract(const Duration(days: 1))) {
-    label = 'Yesterday';
+    label = 'label_yesterday'.tr;
   } else {
     label = '${date.day}/${date.month}/${date.year}';
   }

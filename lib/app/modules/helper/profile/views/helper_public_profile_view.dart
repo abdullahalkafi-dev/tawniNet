@@ -67,7 +67,7 @@ class _HelperPublicProfileViewState extends State<HelperPublicProfileView> {
 
   Widget _buildProfileHeader(BuildContext context, dynamic user) {
     final avatar = user.avatar;
-    final name = user.name ?? 'Helper';
+    final name = user.name ?? 'ui_helper'.tr;
     final serviceName = user.serviceType != null
         ? (user.serviceType is String
             ? user.serviceType
@@ -151,7 +151,7 @@ class _HelperPublicProfileViewState extends State<HelperPublicProfileView> {
           Text('label_about_me'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 18)),
           const SizedBox(height: 12),
           Text(
-            'No bio added yet.',
+            'ui_no_bio_added_yet'.tr,
             style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
           ),
         ],
@@ -211,7 +211,7 @@ class _HelperPublicProfileViewState extends State<HelperPublicProfileView> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
-              child: Text('No photos added yet', style: TextStyle(color: context.textHintColor)),
+              child: Text('ui_no_photos_added_yet'.tr, style: TextStyle(color: context.textHintColor)),
             ),
           )
         else
@@ -256,13 +256,13 @@ class _HelperPublicProfileViewState extends State<HelperPublicProfileView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Details', style: AppStyles.h2Of(context).copyWith(fontSize: 18)),
+        Text('helper_details_btn'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 18)),
         const SizedBox(height: 12),
-        _buildInfoRow(context, Icons.location_on_outlined, 'Location', user.address ?? 'Not set'),
-        _buildInfoRow(context, Icons.work_outline, 'Experience', '${user.experience ?? 0} years'),
-        _buildInfoRow(context, Icons.attach_money, 'Price', '${user.pricePerHour ?? 0}/hour'),
-        _buildInfoRow(context, Icons.language, 'Language', user.language ?? 'Not set'),
-        _buildInfoRow(context, Icons.my_location, 'Service Radius', '${user.serviceRadius ?? 0} km'),
+        _buildInfoRow(context, Icons.location_on_outlined, 'label_location'.tr, user.address ?? 'ui_not_set'.tr),
+        _buildInfoRow(context, Icons.work_outline, 'helper_experience'.tr, '${user.experience ?? 0} years'),
+        _buildInfoRow(context, Icons.attach_money, 'ui_price'.tr, '${user.pricePerHour ?? 0}/hour'),
+        _buildInfoRow(context, Icons.language, 'profile_language'.tr, user.language ?? 'ui_not_set'.tr),
+        _buildInfoRow(context, Icons.my_location, 'ui_service_radius'.tr, '${user.serviceRadius ?? 0} km'),
       ],
     );
   }

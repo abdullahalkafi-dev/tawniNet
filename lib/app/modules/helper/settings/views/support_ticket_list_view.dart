@@ -75,11 +75,11 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
   String _statusLabel(String status) {
     switch (status) {
       case 'open':
-        return 'Open';
+        return 'ui_open'.tr;
       case 'in_progress':
-        return 'In Progress';
+        return 'status_in_progress'.tr;
       case 'resolved':
-        return 'Resolved';
+        return 'ui_resolved'.tr;
       case 'all':
         return 'All';
       default:
@@ -88,11 +88,11 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
   }
 
   void _showFilterSheet() {
-    const options = [
-      ('open', 'Open'),
-      ('in_progress', 'In Progress'),
-      ('resolved', 'Resolved'),
-      ('all', 'All'),
+    final options = [
+      ('open', 'ui_open'.tr),
+      ('in_progress', 'status_in_progress'.tr),
+      ('resolved', 'ui_resolved'.tr),
+      ('all', 'label_all'.tr),
     ];
     Get.bottomSheet(
       Container(
@@ -108,7 +108,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                 child: Text(
-                  'Filter by status',
+                  'ui_filter_by_status'.tr,
                   style: AppStyles.bodyLargeOf(context).copyWith(
                     fontWeight: FontWeight.w600,
                     color: context.textPrimaryColor,
@@ -159,7 +159,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
       builder: (dialogCtx) => AlertDialog(
         backgroundColor: dialogCtx.cardColor,
         title: Text(
-          'New Support Ticket',
+          'ui_new_support_ticket'.tr,
           style: AppStyles.h2Of(dialogCtx).copyWith(fontSize: 18),
         ),
         content: Column(
@@ -169,7 +169,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
               controller: subjectController,
               style: TextStyle(color: dialogCtx.textPrimaryColor),
               decoration: InputDecoration(
-                hintText: 'Subject (e.g. Payment issue, Job #12)',
+                hintText: 'ui_subject_e_g_payment_issue_job_12'.tr,
                 hintStyle: TextStyle(color: dialogCtx.textHintColor),
                 filled: true,
                 fillColor: dialogCtx.inputFillColor,
@@ -193,7 +193,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
               maxLines: 3,
               style: TextStyle(color: dialogCtx.textPrimaryColor),
               decoration: InputDecoration(
-                hintText: 'Describe your issue...',
+                hintText: 'ui_describe_your_issue'.tr,
                 hintStyle: TextStyle(color: dialogCtx.textHintColor),
                 filled: true,
                 fillColor: dialogCtx.inputFillColor,
@@ -217,7 +217,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
           TextButton(
             onPressed: () => Navigator.pop(dialogCtx),
             child: Text(
-              'Cancel',
+              'btn_cancel'.tr,
               style: TextStyle(color: dialogCtx.textSecondaryColor),
             ),
           ),
@@ -233,7 +233,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-            child: const Text('Submit', style: TextStyle(color: Colors.white)),
+            child: Text('btn_submit'.tr, style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -249,7 +249,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Support',
+          'ui_support'.tr,
           style: AppStyles.h2Of(context).copyWith(fontSize: 20),
         ),
         centerTitle: true,
@@ -294,14 +294,14 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
                 const SizedBox(height: 16),
                 Text(
                   _controller.statusFilter.value == 'all'
-                      ? 'No support tickets yet.'
-                      : 'No ${_statusLabel(_controller.statusFilter.value).toLowerCase()} tickets.',
+                      ? 'ui_no_support_tickets_yet'.tr
+                      : 'ui_no_tickets_with_status'.trParams({'status': _statusLabel(_controller.statusFilter.value)}),
                   style: AppStyles.bodyMediumOf(context)
                       .copyWith(color: context.textSecondaryColor),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Tap + to create a new ticket.',
+                  'ui_tap_to_create_a_new_ticket'.tr,
                   style: AppStyles.bodySmallOf(context)
                       .copyWith(color: context.textHintColor, fontSize: 12),
                 ),
@@ -309,7 +309,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
                 TextButton.icon(
                   onPressed: _showFilterSheet,
                   icon: const Icon(Icons.tune_rounded, size: 18),
-                  label: const Text('Change filter'),
+                  label: Text('ui_change_filter'.tr),
                 ),
               ],
             ),
@@ -394,7 +394,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
                             if (resolved) ...[
                               const SizedBox(height: 6),
                               Text(
-                                'Read-only · Create a new ticket for another issue',
+                                'ui_read_only_create_a_new_ticket_for'.tr,
                                 style: AppStyles.bodySmallOf(context).copyWith(
                                   color: context.textHintColor,
                                   fontStyle: FontStyle.italic,

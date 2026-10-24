@@ -91,7 +91,7 @@ class ManualLocationView extends GetView<LocationController> {
                     child: Padding(
                       padding: const EdgeInsets.all(24.0),
                       child: Text(
-                        'Type to search for any address...',
+                        'ui_type_to_search_for_any_address'.tr,
                         style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
                         textAlign: TextAlign.center,
                       ),

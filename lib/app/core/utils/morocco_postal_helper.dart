@@ -1,3 +1,5 @@
+import 'package:get/get.dart';
+
 class MoroccoPostalHelper {
   MoroccoPostalHelper._();
 
@@ -75,7 +77,7 @@ class MoroccoPostalHelper {
   /// Validates a city / zip code string (e.g. "Casablanca 20000" or "20000" or "Casablanca")
   static String? validateCityZip(String? input) {
     if (input == null || input.trim().isEmpty) {
-      return 'Please enter your City and Zip Code (e.g. Casablanca 20000)';
+      return 'ui_please_enter_your_city_and_zip_code'.tr;
     }
 
     final trimmed = input.trim();
@@ -85,12 +87,12 @@ class MoroccoPostalHelper {
     if (match != null) {
       final code = match.group(0)!;
       if (!isValidPostalCode(code)) {
-        return 'Please enter a valid 5-digit Moroccan postal code (10000 to 95000)';
+        return 'ui_please_enter_a_valid_5_digit_moroccan'.tr;
       }
     }
 
     if (trimmed.length < 3) {
-      return 'Please enter a valid Moroccan city or postal code';
+      return 'ui_please_enter_a_valid_moroccan_city_or'.tr;
     }
 
     return null;

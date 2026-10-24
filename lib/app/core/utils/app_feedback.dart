@@ -23,11 +23,11 @@ class AppFeedback {
 
   static void error(
     String message, {
-    String title = 'Something went wrong',
+    String? title,
     SnackPosition position = SnackPosition.BOTTOM,
   }) {
     _show(
-      title: title,
+      title: title ?? 'feedback_error_title'.tr,
       message: message,
       position: position,
       bg: _errorBg,
@@ -40,11 +40,11 @@ class AppFeedback {
 
   static void success(
     String message, {
-    String title = 'Done',
+    String? title,
     SnackPosition position = SnackPosition.BOTTOM,
   }) {
     _show(
-      title: title,
+      title: title ?? 'feedback_success_title'.tr,
       message: message,
       position: position,
       bg: _successBg,
@@ -57,11 +57,11 @@ class AppFeedback {
 
   static void info(
     String message, {
-    String title = 'Notice',
+    String? title,
     SnackPosition position = SnackPosition.BOTTOM,
   }) {
     _show(
-      title: title,
+      title: title ?? 'ui_notice'.tr,
       message: message,
       position: position,
       bg: _infoBg,

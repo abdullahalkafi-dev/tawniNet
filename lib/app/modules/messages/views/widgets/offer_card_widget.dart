@@ -81,7 +81,7 @@ class OfferCardWidget extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'Service Offer',
+                    'ui_service_offer'.tr,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
@@ -275,7 +275,7 @@ class OfferCardWidget extends StatelessWidget {
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 8),
                         ),
-                        child: const Text('Pay now', style: TextStyle(fontSize: 12)),
+                        child: Text('booking_pay_now'.tr, style: TextStyle(fontSize: 12)),
                       ),
                     )
                   : _buildActionButtons(offer.status),
@@ -292,23 +292,23 @@ class OfferCardWidget extends StatelessWidget {
     switch (status) {
       case 'accepted':
         color = Colors.green;
-        text = 'Accepted';
+        text = 'job_accepted'.tr;
         break;
       case 'rejected':
         color = Colors.red;
-        text = 'Rejected';
+        text = 'ui_rejected'.tr;
         break;
       case 'cancelled':
         color = Colors.orange;
-        text = 'Cancelled';
+        text = 'status_cancelled'.tr;
         break;
       case 'awaiting_payment':
         color = Colors.orange.shade800;
-        text = 'Payment required';
+        text = 'ui_payment_required'.tr;
         break;
       default:
         color = Colors.blue;
-        text = 'Pending';
+        text = 'status_pending'.tr;
     }
 
     return Container(
@@ -344,7 +344,7 @@ class OfferCardWidget extends StatelessWidget {
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 8),
               ),
-              child: const Text('Cancel', style: TextStyle(fontSize: 12)),
+              child: Text('btn_cancel'.tr, style: TextStyle(fontSize: 12)),
             ),
           ),
           const SizedBox(width: 8),
@@ -359,7 +359,7 @@ class OfferCardWidget extends StatelessWidget {
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 8),
               ),
-              child: const Text('Edit', style: TextStyle(fontSize: 12)),
+              child: Text('ui_edit'.tr, style: TextStyle(fontSize: 12)),
             ),
           ),
         ],
@@ -379,7 +379,7 @@ class OfferCardWidget extends StatelessWidget {
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 8),
               ),
-              child: const Text('Reject', style: TextStyle(fontSize: 12)),
+              child: Text('ui_reject'.tr, style: TextStyle(fontSize: 12)),
             ),
           ),
           const SizedBox(width: 8),
@@ -394,7 +394,7 @@ class OfferCardWidget extends StatelessWidget {
                 ),
                 padding: const EdgeInsets.symmetric(vertical: 8),
               ),
-              child: const Text('Accept', style: TextStyle(fontSize: 12)),
+              child: Text('ui_accept'.tr, style: TextStyle(fontSize: 12)),
             ),
           ),
         ],

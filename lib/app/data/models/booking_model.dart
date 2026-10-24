@@ -1,4 +1,5 @@
 import 'package:awnneaapp/app/core/utils/datetime_format.dart';
+import 'package:get/get.dart';
 
 enum BookingStatus {
   pendingPayment,
@@ -168,7 +169,7 @@ class Booking {
           : '',
       workerName: assigned != null
           ? ((assigned['name'] ?? 'Assigned Helper').toString())
-          : 'Looking for Helper...',
+          : 'ui_looking_for_helper'.tr,
       workerImage: assigned != null ? (assigned['avatar'] ?? '').toString() : '',
       category: cat != null
           ? ((cat['name'] ?? 'Service').toString())

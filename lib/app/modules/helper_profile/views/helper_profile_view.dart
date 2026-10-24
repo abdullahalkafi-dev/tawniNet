@@ -2,6 +2,7 @@ import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/widgets/emoji_picker_panel.dart';
+import 'package:awnneaapp/app/core/widgets/helper_trust_widgets.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/image_viewer_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -34,7 +35,7 @@ class HelperProfileView extends GetView<HelperProfileController> {
         if (helper == null) {
           return Center(
             child: Text(
-              'Helper not found',
+              'ui_helper_not_found'.tr,
               style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
             ),
           );
@@ -107,12 +108,28 @@ class HelperProfileView extends GetView<HelperProfileController> {
           ),
           const SizedBox(height: 16),
           Text(
-            helper.name ?? 'Helper',
+            helper.name ?? 'ui_helper'.tr,
             style: AppStyles.h1Of(context).copyWith(fontSize: 24),
           ),
           Text(
-            helper.categoryName ?? 'General',
+            helper.categoryName ?? 'ui_general'.tr,
             style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 10,
+            runSpacing: 6,
+            children: [
+              if (helper.isVerified) const VerifiedBadge(),
+              RatingSummary(
+                rating: helper.rating,
+                reviewCount: helper.reviewCount,
+                fontSize: 13,
+                showReviewWord: true,
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           if (helper.address != null && helper.address!.isNotEmpty)
@@ -150,17 +167,17 @@ class HelperProfileView extends GetView<HelperProfileController> {
         _buildStatItem(
           context,
           helper.experience != null ? '${helper.experience} Yrs' : 'N/A',
-          'Experience',
+          'helper_experience'.tr,
         ),
         _buildStatItem(
           context,
           helper.pricePerHour != null ? '${helper.pricePerHour!.toInt()} MAD' : 'N/A',
-          'Price/hr',
+          'ui_price_hr'.tr,
         ),
         _buildStatItem(
           context,
           helper.serviceRadius != null ? '${helper.serviceRadius} km' : 'N/A',
-          'Service Radius',
+          'ui_service_radius'.tr,
         ),
       ],
     );
@@ -217,7 +234,7 @@ class HelperProfileView extends GetView<HelperProfileController> {
         ),
         const SizedBox(height: 12),
         Text(
-          hasBio ? bio : 'No bio available',
+          hasBio ? bio : 'ui_no_bio_available'.tr,
           style: AppStyles.bodyMediumOf(context).copyWith(
             height: 1.5,
             color: hasBio ? context.textSecondaryColor : context.textHintColor,
@@ -241,7 +258,7 @@ class HelperProfileView extends GetView<HelperProfileController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'label_photos'.tr,
+          'helper_work_photos'.tr,
           style: AppStyles.h2Of(context).copyWith(fontSize: 20),
         ),
         const SizedBox(height: 16),
@@ -256,7 +273,7 @@ class HelperProfileView extends GetView<HelperProfileController> {
             ),
             child: Center(
               child: Text(
-                'No photos yet',
+                'helper_no_work_photos'.tr,
                 style: AppStyles.bodyMedium.copyWith(
                   color: context.textHintColor,
                 ),
@@ -344,7 +361,7 @@ class HelperProfileView extends GetView<HelperProfileController> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'No reviews yet',
+                    'rating_no_reviews'.tr,
                     style: AppStyles.bodyMediumOf(context).copyWith(
                       color: context.textSecondaryColor,
                       fontSize: 16,

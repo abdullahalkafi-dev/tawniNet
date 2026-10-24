@@ -68,23 +68,23 @@ class HelperJobsTabView extends GetView<HelperJobsController> {
     switch (statusRaw) {
       case 'in_progress':
       case 'inprogress':
-        statusLabel = 'In Progress';
+        statusLabel = 'status_in_progress'.tr;
         statusColor = const Color(0xFF7CE0C3);
         break;
       case 'completed':
-        statusLabel = 'Completed';
+        statusLabel = 'status_completed'.tr;
         statusColor = AppColors.primary;
         break;
       case 'cancelled':
-        statusLabel = 'Cancelled';
+        statusLabel = 'status_cancelled'.tr;
         statusColor = Colors.orange;
         break;
       case 'open':
-        statusLabel = 'Open';
+        statusLabel = 'ui_open'.tr;
         statusColor = Colors.blueGrey;
         break;
       case 'pending_payment':
-        statusLabel = 'Unpaid';
+        statusLabel = 'ui_unpaid'.tr;
         statusColor = Colors.orange.shade700;
         break;
       default:
@@ -134,7 +134,7 @@ class HelperJobsTabView extends GetView<HelperJobsController> {
               const SizedBox(height: 8),
               Center(
                 child: Text(
-                  'Pull down to refresh',
+                  'ui_pull_down_to_refresh'.tr,
                   style: TextStyle(
                     color: context.textHintColor,
                     fontSize: 12,

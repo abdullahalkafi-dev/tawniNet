@@ -74,7 +74,7 @@ class _WalletViewState extends State<WalletView> {
         _hasMore = _txs.length < total;
       }
     } catch (e) {
-      AppFeedback.error('Failed to load wallet');
+      AppFeedback.error('ui_failed_to_load_wallet'.tr);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -109,23 +109,23 @@ class _WalletViewState extends State<WalletView> {
     final amount = await showDialog<double>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Top up wallet'),
+        title: Text('ui_top_up_wallet'.tr),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Amount (MAD)',
+          decoration: InputDecoration(
+            labelText: 'ui_amount_mad'.tr,
             prefixIcon: Icon(Icons.payments_outlined),
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: Text('btn_cancel'.tr)),
           FilledButton(
             onPressed: () {
               final v = double.tryParse(controller.text.trim());
               Navigator.pop(ctx, v);
             },
-            child: const Text('Continue'),
+            child: Text('ui_continue'.tr),
           ),
         ],
       ),
@@ -162,11 +162,11 @@ class _WalletViewState extends State<WalletView> {
         );
 
         if (paid == true) {
-          AppFeedback.success('Wallet topped up successfully!');
+          AppFeedback.success('ui_wallet_topped_up_successfully'.tr);
           _load();
         }
       } else {
-        AppFeedback.error(res.message ?? 'Top-up failed');
+        AppFeedback.error(res.message ?? 'ui_top_up_failed'.tr);
       }
     } catch (e) {
       AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
@@ -178,7 +178,7 @@ class _WalletViewState extends State<WalletView> {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       appBar: AppBar(
-        title: Text('Wallet', style: AppStyles.h2Of(context).copyWith(fontSize: 18)),
+        title: Text('ui_wallet'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 18)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
@@ -217,7 +217,7 @@ class _WalletViewState extends State<WalletView> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Available balance',
+                          'ui_available_balance'.tr,
                           style: AppStyles.bodyMedium.copyWith(color: Colors.white70),
                         ),
                         const SizedBox(height: 8),
@@ -235,20 +235,20 @@ class _WalletViewState extends State<WalletView> {
                             backgroundColor: Colors.white,
                             foregroundColor: const Color(0xFF0F766E),
                           ),
-                          child: const Text('Top up'),
+                          child: Text('ui_top_up'.tr),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Text('Transactions', style: AppStyles.h2Of(context)),
+                  Text('ui_transactions'.tr, style: AppStyles.h2Of(context)),
                   const SizedBox(height: 8),
                   if (_txs.isEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 32),
                       child: Center(
                         child: Text(
-                          'No transactions yet',
+                          'ui_no_transactions_yet'.tr,
                           style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
                         ),
                       ),

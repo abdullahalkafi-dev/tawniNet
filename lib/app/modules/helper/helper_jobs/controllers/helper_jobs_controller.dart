@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:awnneaapp/app/core/constants/refetch_keys.dart';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
+import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/job_service.dart';
 import 'package:awnneaapp/app/services/location_service.dart';
 import 'package:awnneaapp/app/services/refetch_service.dart';
@@ -98,9 +99,9 @@ class HelperJobsController extends GetxController {
                   cancelledJobs.isEmpty))) {
         AppFeedback.error(
           e.toString().replaceAll('Exception: ', '').isEmpty
-              ? 'Could not load jobs. Pull down to retry.'
+              ? 'ui_could_not_load_jobs_pull_down_to'.tr
               : e.toString().replaceAll('Exception: ', ''),
-          title: 'My Job',
+          title: 'helper_my_job'.tr,
         );
       }
     } finally {
@@ -184,10 +185,21 @@ class HelperJobsController extends GetxController {
           return id == jid;
         });
 
+        // The helper receives this event for their own cancellations too.
+        final cancelledByRaw = data['cancelledBy'];
+        final cancelledBy = (cancelledByRaw is Map
+                ? (cancelledByRaw['_id'] ?? cancelledByRaw['id'])
+                : cancelledByRaw)
+            ?.toString();
+        final myId = Get.isRegistered<AuthService>()
+            ? Get.find<AuthService>().currentUser.value?.id
+            : null;
+        final cancelledByMe = cancelledBy != null && cancelledBy == myId;
+
         _moveJobToCancelledLocally(jid, reason: reason, rawJob: data);
 
-        if (wasActive) {
-          AppFeedback.info('"$title" was cancelled by the client.', title: 'Job Cancelled');
+        if (wasActive && !cancelledByMe) {
+          AppFeedback.info('"$title" was cancelled by the client.', title: 'cancel_job_cancelled'.tr);
         }
         _invalidatePipeline().catchError((_) {});
       }
@@ -259,7 +271,7 @@ class HelperJobsController extends GetxController {
       await jobService.cancelJob(id, reason);
       // Immediately reflect cancellation in memory (0ms UI latency)
       _moveJobToCancelledLocally(id, reason: reason);
-      AppFeedback.success('Job has been cancelled', title: 'Cancelled');
+      AppFeedback.success('job_cancelled_success'.tr, title: 'status_cancelled'.tr);
       // Sync with server in background
       _invalidatePipeline().catchError((_) {});
       return true;
@@ -278,7 +290,7 @@ class HelperJobsController extends GetxController {
         'paymentStatus': 'paid',
         'status': 'completed',
       });
-      AppFeedback.success('Cash payment confirmed', title: 'Cash received');
+      AppFeedback.success('ui_cash_payment_confirmed'.tr, title: 'ui_cash_received'.tr);
       // Full pipeline refresh in background — do not block UI.
       _invalidatePipeline().catchError((_) {});
       return true;

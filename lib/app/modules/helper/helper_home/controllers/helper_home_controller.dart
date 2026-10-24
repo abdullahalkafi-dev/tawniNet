@@ -97,7 +97,7 @@ class HelperHomeController extends GetxController with WidgetsBindingObserver {
           } else {
             nearbyJobs.insert(0, job);
             Get.snackbar(
-              'New Job Nearby',
+              'ui_new_job_nearby'.tr,
               '${job.title} (${job.price})',
               snackPosition: SnackPosition.TOP,
               duration: const Duration(seconds: 4),
@@ -183,7 +183,7 @@ class HelperHomeController extends GetxController with WidgetsBindingObserver {
       final jobService = Get.find<JobService>();
       await jobService.acceptJob(jobId);
       Get.back();
-      Get.snackbar('Job Accepted', 'Job accepted successfully!', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('ui_job_accepted'.tr, 'job_accepted_success'.tr, snackPosition: SnackPosition.BOTTOM);
       refreshData();
     } catch (e) {
       final errStr = e.toString().replaceAll('Exception: ', '');
@@ -206,8 +206,8 @@ class HelperHomeController extends GetxController with WidgetsBindingObserver {
           children: [
             Icon(Icons.account_balance_wallet_outlined, color: AppColors.primary),
             const SizedBox(width: 8),
-            const Text(
-              'Recharge Required',
+            Text(
+              'ui_recharge_required'.tr,
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ],
@@ -221,8 +221,8 @@ class HelperHomeController extends GetxController with WidgetsBindingObserver {
               style: const TextStyle(fontSize: 14, color: Colors.black87),
             ),
             const SizedBox(height: 12),
-            const Text(
-              'Cash jobs require a platform commission fee (from Settings) debited from your wallet balance upon acceptance. Please recharge your wallet to proceed.',
+            Text(
+              'ui_cash_jobs_require_a_platform_commission_fee'.tr,
               style: TextStyle(fontSize: 13, color: Colors.grey),
             ),
           ],
@@ -230,7 +230,7 @@ class HelperHomeController extends GetxController with WidgetsBindingObserver {
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            child: Text('btn_cancel'.tr, style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -242,7 +242,7 @@ class HelperHomeController extends GetxController with WidgetsBindingObserver {
               Get.back();
               Get.toNamed(Routes.buyConnects);
             },
-            child: const Text('Recharge Wallet'),
+            child: Text('ui_recharge_wallet'.tr),
           ),
         ],
       ),

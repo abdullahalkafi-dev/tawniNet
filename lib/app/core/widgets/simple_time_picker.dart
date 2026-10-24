@@ -1,6 +1,7 @@
 import 'package:awnneaapp/app/core/utils/datetime_format.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// Simple hour + minute + AM/PM bottom-sheet picker (no clock dial).
 /// Returns a [TimeOfDay] or null if cancelled.
@@ -81,7 +82,7 @@ class _SimpleTimePickerSheetState extends State<_SimpleTimePickerSheet> {
           ),
           const SizedBox(height: 16),
           Text(
-            'Select time',
+            'ui_select_time'.tr,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,
@@ -104,7 +105,7 @@ class _SimpleTimePickerSheetState extends State<_SimpleTimePickerSheet> {
             children: [
               Expanded(
                 child: _WheelColumn(
-                  label: 'Hour',
+                  label: 'ui_hour'.tr,
                   items: List.generate(12, (i) => '${i + 1}'),
                   selectedIndex: _hour12 - 1,
                   onSelected: (i) => setState(() => _hour12 = i + 1),
@@ -113,7 +114,7 @@ class _SimpleTimePickerSheetState extends State<_SimpleTimePickerSheet> {
               const SizedBox(width: 12),
               Expanded(
                 child: _WheelColumn(
-                  label: 'Minute',
+                  label: 'ui_minute'.tr,
                   items: _minutes.map((m) => m.toString().padLeft(2, '0')).toList(),
                   selectedIndex: _minutes.contains(_minute)
                       ? _minutes.indexOf(_minute)
@@ -160,7 +161,7 @@ class _SimpleTimePickerSheetState extends State<_SimpleTimePickerSheet> {
                     ),
                   ),
                   child: Text(
-                    'Cancel',
+                    'btn_cancel'.tr,
                     style: TextStyle(color: textPrimary, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -177,8 +178,8 @@ class _SimpleTimePickerSheetState extends State<_SimpleTimePickerSheet> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    'OK',
+                  child: Text(
+                    'ui_ok'.tr,
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),

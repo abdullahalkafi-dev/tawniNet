@@ -11,8 +11,8 @@ class MediaDownloader {
   }) async {
     try {
       Get.snackbar(
-        'Downloading...',
-        'Saving $fileName',
+        'ui_downloading'.tr,
+        'ui_saving_file'.trParams({'file': fileName}),
         snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 2),
       );
@@ -31,7 +31,7 @@ class MediaDownloader {
       }
 
       if (dir == null) {
-        AppFeedback.error('Could not access storage');
+        AppFeedback.error('ui_could_not_access_storage'.tr);
         return;
       }
 
@@ -39,11 +39,11 @@ class MediaDownloader {
       await dio.download(url, filePath);
 
       AppFeedback.success(
-        'Saved to ${Platform.isAndroid ? "Downloads" : "Files"}/$fileName',
-        title: 'Downloaded',
+        'ui_saved_to'.trParams({'path': '${Platform.isAndroid ? "Downloads" : "Files"}/$fileName'}),
+        title: 'ui_downloaded'.tr,
       );
     } catch (e) {
-      AppFeedback.error('Failed to download: $e');
+      AppFeedback.error('ui_failed_to_download'.trParams({'error': '$e'}));
     }
   }
 }

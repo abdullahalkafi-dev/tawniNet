@@ -77,11 +77,11 @@ class LoginController extends GetxController {
     }
 
     if (password.isEmpty) {
-      _showError('Please enter your password');
+      _showError('ui_please_enter_your_password'.tr);
       return;
     }
     if (password.length < 6) {
-      _showError('Password must be at least 6 characters');
+      _showError('ui_password_must_be_at_least_6_characters'.tr);
       return;
     }
 

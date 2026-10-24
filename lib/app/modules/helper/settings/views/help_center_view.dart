@@ -1,3 +1,4 @@
+import 'package:awnneaapp/app/core/constants/app_info.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
@@ -175,10 +176,10 @@ class _HelpCenterViewState extends State<HelpCenterView> {
                 child: _buildContactCard(
                   context,
                   'settings_email'.tr,
-                  'admin@shifty.com',
+                  AppInfo.supportEmail,
                   Icons.email_outlined,
                   Colors.purple,
-                  onTap: () {},
+                  onTap: AppInfo.emailSupport,
                 ),
               ),
             ],

@@ -81,13 +81,14 @@ class OnboardingView extends GetView<OnboardingController> {
                 ],
               ),
               child: Obx(() {
-                final isArabic = localeService.currentLocale.value.languageCode == 'ar';
+                localeService.currentLocale.value;
+                final language = localeService.currentLanguage;
                 return Row(
                   children: [
-                    Icon(Icons.language, size: 18, color: isArabic ? Colors.green : Colors.red),
+                    Text(language.flag, style: const TextStyle(fontSize: 16)),
                     const SizedBox(width: 6),
                     Text(
-                      isArabic ? 'lang_arabic'.tr : 'lang_english'.tr,
+                      language.nativeName,
                       style: AppStyles.bodyMediumOf(context).copyWith(fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                   ],

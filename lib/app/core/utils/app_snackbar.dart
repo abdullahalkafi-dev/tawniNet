@@ -21,11 +21,11 @@ class AppSnackbar {
       if (error.type == DioExceptionType.connectionTimeout ||
           error.type == DioExceptionType.sendTimeout ||
           error.type == DioExceptionType.receiveTimeout) {
-        return 'Connection timed out. Please check your internet connection.';
+        return 'ui_connection_timed_out_please_check_your_internet'.tr;
       }
 
       if (error.type == DioExceptionType.connectionError) {
-        return 'Cannot connect to server. Please check your network.';
+        return 'ui_cannot_connect_to_server_please_check_your'.tr;
       }
 
       final response = error.response;
@@ -49,16 +49,16 @@ class AppSnackbar {
       }
 
       if (response?.statusCode == 401) {
-        return 'Invalid phone number or password';
+        return 'ui_invalid_phone_number_or_password'.tr;
       } else if (response?.statusCode == 403) {
-        return 'Access forbidden';
+        return 'ui_access_forbidden'.tr;
       } else if (response?.statusCode == 404) {
-        return 'Resource not found';
+        return 'ui_resource_not_found'.tr;
       } else if (response?.statusCode != null && response!.statusCode! >= 500) {
-        return 'Server error. Please try again later.';
+        return 'ui_server_error_please_try_again_later'.tr;
       }
 
-      return error.message ?? 'An unexpected network error occurred';
+      return error.message ?? 'ui_an_unexpected_network_error_occurred'.tr;
     }
 
     final str = error.toString().trim();
@@ -69,9 +69,9 @@ class AppSnackbar {
       if (str.contains('403')) return 'Access denied';
       if (str.contains('404')) return 'Resource not found';
       if (str.contains('500') || str.contains('502') || str.contains('503')) {
-        return 'Server error. Please try again later.';
+        return 'ui_server_error_please_try_again_later'.tr;
       }
-      return 'Network request failed. Please try again.';
+      return 'ui_network_request_failed_please_try_again'.tr;
     }
 
     return str
@@ -91,7 +91,7 @@ class AppSnackbar {
 
     Get.rawSnackbar(
       titleText: Text(
-        title ?? 'Error',
+        title ?? 'ui_error'.tr,
         style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.bold,
@@ -135,7 +135,7 @@ class AppSnackbar {
 
     Get.rawSnackbar(
       titleText: Text(
-        title ?? 'Success',
+        title ?? 'booking_success'.tr,
         style: const TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.bold,

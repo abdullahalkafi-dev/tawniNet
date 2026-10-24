@@ -51,7 +51,7 @@ class ApplicationPendingView extends GetView<ApplyHelperController> {
                 const SizedBox(height: 16),
                 Text(
                   isAppeal
-                      ? 'Your review appeal has been submitted to the compliance team. We will notify you once a decision is finalized.'
+                      ? 'ui_your_review_appeal_has_been_submitted_to'.tr
                       : 'app_pending_desc'.tr,
                   style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 15, height: 1.5),
                   textAlign: TextAlign.center,
@@ -67,7 +67,7 @@ class ApplicationPendingView extends GetView<ApplyHelperController> {
                   ),
                   child: Text(
                     isAppeal
-                        ? 'Appeals are usually reviewed within 12-24 hours.'
+                        ? 'ui_appeals_are_usually_reviewed_within_12_24'.tr
                         : 'app_pending_time'.tr,
                     style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 14),
                     textAlign: TextAlign.center,
@@ -127,7 +127,7 @@ class ApplicationPendingView extends GetView<ApplyHelperController> {
                     }
                   },
                   icon: const Icon(Icons.refresh, size: 16),
-                  label: const Text('Check Status'),
+                  label: Text('ui_check_status'.tr),
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size(double.infinity, 48),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

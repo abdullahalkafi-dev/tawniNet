@@ -1,4 +1,5 @@
 import 'package:awnneaapp/app/core/utils/datetime_format.dart';
+import 'package:get/get.dart';
 
 /// Helpers for flattening job API maps into display-safe strings.
 class JobDisplay {
@@ -10,7 +11,7 @@ class JobDisplay {
     if (address.isNotEmpty && address != 'null') return address;
     final city = job['city']?.toString() ?? '';
     if (city.isNotEmpty && city != 'null') return city;
-    return 'Not provided';
+    return 'ui_not_provided'.tr;
   }
 
   /// Street + area only (first 2 comma parts). Extra details belong in chat.
@@ -19,13 +20,13 @@ class JobDisplay {
     if (address.isNotEmpty && address != 'null') {
       final parts =
           address.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-      if (parts.isEmpty) return 'Not provided';
+      if (parts.isEmpty) return 'ui_not_provided'.tr;
       if (parts.length == 1) return parts.first;
       return '${parts[0]}, ${parts[1]}';
     }
     final city = job['city']?.toString() ?? '';
     if (city.isNotEmpty && city != 'null') return city;
-    return 'Not provided';
+    return 'ui_not_provided'.tr;
   }
 
   static String safeText(dynamic value, {String fallback = ''}) {
@@ -96,23 +97,23 @@ class JobTimeline {
   }) {
     final s = status.toLowerCase();
     final submitted = JobTimelineStep(
-      label: 'Job Submitted',
+      label: 'status_submitted'.tr,
       detail: JobDisplay.formatStamp(submittedAt, fallback: '—'),
       done: true,
     );
 
     if (s == 'cancelled') {
       final matched = JobTimelineStep(
-        label: 'Worker Matched',
+        label: 'status_worker_matched'.tr,
         detail: isAssigned ? 'Assigned' : 'No helper',
         done: isAssigned,
       );
       return [
         submitted,
         matched,
-        const JobTimelineStep(
-          label: 'Cancelled',
-          detail: 'Job was cancelled',
+        JobTimelineStep(
+          label: 'status_cancelled'.tr,
+          detail: 'ui_job_was_cancelled'.tr,
           done: true,
         ),
       ];
@@ -128,39 +129,39 @@ class JobTimeline {
     // Escrow is credited on complete for online jobs in this app.
     final paymentDone = completedDone;
     final paymentDetail = s == 'pending_payment'
-        ? 'Awaiting payment'
+        ? 'ui_awaiting_payment'.tr
         : (completedDone ? 'Processed' : 'Pending');
 
     return [
       submitted,
       JobTimelineStep(
-        label: 'Worker Matched',
+        label: 'status_worker_matched'.tr,
         detail: matchedDone
             ? (s == 'in_progress' || s == 'completed' ? 'Accepted' : 'Assigned')
             : (s == 'open' ? 'Looking for helper' : 'Pending'),
         done: matchedDone,
       ),
       JobTimelineStep(
-        label: 'In Progress',
+        label: 'status_in_progress'.tr,
         detail: inProgressActive
-            ? 'Started'
+            ? 'ui_started'.tr
             : (inProgressDone
-                ? JobDisplay.formatStamp(completedAt, fallback: 'Started')
+                ? JobDisplay.formatStamp(completedAt, fallback: 'ui_started'.tr)
                 : (s == 'pending_payment'
-                    ? 'After payment'
+                    ? 'ui_after_payment'.tr
                     : (s == 'open' ? 'After a helper accepts' : 'Pending'))),
         done: inProgressDone,
         active: inProgressActive,
       ),
       JobTimelineStep(
-        label: 'Completed',
+        label: 'status_completed'.tr,
         detail: completedDone
-            ? JobDisplay.formatStamp(completedAt, fallback: 'Completed')
-            : 'Pending',
+            ? JobDisplay.formatStamp(completedAt, fallback: 'status_completed'.tr)
+            : 'status_pending'.tr,
         done: completedDone,
       ),
       JobTimelineStep(
-        label: 'Payment Processed',
+        label: 'status_payment_processed'.tr,
         detail: paymentDetail,
         done: paymentDone && completedDone,
       ),

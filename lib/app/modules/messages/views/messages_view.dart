@@ -109,7 +109,7 @@ class MessagesView extends GetView<MessagesController> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'No conversations yet',
+                    'ui_no_conversations_yet'.tr,
                     style: AppStyles.h2Of(context).copyWith(
                       color: context.textSecondaryColor,
                       fontSize: 18,
@@ -117,7 +117,7 @@ class MessagesView extends GetView<MessagesController> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Start a conversation with a helper\nfrom their profile or job details',
+                    'ui_start_a_conversation_with_a_helper_from'.tr,
                     textAlign: TextAlign.center,
                     style: AppStyles.bodyMedium.copyWith(
                       color: context.textHintColor,

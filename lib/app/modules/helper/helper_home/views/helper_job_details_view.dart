@@ -59,12 +59,12 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
   Widget _buildJobInfoCard(BuildContext context, HelperJob job) {
     final dateStr = job.date != null
         ? AppDateTime.formatDateDisplay(job.date!.toIso8601String())
-        : 'Not specified';
+        : 'ui_not_specified'.tr;
     final timeStr = (job.startTime != null && job.startTime!.isNotEmpty)
         ? (job.endTime != null && job.endTime!.isNotEmpty
             ? '${AppDateTime.formatTime12h(job.startTime)} - ${AppDateTime.formatTime12h(job.endTime)}'
             : AppDateTime.formatTime12h(job.startTime))
-        : 'Not specified';
+        : 'ui_not_specified'.tr;
 
     return Container(
       width: double.infinity,
@@ -140,7 +140,7 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
                 child: Text(
                   (job.address != null && job.address!.isNotEmpty)
                       ? job.address!
-                      : 'Not specified',
+                      : 'ui_not_specified'.tr,
                   style: AppStyles.bodyMedium.copyWith(fontSize: 13, color: context.textSecondaryColor),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
@@ -257,7 +257,7 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
             ),
           ] else
             Text(
-              'No description provided',
+              'ui_no_description_provided'.tr,
               style: AppStyles.bodyMedium.copyWith(
                 height: 1.5,
                 color: context.textHintColor,
@@ -325,7 +325,7 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
               ),
               child: Center(
                 child: Text(
-                  'No photos',
+                  'ui_no_photos'.tr,
                   style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
                 ),
               ),
@@ -375,7 +375,7 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
           const SizedBox(height: 8),
           _buildPaymentRow(
             context,
-            'Payment Method',
+            'ui_payment_method'.tr,
             job.paymentMethod?.toUpperCase() ?? 'CASH',
           ),
           const SizedBox(height: 12),

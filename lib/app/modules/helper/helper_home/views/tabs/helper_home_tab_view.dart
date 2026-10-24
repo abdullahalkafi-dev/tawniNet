@@ -63,7 +63,7 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
               Obx(() {
                 final user = Get.find<AuthService>().currentUser.value;
                 return Text(
-                  user?.name ?? 'Helper',
+                  user?.name ?? 'ui_helper'.tr,
                   style: AppStyles.h2Of(context).copyWith(fontSize: 20),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -72,7 +72,7 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
               Obx(() {
                 final user = Get.find<AuthService>().currentUser.value;
                 return Text(
-                  user?.address ?? 'No location set',
+                  user?.address ?? 'label_no_location'.tr,
                   style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -192,12 +192,12 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
                   Icon(Icons.work_outline, size: 60, color: context.textHintColor),
                   const SizedBox(height: 16),
                   Text(
-                    'No nearby jobs found',
+                    'ui_no_nearby_jobs_found'.tr,
                     style: AppStyles.bodyLargeOf(context).copyWith(color: context.textSecondaryColor),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Pull down to refresh',
+                    'ui_pull_down_to_refresh'.tr,
                     style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
                   ),
                 ],

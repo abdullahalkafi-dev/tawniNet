@@ -136,7 +136,7 @@ class _EditProfileViewState extends State<EditProfileView> {
                         final address = controller.address.value.trim();
 
                         if (name.isEmpty) {
-                          AppSnackbar.showError('Name cannot be empty');
+                          AppSnackbar.showError('ui_name_cannot_be_empty'.tr);
                           return;
                         }
 

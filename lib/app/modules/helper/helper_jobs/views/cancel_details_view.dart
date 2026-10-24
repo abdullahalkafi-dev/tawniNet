@@ -22,7 +22,7 @@ class HelperCancelDetailsView extends StatelessWidget {
         fallback: JobDisplay.safeText(job['clientName']));
     final clientAvatar = JobDisplay.personAvatar(job['postedBy'],
         fallback: JobDisplay.safeText(job['clientImage'],
-            fallback: 'https://i.pravatar.cc/150?u=default'));
+            fallback: ''));
     final location = JobDisplay.publicAddress(job);
     final reason = JobDisplay.safeText(job['cancellationReason'],
         fallback: JobDisplay.safeText(job['reason'], fallback: 'No reason provided'));
@@ -39,11 +39,11 @@ class HelperCancelDetailsView extends StatelessWidget {
         job['postedBy'] is Map ? job['postedBy']['_id'] : null,
       );
       if (helperId.isNotEmpty && id == helperId) {
-        cancelledBy = 'Helper';
+        cancelledBy = 'ui_helper'.tr;
       } else if (clientId.isNotEmpty && id == clientId) {
-        cancelledBy = 'Client';
+        cancelledBy = 'ui_client'.tr;
       } else {
-        cancelledBy = 'User';
+        cancelledBy = 'ui_user'.tr;
       }
     }
     final bookingDateRaw = job['date'] ?? job['createdAt'];
@@ -126,7 +126,7 @@ class HelperCancelDetailsView extends StatelessWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(30),
                   child: Image.network(
-                    clientAvatar.isNotEmpty ? clientAvatar : 'https://i.pravatar.cc/150?u=default',
+                    clientAvatar,
                     width: 50,
                     height: 50,
                     fit: BoxFit.cover,

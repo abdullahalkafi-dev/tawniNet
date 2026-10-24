@@ -163,7 +163,7 @@ class _LiveTrackingViewState extends State<LiveTrackingView> {
             Routes.chatDetail,
             arguments: ChatSummary(
               id: conversation.id,
-              name: workerName.isNotEmpty ? workerName : 'Helper',
+              name: workerName.isNotEmpty ? workerName : 'ui_helper'.tr,
               image: workerImage,
               otherUserId: workerUserId,
             ),

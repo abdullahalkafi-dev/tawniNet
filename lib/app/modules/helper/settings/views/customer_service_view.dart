@@ -11,6 +11,7 @@ import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:awnneaapp/app/core/utils/image_picker_errors.dart';
 
 class CustomerServiceView extends StatefulWidget {
   const CustomerServiceView({super.key});
@@ -59,8 +60,8 @@ class _CustomerServiceViewState extends State<CustomerServiceView> {
               ),
               ListTile(
                 leading: const Icon(Icons.image_outlined, color: AppColors.primary),
-                title: const Text('Send Image'),
-                subtitle: const Text('Select up to 4 images'),
+                title: Text('ui_send_image'.tr),
+                subtitle: Text('ui_select_up_to_4_images'.tr),
                 onTap: () {
                   Get.back();
                   _pickImages();
@@ -68,8 +69,8 @@ class _CustomerServiceViewState extends State<CustomerServiceView> {
               ),
               ListTile(
                 leading: const Icon(Icons.videocam_outlined, color: AppColors.primary),
-                title: const Text('Send Video'),
-                subtitle: const Text('Max 5 minutes, 400MB'),
+                title: Text('ui_send_video'.tr),
+                subtitle: Text('ui_max_5_minutes_400mb'.tr),
                 onTap: () {
                   Get.back();
                   _pickVideo();
@@ -92,7 +93,7 @@ class _CustomerServiceViewState extends State<CustomerServiceView> {
         });
       }
     } catch (e) {
-      AppFeedback.error('Failed to pick images');
+      AppFeedback.error(imagePickerErrorMessage(e));
     }
   }
 
@@ -107,7 +108,7 @@ class _CustomerServiceViewState extends State<CustomerServiceView> {
 
       final fileBytes = await File(pickedFile.path).length();
       if (fileBytes > 400 * 1024 * 1024) {
-        AppFeedback.error('Video must be under 400MB');
+        AppFeedback.error('ui_video_must_be_under_400mb'.tr);
         return;
       }
 
@@ -127,7 +128,7 @@ class _CustomerServiceViewState extends State<CustomerServiceView> {
         try { await compressed.delete(); } catch (_) {}
       }
     } catch (e) {
-      AppFeedback.error('Failed to upload video');
+      AppFeedback.error('ui_failed_to_upload_video'.tr);
     } finally {
       if (mounted) setState(() => _isUploading = false);
     }
@@ -239,7 +240,7 @@ class _CustomerServiceViewState extends State<CustomerServiceView> {
                             size: 48, color: context.textHintColor),
                         const SizedBox(height: 12),
                         Text(
-                          'Select a ticket from the list to continue the conversation.',
+                          'ui_select_a_ticket_from_the_list_to'.tr,
                           textAlign: TextAlign.center,
                           style: AppStyles.bodyMediumOf(context)
                               .copyWith(color: context.textSecondaryColor),
@@ -247,7 +248,7 @@ class _CustomerServiceViewState extends State<CustomerServiceView> {
                         const SizedBox(height: 16),
                         TextButton(
                           onPressed: () => Get.back(),
-                          child: const Text('Back to tickets'),
+                          child: Text('ui_back_to_tickets'.tr),
                         ),
                       ],
                     ),
@@ -308,7 +309,7 @@ class _CustomerServiceViewState extends State<CustomerServiceView> {
                 child: Column(
                   children: [
                     Text(
-                      'This ticket is resolved.',
+                      'ui_this_ticket_is_resolved'.tr,
                       style: AppStyles.bodyMediumOf(context).copyWith(
                         fontWeight: FontWeight.w600,
                         color: context.textPrimaryColor,
@@ -316,7 +317,7 @@ class _CustomerServiceViewState extends State<CustomerServiceView> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Create a new ticket if you need more help.',
+                      'ui_create_a_new_ticket_if_you_need'.tr,
                       style: AppStyles.bodySmallOf(context).copyWith(
                         color: context.textSecondaryColor,
                         fontSize: 13,
@@ -329,7 +330,7 @@ class _CustomerServiceViewState extends State<CustomerServiceView> {
                         onPressed: () {
                           Get.back();
                         },
-                        child: const Text('Back to tickets'),
+                        child: Text('ui_back_to_tickets'.tr),
                       ),
                     ),
                   ],

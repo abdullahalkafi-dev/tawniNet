@@ -1,5 +1,7 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/utils/helper_chat.dart';
+import 'package:awnneaapp/app/core/widgets/helper_trust_widgets.dart';
 import 'package:awnneaapp/app/data/models/home_models.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:flutter/material.dart';
@@ -61,7 +63,7 @@ class SearchView extends GetView<AwnneaSearchController> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Popular Services',
+            'home_popular_services'.tr,
             style: AppStyles.h2Of(context).copyWith(fontSize: 18),
           ),
           const SizedBox(height: 16),
@@ -79,7 +81,7 @@ class SearchView extends GetView<AwnneaSearchController> {
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Text(
-                    'No services found',
+                    'popular_no_services'.tr,
                     style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
                   ),
                 ),
@@ -209,7 +211,7 @@ class SearchView extends GetView<AwnneaSearchController> {
                       Icon(Icons.search_off, size: 60, color: context.textHintColor),
                       const SizedBox(height: 16),
                       Text(
-                        'No helpers found',
+                        'find_no_helpers'.tr,
                         style: AppStyles.bodyLargeOf(context).copyWith(color: context.textSecondaryColor),
                       ),
                     ],
@@ -259,9 +261,26 @@ class SearchView extends GetView<AwnneaSearchController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      helper.helperName,
-                      style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            helper.helperName,
+                            style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.bold),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (helper.isVerified) ...[
+                          const SizedBox(width: 4),
+                          const VerifiedBadge(compact: true),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    RatingSummary(
+                      rating: helper.rating,
+                      reviewCount: helper.reviewCount,
                     ),
                     const SizedBox(height: 2),
                     Text(
@@ -286,6 +305,13 @@ class SearchView extends GetView<AwnneaSearchController> {
               ),
             ],
           ),
+          if (helper.workPhotos.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: WorkPhotoStrip(urls: helper.workPhotos),
+            ),
+          ],
           const SizedBox(height: 12),
           Row(
             children: [
@@ -318,7 +344,7 @@ class SearchView extends GetView<AwnneaSearchController> {
                 child: SizedBox(
                   height: 36,
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: () => openChatWithHelper(helper),
                     style: ElevatedButton.styleFrom(
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       backgroundColor: AppColors.primary,

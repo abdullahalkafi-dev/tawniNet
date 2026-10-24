@@ -35,7 +35,7 @@ class OtpController extends GetxController {
   Future<void> verifyOtp() async {
     final otp = otpControllers.map((c) => c.text).join();
     if (otp.length != 6) {
-      _showError('Please enter the complete 6-digit WhatsApp code');
+      _showError('ui_please_enter_the_complete_6_digit_whatsapp'.tr);
       return;
     }
 
@@ -98,8 +98,8 @@ class OtpController extends GetxController {
       });
 
       AppSnackbar.showSuccess(
-        'A new WhatsApp code has been sent to $formattedPhone',
-        title: 'Code Sent',
+        'ui_code_resent_to'.trParams({'phone': formattedPhone}),
+        title: 'ui_code_sent'.tr,
       );
     } catch (e) {
       _showError(e);

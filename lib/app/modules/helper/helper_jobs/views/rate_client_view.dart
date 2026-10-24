@@ -43,7 +43,7 @@ class _RateClientViewState extends State<RateClientView> {
             onPressed: () => Get.back(),
           ),
         ),
-        body: const Center(child: Text('Job not found')),
+        body: Center(child: Text('ui_job_not_found'.tr)),
       );
     }
 
@@ -120,8 +120,8 @@ class _RateClientViewState extends State<RateClientView> {
               onPressed: () async {
                 if (_rating == 0) {
                   AppFeedback.error(
-                    'Please select a star rating',
-                    title: 'Rating Required',
+                    'ui_please_select_a_star_rating'.tr,
+                    title: 'ui_rating_required'.tr,
                   );
                   return;
                 }
@@ -138,8 +138,8 @@ class _RateClientViewState extends State<RateClientView> {
                   }
                   if (jobId.isEmpty || revieweeId.isEmpty) {
                     AppFeedback.error(
-                      'Could not identify this job for review.',
-                      title: 'Review failed',
+                      'ui_could_not_identify_this_job_for_review'.tr,
+                      title: 'ui_review_failed'.tr,
                     );
                     return;
                   }
@@ -165,10 +165,10 @@ class _RateClientViewState extends State<RateClientView> {
                   AppFeedback.success(
                     'rate_submitted'.tr.isNotEmpty
                         ? 'rate_submitted'.tr
-                        : 'Thank you!',
+                        : 'rate_thank_you'.tr,
                     title: 'rate_thank_you'.tr.isNotEmpty
                         ? 'rate_thank_you'.tr
-                        : 'Review Submitted',
+                        : 'ui_review_submitted'.tr,
                   );
                   try {
                     Get.find<RefetchService>()

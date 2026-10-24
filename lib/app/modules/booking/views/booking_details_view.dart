@@ -381,7 +381,7 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
         text = 'booking_unpaid'.tr;
         break;
       case BookingStatus.open:
-        text = 'Looking for helper';
+        text = 'ui_looking_for_helper_2'.tr;
         break;
       case BookingStatus.inProgress:
         text = 'booking_inprogress'.tr;
@@ -599,7 +599,7 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Helper is on the way',
+                  'ui_helper_is_on_the_way'.tr,
                   style: AppStyles.h2Of(context).copyWith(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -613,13 +613,13 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
                   color: AppColors.primary.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.gps_fixed, size: 12, color: AppColors.primary),
                     SizedBox(width: 4),
                     Text(
-                      'Live GPS',
+                      'ui_live_gps'.tr,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
@@ -633,7 +633,9 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Track ${booking.workerName.isNotEmpty ? booking.workerName : "your helper"} in real-time as they travel to your service address.',
+            booking.workerName.isNotEmpty
+                ? 'ui_track_named_helper'.trParams({'name': booking.workerName})
+                : 'ui_track_your_helper'.tr,
             style: AppStyles.bodySmall.copyWith(
               color: context.textSecondaryColor,
               fontSize: 12,
@@ -662,8 +664,8 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
                 );
               },
               icon: const Icon(Icons.near_me_rounded, color: Colors.white, size: 18),
-              label: const Text(
-                'Track Helper Live on Map',
+              label: Text(
+                'ui_track_helper_live_on_map'.tr,
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -852,8 +854,8 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
                               final reason = reasonController.text.trim();
                               if (reason.length < 3) {
                                 AppFeedback.error(
-                                  'Please enter a reason (at least 3 characters).',
-                                  title: 'Reason required',
+                                  'ui_please_enter_a_reason_at_least_3'.tr,
+                                  title: 'ui_reason_required'.tr,
                                 );
                                 return;
                               }
@@ -991,14 +993,14 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
                   ),
                   const SizedBox(height: 20),
                   Text(
-                    'Rate Helper',
+                    'ui_rate_helper'.tr,
                     style: AppStyles.h1Of(dialogContext).copyWith(fontSize: 22),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'rate_how_was'.tr.isNotEmpty
                         ? 'rate_how_was'.tr
-                        : 'How was your experience?',
+                        : 'ui_how_was_your_experience'.tr,
                     style: AppStyles.bodyMedium.copyWith(color: dialogContext.textSecondaryColor),
                     textAlign: TextAlign.center,
                   ),
@@ -1079,7 +1081,7 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
                     decoration: InputDecoration(
                       hintText: 'rate_share'.tr.isNotEmpty
                           ? 'rate_share'.tr
-                          : 'Share your feedback...',
+                          : 'ui_share_your_feedback'.tr,
                       hintStyle: AppStyles.bodyMedium.copyWith(color: dialogContext.textHintColor),
                       filled: true,
                       fillColor: dialogContext.inputFillColor,
@@ -1124,8 +1126,8 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
                               : () async {
                                   if (booking.workerUserId.isEmpty) {
                                     Get.snackbar(
-                                      'Notice',
-                                      'No assigned helper found for this booking.',
+                                      'ui_notice'.tr,
+                                      'ui_no_assigned_helper_found_for_this_booking'.tr,
                                       snackPosition: SnackPosition.BOTTOM,
                                     );
                                     return;

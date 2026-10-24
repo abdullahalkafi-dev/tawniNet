@@ -70,6 +70,12 @@
 	<string>This app needs access to your location to find helpers near you.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>This app needs access to your location to find helpers near you.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to your photos so you can attach pictures to job posts, chats and your helper portfolio.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs access to your camera so you can take photos for job posts, chats and identity verification.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app needs access to your microphone to record videos you attach to chats.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

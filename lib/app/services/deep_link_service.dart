@@ -95,7 +95,7 @@ class DeepLinkService extends GetxService {
       if (Get.isRegistered<RoleService>()) {
         Get.find<RoleService>().setUserRole('helper');
       }
-      AppFeedback.success('KYC verification approved! Welcome to Tarik.');
+      AppFeedback.success('ui_kyc_verification_approved_welcome_to_3awninet'.tr);
       Get.offAllNamed(Routes.helperHome);
       return;
     }
@@ -114,15 +114,15 @@ class DeepLinkService extends GetxService {
         if (Get.isRegistered<RoleService>()) {
           Get.find<RoleService>().setUserRole('helper');
         }
-        AppFeedback.success('KYC verification approved! Welcome to Tarik.');
+        AppFeedback.success('ui_kyc_verification_approved_welcome_to_3awninet'.tr);
         Get.offAllNamed(Routes.helperHome);
       } else if (user?.helperApplicationStatus == 'rejected' || status == 'declined' || status == 'rejected') {
-        AppFeedback.error(user?.rejectionReason ?? 'Verification was not approved');
+        AppFeedback.error(user?.rejectionReason ?? 'ui_verification_was_not_approved'.tr);
         Get.offAllNamed(Routes.applicationRejected);
       } else if (user?.diditStatus == 'In Review' || user?.helperApplicationStatus == 'pending_appeal') {
         Get.offAllNamed(Routes.applicationPending);
       } else {
-        AppFeedback.info('Verification in progress...');
+        AppFeedback.info('ui_verification_in_progress'.tr);
         Get.toNamed(Routes.helperKycVerification);
       }
     } catch (e) {
@@ -163,7 +163,7 @@ class DeepLinkService extends GetxService {
     }
 
     if (status == 'success') {
-      AppFeedback.success('Payment completed successfully!');
+      AppFeedback.success('ui_payment_completed_successfully'.tr);
       if (orderType == 'wallet_topup') {
         if (isHelper) {
           if (Get.currentRoute != Routes.helperConnects) {
@@ -210,7 +210,7 @@ class DeepLinkService extends GetxService {
         }
       }
     } else {
-      AppFeedback.error('Payment was cancelled or failed.');
+      AppFeedback.error('ui_payment_was_cancelled_or_failed'.tr);
       if (orderType == 'wallet_topup') {
         if (isHelper) {
           if (Get.currentRoute != Routes.helperConnects) {

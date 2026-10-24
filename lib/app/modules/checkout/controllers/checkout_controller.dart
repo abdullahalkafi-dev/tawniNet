@@ -22,7 +22,7 @@ class CheckoutController extends GetxController {
   final orderType = 'job'.obs; // 'job' | 'offer' | 'wallet_topup'
   final amount = 0.0.obs;
   final currency = 'MAD'.obs;
-  final title = 'Service Payment'.obs;
+  final title = 'ui_service_payment'.tr.obs;
   final sessionId = ''.obs;
   final metadata = <String, dynamic>{}.obs;
 
@@ -205,12 +205,12 @@ class CheckoutController extends GetxController {
           _popWithResult(true);
         }
       } else {
-        errorMessage.value = response.message ?? 'Payment failed. Please try again.';
-        AppFeedback.error(errorMessage.value, title: 'Payment failed');
+        errorMessage.value = response.message ?? 'ui_payment_failed_please_try_again'.tr;
+        AppFeedback.error(errorMessage.value, title: 'ui_payment_failed'.tr);
       }
     } catch (e) {
       errorMessage.value = e.toString().replaceAll('Exception: ', '');
-      AppFeedback.error(errorMessage.value, title: 'Payment failed');
+      AppFeedback.error(errorMessage.value, title: 'ui_payment_failed'.tr);
     } finally {
       if (!isClosed) {
         isProcessing.value = false;
@@ -246,20 +246,20 @@ class CheckoutController extends GetxController {
 
       if (response.success) {
         AppFeedback.success(
-          'You can try again later from Buy Connects or My Bookings.',
-          title: 'Payment cancelled',
+          'ui_you_can_try_again_later_from_buy'.tr,
+          title: 'ui_payment_cancelled'.tr,
         );
       } else {
         // Still leave checkout — user asked to cancel
         AppFeedback.info(
-          response.message ?? 'Checkout closed. Payment was not completed.',
-          title: 'Payment cancelled',
+          response.message ?? 'ui_checkout_closed_payment_was_not_completed'.tr,
+          title: 'ui_payment_cancelled'.tr,
         );
       }
     } catch (e) {
       AppFeedback.error(
         e.toString().replaceAll('Exception: ', ''),
-        title: 'Could not update payment',
+        title: 'ui_could_not_update_payment'.tr,
       );
     } finally {
       if (!isClosed) {
@@ -277,16 +277,16 @@ class CheckoutController extends GetxController {
     Get.dialog(
       AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Cancel payment?'),
+        title: Text('ui_cancel_payment'.tr),
         content: Text(
           orderType.value == 'wallet_topup'
-              ? 'Your wallet will not be charged. You can buy connects again later.'
-              : 'You can complete this payment later from My Bookings.',
+              ? 'ui_your_wallet_will_not_be_charged_you'.tr
+              : 'ui_you_can_complete_this_payment_later_from'.tr,
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Keep paying'),
+            child: Text('ui_keep_paying'.tr),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red.shade600),
@@ -294,7 +294,7 @@ class CheckoutController extends GetxController {
               Get.back(); // close dialog
               cancelPayment();
             },
-            child: const Text('Cancel payment', style: TextStyle(color: Colors.white)),
+            child: Text('checkout_cancel_payment'.tr, style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

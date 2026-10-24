@@ -36,7 +36,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _error = 'Failed to load video');
+        setState(() => _error = 'ui_failed_to_load_video'.tr);
       }
     }
   }

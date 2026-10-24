@@ -170,13 +170,13 @@ class ProfileController extends GetxController {
         if (response.success) {
           await Get.find<AuthService>().getMe();
           await Get.find<RefetchService>().invalidate(RefetchKeys.userProfile);
-          AppSnackbar.showSuccess('Profile photo updated');
+          AppSnackbar.showSuccess('ui_profile_photo_updated'.tr);
         } else {
-          AppSnackbar.showError(response.message ?? 'Failed to update photo');
+          AppSnackbar.showError(response.message ?? 'ui_failed_to_update_photo'.tr);
         }
       } else {
         if (isClosed) return;
-        AppSnackbar.showError('Failed to upload image');
+        AppSnackbar.showError('ui_failed_to_upload_image'.tr);
       }
     } catch (e) {
       if (isClosed) return;

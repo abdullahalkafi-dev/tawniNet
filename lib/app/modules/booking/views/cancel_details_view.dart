@@ -31,7 +31,7 @@ class CancelDetailsView extends GetView<BookingController> {
           centerTitle: true,
         ),
         body: Center(
-          child: Text('Booking not found. Go back and try again.'),
+          child: Text('booking_not_found'.tr),
         ),
       );
     }
@@ -129,34 +129,34 @@ class CancelDetailsView extends GetView<BookingController> {
     if (!isOnline) {
       color = AppColors.primary;
       icon = Icons.account_balance_wallet_outlined;
-      title = 'Cash job';
+      title = 'ui_cash_job'.tr;
       body =
-          'No online charge to refund. Helper commission is returned to their wallet when applicable.';
+          'ui_no_online_charge_to_refund_helper_commission'.tr;
     } else if (refund == 'refunded') {
       color = const Color(0xFF0F766E);
       icon = Icons.check_circle_outline;
-      title = 'Payment refunded';
+      title = 'ui_payment_refunded'.tr;
       body = booking.refundReference.isNotEmpty
-          ? 'Refunded to your original payment method.\nRef: ${booking.refundReference}'
-          : 'Refunded to your original payment method.';
+          ? 'ui_refunded_original_method'.trParams({'ref': '${booking.refundReference}'})
+          : 'ui_refunded_to_your_original_payment_method'.tr;
     } else if (refund == 'failed') {
       color = Colors.orange.shade800;
       icon = Icons.error_outline;
-      title = 'Refund needs attention';
+      title = 'ui_refund_needs_attention'.tr;
       body =
-          'Automatic refund did not complete. Contact support with booking ID ${booking.id}.';
+          'ui_refund_failed_contact_support'.trParams({'id': booking.id});
     } else if (refund == 'pending') {
       color = Colors.blueGrey;
       icon = Icons.hourglass_empty;
-      title = 'Refund processing';
-      body = 'Your refund is being processed.';
+      title = 'ui_refund_processing'.tr;
+      body = 'ui_your_refund_is_being_processed'.tr;
     } else {
       color = context.textSecondaryColor;
       icon = Icons.info_outline;
-      title = 'No charge to refund';
+      title = 'ui_no_charge_to_refund'.tr;
       body = booking.budget > 0
-          ? 'This job was cancelled before payment completed (${formatMoney(booking.budget)}).'
-          : 'This job was cancelled before any payment.';
+          ? 'ui_cancelled_before_payment'.trParams({'amount': formatMoney(booking.budget)})
+          : 'ui_this_job_was_cancelled_before_any_payment'.tr;
     }
 
     return Container(
@@ -384,7 +384,7 @@ class CancelDetailsView extends GetView<BookingController> {
           try {
             Get.toNamed(Routes.supportTicketList);
           } catch (_) {
-            AppFeedback.error('Support is unavailable right now.');
+            AppFeedback.error('ui_support_is_unavailable_right_now'.tr);
           }
         },
         style: ElevatedButton.styleFrom(

@@ -60,26 +60,26 @@ class _EarningViewState extends State<EarningView> {
   String _getActivityLabel(String type) {
     switch (type) {
       case 'commission_deduction':
-        return 'Platform Fee';
+        return 'ui_platform_fee'.tr;
       case 'commission_refund':
-        return 'Fee Refund';
+        return 'ui_fee_refund'.tr;
       case 'earning_payout':
-        return 'Job Earning';
+        return 'ui_job_earning'.tr;
       default:
-        return 'Transaction';
+        return 'ui_transaction'.tr;
     }
   }
 
   String _getMethodLabel(String type) {
     switch (type) {
       case 'commission_deduction':
-        return 'Platform Fee';
+        return 'ui_platform_fee'.tr;
       case 'commission_refund':
-        return 'Refund';
+        return 'ui_refund'.tr;
       case 'earning_payout':
-        return 'Job Payout';
+        return 'ui_job_payout'.tr;
       default:
-        return 'Other';
+        return 'edit_other'.tr;
     }
   }
 

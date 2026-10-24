@@ -1,3 +1,5 @@
+import 'package:get/get.dart';
+
 class ChatConversation {
   final String id;
   final List<ChatParticipant> participants;
@@ -72,7 +74,7 @@ class ChatConversation {
     );
   }
 
-  String get displayName => otherParticipant?.name ?? 'Unknown';
+  String get displayName => otherParticipant?.name ?? 'ui_unknown'.tr;
   String get displayImage => otherParticipant?.avatar ?? '';
 }
 

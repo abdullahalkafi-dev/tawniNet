@@ -53,11 +53,11 @@ class ThemeService extends GetxService {
   String get themeModeName {
     switch (themeMode.value) {
       case ThemeMode.dark:
-        return 'Dark';
+        return 'ui_dark'.tr;
       case ThemeMode.light:
-        return 'Light';
+        return 'ui_light'.tr;
       case ThemeMode.system:
-        return 'System';
+        return 'ui_system'.tr;
     }
   }
 }

@@ -116,7 +116,7 @@ class CustomerServiceController extends GetxController {
       }
     } catch (e) {
       if (!isClosed) {
-        AppFeedback.error('Failed to load tickets');
+        AppFeedback.error('ui_failed_to_load_tickets'.tr);
       }
     } finally {
       if (!isClosed) isLoading.value = false;
@@ -166,7 +166,7 @@ class CustomerServiceController extends GetxController {
       unawaited(fetchTickets());
     } catch (e) {
       if (!isClosed) {
-        AppFeedback.error('Failed to load messages');
+        AppFeedback.error('ui_failed_to_load_messages'.tr);
       }
     }
   }
@@ -201,7 +201,7 @@ class CustomerServiceController extends GetxController {
     if (!canSend) {
       if (isResolved) {
         AppFeedback.error(
-          'This ticket is resolved. Create a new ticket for a new issue.',
+          'ui_this_ticket_is_resolved_create_a_new'.tr,
         );
       }
       return;

@@ -49,12 +49,12 @@ class OtpView extends GetView<OtpController> {
               ),
               const SizedBox(height: 20),
               Text(
-                'WhatsApp Verification',
+                'ui_whatsapp_verification'.tr,
                 style: AppStyles.h1Of(context).copyWith(fontSize: 28),
               ),
               const SizedBox(height: 8),
               Text(
-                'Please enter the 6-digit verification code sent to\n${controller.formattedPhone}',
+                'ui_enter_code_sent_to'.trParams({'phone': controller.formattedPhone}),
                 textAlign: TextAlign.center,
                 style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 15),
               ),

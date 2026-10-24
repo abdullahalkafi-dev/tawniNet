@@ -122,49 +122,16 @@ class HomeController extends GetxController {
         final data = response.data as Map<String, dynamic>;
         final helpersList = data['helpers'] as List? ?? [];
 
-        final helpers = helpersList.map((h) {
-          final serviceType = h['serviceType'];
-          String category = 'General';
-          if (serviceType is Map) {
-            category = serviceType['name'] as String? ?? 'General';
-          }
-
-          String avatar = 'https://i.pravatar.cc/150';
-          if (h['avatar'] != null && (h['avatar'] as String).isNotEmpty) {
-            avatar = h['avatar'];
-          }
-
-          return HelperJob(
-            id: h['_id'] ?? '',
-            helperName: h['name'] ?? 'Helper',
-            helperImage: avatar,
-            postedByUserId: h['_id'] ?? '',
-            timeAgo: _formatDate(h['createdAt']),
-            category: category,
-            title: h['bio'] ?? 'Available for hire',
-            description: h['bio'] ?? 'Professional helper in your area',
-            distance: h['address'] ?? 'Nearby',
-          );
-        }).toList();
+        final helpers = helpersList
+            .map((h) => HelperJob.fromHelperJson(
+                  h is Map ? Map<String, dynamic>.from(h) : <String, dynamic>{},
+                ))
+            .toList();
 
         nearbyJobs.assignAll(helpers);
       }
     } catch (_) {} finally {
       if (!isClosed) isLoadingHelpers.value = false;
-    }
-  }
-
-  String _formatDate(String? dateStr) {
-    if (dateStr == null) return 'Recently';
-    try {
-      final date = DateTime.parse(dateStr);
-      final diff = DateTime.now().difference(date);
-      if (diff.inDays > 30) return '${(diff.inDays / 30).floor()}mo ago';
-      if (diff.inDays > 0) return '${diff.inDays}d ago';
-      if (diff.inHours > 0) return '${diff.inHours}h ago';
-      return 'Just now';
-    } catch (_) {
-      return 'Recently';
     }
   }
 
@@ -204,7 +171,7 @@ class HomeController extends GetxController {
         final services = helpersList.map((h) {
           final map = h is Map ? Map<String, dynamic>.from(h) : <String, dynamic>{};
           final serviceType = map['serviceType'];
-          String category = 'General';
+          String category = 'ui_general'.tr;
           if (serviceType is Map) {
             category = serviceType['name']?.toString() ?? 'General';
           } else if (serviceType is String) {
@@ -235,6 +202,7 @@ class HomeController extends GetxController {
             pricePerHour: (map['pricePerHour'] as num?)?.toDouble() ?? 0.0,
             distance: map['address']?.toString() ?? 'Nearby',
             image: avatar,
+            isVerified: map['isVerified'] == true,
           );
         }).toList();
 
@@ -271,7 +239,7 @@ class HomeController extends GetxController {
         Routes.chatDetail,
         arguments: ChatSummary(
           id: conversation.id,
-          name: other?.name ?? 'Helper',
+          name: other?.name ?? 'ui_helper'.tr,
           image: other?.avatar ?? '',
         ),
       );

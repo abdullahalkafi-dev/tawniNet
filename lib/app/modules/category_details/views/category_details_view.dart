@@ -9,6 +9,7 @@ import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:awnneaapp/app/core/widgets/helper_trust_widgets.dart';
 
 class CategoryDetailsView extends StatefulWidget {
   const CategoryDetailsView({super.key});
@@ -55,50 +56,17 @@ class _CategoryDetailsViewState extends State<CategoryDetailsView> {
         final data = response.data as Map<String, dynamic>;
         final helpersList = data['helpers'] as List? ?? [];
 
-        final fetched = helpersList.map((h) {
-          final serviceType = h['serviceType'];
-          String cat = 'General';
-          if (serviceType is Map) {
-            cat = serviceType['name'] as String? ?? 'General';
-          }
-
-          String avatar = 'https://i.pravatar.cc/150';
-          if (h['avatar'] != null && (h['avatar'] as String).isNotEmpty) {
-            avatar = h['avatar'];
-          }
-
-          return HelperJob(
-            id: h['_id'] ?? '',
-            helperName: h['name'] ?? 'Helper',
-            helperImage: avatar,
-            postedByUserId: h['_id'] ?? '',
-            timeAgo: _formatDate(h['createdAt']),
-            category: cat,
-            title: h['bio'] ?? 'Available for hire',
-            description: h['bio'] ?? 'Professional helper in your area',
-            distance: h['address'] ?? 'Nearby',
-          );
-        }).toList();
+        final fetched = helpersList
+            .map((h) => HelperJob.fromHelperJson(
+                  h is Map ? Map<String, dynamic>.from(h) : <String, dynamic>{},
+                ))
+            .toList();
 
         helpers.assignAll(fetched);
       }
     } catch (_) {
     } finally {
       isLoading.value = false;
-    }
-  }
-
-  String _formatDate(String? dateStr) {
-    if (dateStr == null) return 'Recently';
-    try {
-      final date = DateTime.parse(dateStr);
-      final diff = DateTime.now().difference(date);
-      if (diff.inDays > 30) return '${(diff.inDays / 30).floor()}mo ago';
-      if (diff.inDays > 0) return '${diff.inDays}d ago';
-      if (diff.inHours > 0) return '${diff.inHours}h ago';
-      return 'Recently';
-    } catch (_) {
-      return 'Recently';
     }
   }
 
@@ -140,7 +108,7 @@ class _CategoryDetailsViewState extends State<CategoryDetailsView> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'No helpers found in this category',
+                          'ui_no_helpers_found_in_this_category'.tr,
                           style: AppStyles.bodyMediumOf(context).copyWith(
                             color: context.textSecondaryColor,
                             fontSize: 16,
@@ -179,7 +147,7 @@ class _CategoryDetailsViewState extends State<CategoryDetailsView> {
         style: TextStyle(color: context.textPrimaryColor),
         decoration: InputDecoration(
           icon: Icon(Icons.search, color: context.textHintColor),
-          hintText: 'Search ${category.name} helpers...',
+          hintText: 'ui_search_category_helpers'.trParams({'category': category.name}),
           hintStyle: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
@@ -229,11 +197,28 @@ class _CategoryDetailsViewState extends State<CategoryDetailsView> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      service.helperName,
-                      style: AppStyles.bodyLargeOf(context).copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            service.helperName,
+                            style: AppStyles.bodyLargeOf(context).copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (service.isVerified) ...[
+                          const SizedBox(width: 4),
+                          const VerifiedBadge(compact: true),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    RatingSummary(
+                      rating: service.rating,
+                      reviewCount: service.reviewCount,
                     ),
                     const SizedBox(height: 4),
                     Text(
@@ -258,6 +243,13 @@ class _CategoryDetailsViewState extends State<CategoryDetailsView> {
               ),
             ],
           ),
+          if (service.workPhotos.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: WorkPhotoStrip(urls: service.workPhotos),
+            ),
+          ],
           const SizedBox(height: 16),
           Row(
             children: [
@@ -279,7 +271,7 @@ class _CategoryDetailsViewState extends State<CategoryDetailsView> {
                       backgroundColor: context.inputFillLight,
                     ),
                     child: Text(
-                      'View Profile',
+                      'btn_view_profile'.tr,
                       style: AppStyles.bodyMedium.copyWith(
                         color: context.isDarkMode ? AppColors.primary : Colors.teal,
                       ),
@@ -316,8 +308,8 @@ class _CategoryDetailsViewState extends State<CategoryDetailsView> {
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
                     ),
-                    child: const Text(
-                      'Chat',
+                    child: Text(
+                      'btn_chat'.tr,
                       style: TextStyle(fontSize: 14),
                     ),
                   ),

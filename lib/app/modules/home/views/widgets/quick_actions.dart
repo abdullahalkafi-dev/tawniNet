@@ -16,8 +16,8 @@ class QuickActions extends GetView<HomeController> {
             onTap: controller.onFindHelperTap,
             child: _buildActionCard(
               context,
-              title: 'Find Helper',
-              subtitle: 'Browse Services',
+              title: 'ui_find_helper'.tr,
+              subtitle: 'ui_browse_services'.tr,
               icon: Icons.search,
               color: context.isDarkMode
                   ? AppColors.primary.withOpacity(0.15)
@@ -34,7 +34,7 @@ class QuickActions extends GetView<HomeController> {
             onTap: controller.onPostJobTap,
             child: _buildActionCard(
               context,
-              title: 'Post a job',
+              title: 'post_title'.tr,
               subtitle: '',
               icon: Icons.track_changes,
               color: context.cardColor,

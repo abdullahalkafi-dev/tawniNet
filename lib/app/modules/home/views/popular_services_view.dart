@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
+import 'package:awnneaapp/app/core/widgets/helper_trust_widgets.dart';
 
 class PopularServicesView extends GetView<HomeController> {
   const PopularServicesView({super.key});
@@ -206,7 +207,7 @@ class PopularServicesView extends GetView<HomeController> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Expanded(
+                        Flexible(
                           child: Text(
                             service.name,
                             style: AppStyles.bodyLargeOf(context).copyWith(
@@ -217,6 +218,11 @@ class PopularServicesView extends GetView<HomeController> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        if (service.isVerified) ...[
+                          const SizedBox(width: 4),
+                          const VerifiedBadge(compact: true),
+                        ],
+                        const Spacer(),
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(

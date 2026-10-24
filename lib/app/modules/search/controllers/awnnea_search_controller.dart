@@ -101,7 +101,7 @@ class AwnneaSearchController extends GetxController {
         final data = response.data as Map<String, dynamic>;
         final items = data['helpers'] as List? ?? [];
         searchResults.assignAll(
-          items.map<HelperJob>((e) => HelperJob.fromJson(e as Map<String, dynamic>)).toList(),
+          items.map<HelperJob>((e) => HelperJob.fromHelperJson(e as Map<String, dynamic>)).toList(),
         );
       } else {
         searchResults.clear();
@@ -136,7 +136,7 @@ class AwnneaSearchController extends GetxController {
         final data = response.data as Map<String, dynamic>;
         final items = data['helpers'] as List? ?? [];
         searchResults.assignAll(
-          items.map<HelperJob>((e) => HelperJob.fromJson(e as Map<String, dynamic>)).toList(),
+          items.map<HelperJob>((e) => HelperJob.fromHelperJson(e as Map<String, dynamic>)).toList(),
         );
       } else {
         searchResults.clear();

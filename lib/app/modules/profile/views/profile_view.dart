@@ -1,4 +1,5 @@
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
+import 'package:awnneaapp/app/core/constants/app_info.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/localization/locale_service.dart';
@@ -48,7 +49,7 @@ class ProfileView extends GetView<ProfileController> {
               _buildProfileOption(
                 context,
                 Icons.brightness_6_outlined,
-                'Theme Mode',
+                'ui_theme_mode'.tr,
                 trailingText: Get.find<ThemeService>().themeModeName,
                 onTap: () => _showThemeModeBottomSheet(context),
               ),
@@ -103,7 +104,7 @@ class ProfileView extends GetView<ProfileController> {
   Widget _buildProfileHeader(BuildContext context) {
     return Obx(() {
       final user = Get.find<AuthService>().currentUser.value;
-      final name = user?.name ?? 'User';
+      final name = user?.name ?? 'ui_user'.tr;
       final email = user?.email ?? '';
       final avatar = user?.avatar;
 
@@ -262,7 +263,7 @@ class ProfileView extends GetView<ProfileController> {
             ),
             const SizedBox(height: 20),
             Text(
-              'Select Theme Mode',
+              'ui_select_theme_mode'.tr,
               style: AppStyles.h2Of(context).copyWith(
                 fontSize: 20,
               ),
@@ -270,8 +271,8 @@ class ProfileView extends GetView<ProfileController> {
             const SizedBox(height: 20),
             _buildThemeOptionTile(
               context,
-              title: 'System Default',
-              subtitle: 'Follow your device system setting',
+              title: 'ui_system_default'.tr,
+              subtitle: 'ui_follow_your_device_system_setting'.tr,
               mode: ThemeMode.system,
               currentMode: themeService.themeMode.value,
               onTap: () {
@@ -281,8 +282,8 @@ class ProfileView extends GetView<ProfileController> {
             ),
             _buildThemeOptionTile(
               context,
-              title: 'Light Mode',
-              subtitle: 'Clean white background and dark text',
+              title: 'ui_light_mode'.tr,
+              subtitle: 'ui_clean_white_background_and_dark_text'.tr,
               mode: ThemeMode.light,
               currentMode: themeService.themeMode.value,
               onTap: () {
@@ -292,8 +293,8 @@ class ProfileView extends GetView<ProfileController> {
             ),
             _buildThemeOptionTile(
               context,
-              title: 'Dark Mode',
-              subtitle: 'Deep charcoal background and light text',
+              title: 'ui_dark_mode'.tr,
+              subtitle: 'ui_deep_charcoal_background_and_light_text'.tr,
               mode: ThemeMode.dark,
               currentMode: themeService.themeMode.value,
               onTap: () {
@@ -382,31 +383,22 @@ class ProfileView extends GetView<ProfileController> {
             ),
             const SizedBox(height: 20),
             Obx(() {
-              final isAr = localeService.isArabic;
+              // Read the observable so the tiles rebuild on change.
+              localeService.currentLocale.value;
               return Column(
                 children: [
-                  _buildLanguageOptionTile(
-                    context,
-                    title: 'English',
-                    subtitle: 'English (US)',
-                    flag: '🇺🇸',
-                    isSelected: !isAr,
-                    onTap: () {
-                      localeService.setLocale(const Locale('en', 'US'));
-                      Get.back();
-                    },
-                  ),
-                  _buildLanguageOptionTile(
-                    context,
-                    title: 'العربية',
-                    subtitle: 'Moroccan Arabic (الدارجة)',
-                    flag: '🇲🇦',
-                    isSelected: isAr,
-                    onTap: () {
-                      localeService.setLocale(const Locale('ar', 'MA'));
-                      Get.back();
-                    },
-                  ),
+                  for (final language in LocaleService.languages)
+                    _buildLanguageOptionTile(
+                      context,
+                      title: language.nativeName,
+                      subtitle: language.subtitle,
+                      flag: language.flag,
+                      isSelected: localeService.isSelected(language),
+                      onTap: () {
+                        localeService.setLocale(language.locale);
+                        Get.back();
+                      },
+                    ),
                 ],
               );
             }),
@@ -565,42 +557,31 @@ class ProfileView extends GetView<ProfileController> {
               ),
             ),
             const SizedBox(height: 20),
+            // The app has no saved cards: online payments go through the
+            // Moroccan checkout each time, or the client pays cash.
             _buildPaymentCardTile(
               context,
-              'Visa ending in 4242',
-              'Expires 12/28',
-              Icons.credit_card,
-              true,
-            ),
-            _buildPaymentCardTile(
-              context,
-              'Mastercard ending in 9876',
-              'Expires 05/27',
+              'payment_online_title'.tr,
+              'payment_online_desc'.tr,
               Icons.credit_card,
               false,
             ),
-            _buildPaymentCardTile(context, 'Apple Pay', 'Connected', Icons.apple, false),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.add, size: 20),
-                label: Text(
-                  'profile_add_card'.tr,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF5AB9A7),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
+            _buildPaymentCardTile(
+              context,
+              'payment_cash_title'.tr,
+              'payment_cash_desc'.tr,
+              Icons.payments_outlined,
+              false,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'payment_no_saved_cards'.tr,
+              style: AppStyles.bodyMedium.copyWith(
+                fontSize: 12,
+                color: context.textHintColor,
               ),
             ),
+            const SizedBox(height: 10),
           ],
         ),
       ),
@@ -725,7 +706,7 @@ class ProfileView extends GetView<ProfileController> {
                       : SingleChildScrollView(
                           child: Text(
                             content.isEmpty
-                                ? 'Privacy policy will appear here once published by the admin.'
+                                ? 'legal_privacy_fallback'.trParams({'email': AppInfo.supportEmail})
                                 : content,
                             style: AppStyles.bodyMediumOf(context).copyWith(
                               color: context.textSecondaryColor,
@@ -867,20 +848,16 @@ class ProfileView extends GetView<ProfileController> {
             _buildSupportTile(
               context,
               'profile_email_support'.tr,
-              'support@awnnea.com',
+              AppInfo.supportEmail,
               Icons.email_outlined,
-              () {
-                print('Email support clicked');
-              },
+              AppInfo.emailSupport,
             ),
             _buildSupportTile(
               context,
               'profile_call_hotline'.tr,
-              '+1 (800) 555-0199',
+              AppInfo.supportPhone,
               Icons.phone_outlined,
-              () {
-                print('Phone support clicked');
-              },
+              AppInfo.callSupport,
             ),
             const SizedBox(height: 10),
           ],

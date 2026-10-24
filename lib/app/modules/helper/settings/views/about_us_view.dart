@@ -1,3 +1,4 @@
+import 'package:awnneaapp/app/core/constants/app_info.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -14,7 +15,7 @@ class AboutUsView extends StatelessWidget {
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'About Us',
+          'profile_about'.tr,
           style: AppStyles.h2Of(context).copyWith(fontSize: 20),
         ),
         centerTitle: true,
@@ -24,11 +25,18 @@ class AboutUsView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSection(context, '1. Introduction', 'Lorem ipsum dolor sit amet consectetur. Elit ac gravida augue suspendisse in scelerisque pellentesque diam elementum. Lorem quam vitae mus metus tortor turpis at. Cras accumsan pharetra odio euismod metus leo neque dui.'),
-            _buildSection(context, '2. Mission Statement', 'Lorem ipsum dolor sit amet consectetur. Mattis et commodo lacus nisl vitae id. Fames egestas etiam risus ultrices risus. Porta nisl commodo sit id purus senectus ultrices.'),
-            _buildSection(context, '3. Core Values', 'Lorem ipsum dolor sit amet consectetur. Elementum amet netus magna justo duis netus. Porttitor nulla erat sodales faucibus. Massa turpis nibh vel sit enim porta a.'),
-            _buildSection(context, '4. Our Team', 'Lorem ipsum dolor sit amet consectetur. Massa suscipit euismod interdum suspendisse id. Vitae sed quam amet dictumst vel sed integer morbi. Vel sed aenean ultricies in volutpat scelerisque id eget hendrerit.'),
-            _buildSection(context, '5. Contact Information', 'Lorem ipsum dolor sit amet consectetur. Id feugiat pretum ipsum sit amet consectetur.'),
+            _buildSection(context, 'about_intro_title'.tr, 'about_intro_body'.tr),
+            _buildSection(context, 'about_mission_title'.tr, 'about_mission_body'.tr),
+            _buildSection(context, 'about_values_title'.tr, 'about_values_body'.tr),
+            _buildSection(context, 'about_team_title'.tr, 'about_team_body'.tr),
+            _buildSection(
+              context,
+              'about_contact_title'.tr,
+              'about_contact_body'.trParams({
+                'email': AppInfo.supportEmail,
+                'phone': AppInfo.supportPhone,
+              }),
+            ),
           ],
         ),
       ),

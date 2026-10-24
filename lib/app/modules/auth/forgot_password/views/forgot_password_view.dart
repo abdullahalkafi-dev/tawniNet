@@ -38,7 +38,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Enter your registered Moroccan mobile number to receive a WhatsApp verification code.',
+                'ui_enter_your_registered_moroccan_mobile_number_to'.tr,
                 textAlign: TextAlign.center,
                 style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 16),
               ),
@@ -48,14 +48,14 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
               MoroccoPhoneField(
                 label: 'auth_phone'.tr.isNotEmpty && 'auth_phone'.tr != 'auth_phone'
                     ? 'auth_phone'.tr
-                    : 'Moroccan Mobile Phone',
+                    : 'ui_moroccan_mobile_phone'.tr,
                 controller: controller.phoneController,
               ),
 
               const SizedBox(height: 40),
               Obx(
                 () => CustomButton(
-                  text: 'Send WhatsApp Code',
+                  text: 'ui_send_whatsapp_code'.tr,
                   onPressed: controller.sendResetOtp,
                   isLoading: controller.isLoading.value,
                 ),

@@ -118,7 +118,7 @@ class _CompletedJobDetailsViewState extends State<CompletedJobDetailsView> {
                   border: Border.all(color: AppColors.primary),
                 ),
                 child: Text(
-                  'Cash payment confirmed',
+                  'ui_cash_payment_confirmed'.tr,
                   textAlign: TextAlign.center,
                   style: AppStyles.bodyMedium.copyWith(
                     fontSize: 13,
@@ -138,7 +138,7 @@ class _CompletedJobDetailsViewState extends State<CompletedJobDetailsView> {
                   border: Border.all(color: Colors.orange.shade700),
                 ),
                 child: Text(
-                  'Client completed this cash job. Confirm once you have received payment.',
+                  'ui_client_completed_this_cash_job_confirm_once'.tr,
                   textAlign: TextAlign.center,
                   style: AppStyles.bodyMedium.copyWith(fontSize: 13),
                 ),
@@ -189,8 +189,8 @@ class _CompletedJobDetailsViewState extends State<CompletedJobDetailsView> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text(
-                        'Cash received',
+                    : Text(
+                        'ui_cash_received'.tr,
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -203,14 +203,14 @@ class _CompletedJobDetailsViewState extends State<CompletedJobDetailsView> {
             if (hasOtherReview && job['reviewFromOther'] is Map)
               _buildReviewCard(
                 context,
-                title: 'Client review',
+                title: 'ui_client_review'.tr,
                 review: Map<String, dynamic>.from(job['reviewFromOther'] as Map),
               ),
             if (hasOtherReview && !hasMyReview) const SizedBox(height: 12),
             if (hasMyReview && job['myReview'] is Map)
               _buildReviewCard(
                 context,
-                title: 'Your review',
+                title: 'booking_your_review'.tr,
                 review: Map<String, dynamic>.from(job['myReview'] as Map),
               )
             else
@@ -326,7 +326,7 @@ class _CompletedJobDetailsViewState extends State<CompletedJobDetailsView> {
             location.isEmpty ? 'Not provided' : location,
           ),
           if (distanceText.isNotEmpty)
-            _buildInfoRow(context, 'Distance', distanceText),
+            _buildInfoRow(context, 'find_distance'.tr, distanceText),
           _buildInfoRow(context, 'label_budget'.tr, budget),
         ],
       ),

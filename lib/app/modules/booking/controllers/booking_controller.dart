@@ -155,9 +155,9 @@ class BookingController extends GetxController {
                   unpaidBookings.isEmpty))) {
         AppFeedback.error(
           e.toString().replaceAll('Exception: ', '').isEmpty
-              ? 'Could not load bookings. Pull down to retry.'
+              ? 'ui_could_not_load_bookings_pull_down_to'.tr
               : e.toString().replaceAll('Exception: ', ''),
-          title: 'Bookings',
+          title: 'ui_bookings'.tr,
         );
       }
     } finally {
@@ -219,8 +219,8 @@ class BookingController extends GetxController {
   Future<void> onChatWithWorker(Booking booking) async {
     if (booking.workerUserId.isEmpty) {
       AppFeedback.error(
-        'No helper assigned yet. Chat opens after a helper accepts the job.',
-        title: 'Chat unavailable',
+        'ui_no_helper_assigned_yet_chat_opens_after'.tr,
+        title: 'ui_chat_unavailable'.tr,
       );
       return;
     }
@@ -241,10 +241,10 @@ class BookingController extends GetxController {
           ),
         );
       } else if (conversation == null && !Get.isSnackbarOpen) {
-        AppFeedback.error('Could not open chat. Try again.', title: 'Chat');
+        AppFeedback.error('ui_could_not_open_chat_try_again'.tr, title: 'btn_chat'.tr);
       }
     } catch (_) {
-      AppFeedback.error('Could not open chat. Try again.', title: 'Chat');
+      AppFeedback.error('ui_could_not_open_chat_try_again'.tr, title: 'btn_chat'.tr);
     }
   }
 
@@ -255,7 +255,7 @@ class BookingController extends GetxController {
       }
       final jobService = Get.find<JobService>();
       await jobService.cancelJob(id, reason.trim());
-      AppFeedback.success('Your booking has been cancelled', title: 'Booking Cancelled');
+      AppFeedback.success('ui_your_booking_has_been_cancelled'.tr, title: 'ui_booking_cancelled'.tr);
       await _invalidatePipeline();
       return true;
     } catch (e) {
@@ -268,7 +268,7 @@ class BookingController extends GetxController {
     try {
       final jobService = Get.find<JobService>();
       await jobService.completeJob(id);
-      AppFeedback.success('Booking marked as completed', title: 'Completed');
+      AppFeedback.success('ui_booking_marked_as_completed'.tr, title: 'status_completed'.tr);
       await _invalidatePipeline();
     } catch (e) {
       AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
@@ -283,7 +283,7 @@ class BookingController extends GetxController {
       final checkoutUrl = res['checkoutUrl']?.toString() ?? '';
       final sessId = res['sessionId']?.toString() ?? '';
       if (checkoutUrl.isEmpty) {
-        AppFeedback.error('Could not start payment. Try again.');
+        AppFeedback.error('ui_could_not_start_payment_try_again'.tr);
         return;
       }
       final paid = await Get.toNamed(
@@ -326,7 +326,7 @@ class BookingController extends GetxController {
     } catch (e) {
       AppFeedback.error(
         e.toString().replaceAll('Exception: ', ''),
-        title: 'Could not submit review',
+        title: 'ui_could_not_submit_review'.tr,
       );
       return false;
     }
@@ -335,8 +335,8 @@ class BookingController extends GetxController {
     scheduleMicrotask(() {
       try {
         AppFeedback.success(
-          'Thank you! Your feedback has been recorded.',
-          title: 'Review Submitted',
+          'ui_thank_you_your_feedback_has_been_recorded'.tr,
+          title: 'ui_review_submitted'.tr,
         );
       } catch (_) {}
       _invalidatePipeline().catchError((_) {});

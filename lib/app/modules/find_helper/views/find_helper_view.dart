@@ -1,6 +1,7 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/widgets/app_pull_to_refresh.dart';
+import 'package:awnneaapp/app/core/widgets/helper_trust_widgets.dart';
 import 'package:awnneaapp/app/data/models/home_models.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -230,101 +231,130 @@ class FindHelperView extends GetView<FindHelperController> {
   }
 
   Widget _buildHelperCard(BuildContext context, HelperJob helper) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: context.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: context.borderSubtle),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              helper.helperImage,
-              height: 50,
-              width: 50,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                width: 50,
-                height: 50,
-                color: context.inputFillLight,
-                child: Icon(Icons.person, color: context.textHintColor),
-              ),
+    return GestureDetector(
+      onTap: () => controller.openHelper(helper),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: context.cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: context.borderSubtle),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Text(
-                  helper.helperName,
-                  style: AppStyles.bodyLargeOf(context).copyWith(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    helper.helperImage,
+                    height: 50,
+                    width: 50,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: 50,
+                      height: 50,
+                      color: context.inputFillLight,
+                      child: Icon(Icons.person, color: context.textHintColor),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: context.isDarkMode
-                            ? AppColors.primary.withOpacity(0.15)
-                            : const Color(0xFFE5F7F5),
-                        borderRadius: BorderRadius.circular(6),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              helper.helperName,
+                              style: AppStyles.bodyLargeOf(context).copyWith(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (helper.isVerified) ...[
+                            const SizedBox(width: 4),
+                            const VerifiedBadge(compact: true),
+                          ],
+                        ],
                       ),
-                      child: Text(
-                        helper.category,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      const SizedBox(height: 2),
+                      RatingSummary(
+                        rating: helper.rating,
+                        reviewCount: helper.reviewCount,
                       ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: context.isDarkMode
+                                  ? AppColors.primary.withOpacity(0.15)
+                                  : const Color(0xFFE5F7F5),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              helper.category,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(Icons.location_on_outlined, size: 14, color: Colors.orange[400]),
+                          const SizedBox(width: 2),
+                          Expanded(
+                            child: Text(
+                              helper.distance,
+                              style: TextStyle(fontSize: 12, color: context.textHintColor),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  height: 34,
+                  child: ElevatedButton(
+                    onPressed: () => controller.chatWithHelper(helper),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
                     ),
-                    const SizedBox(width: 8),
-                    Icon(Icons.location_on_outlined, size: 14, color: Colors.orange[400]),
-                    const SizedBox(width: 2),
-                    Expanded(
-                      child: Text(
-                        helper.distance,
-                        style: TextStyle(fontSize: 12, color: context.textHintColor),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+                    child: Text('btn_chat'.tr, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
                 ),
               ],
             ),
-          ),
-          SizedBox(
-            height: 34,
-            child: ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-              ),
-              child: Text('btn_chat'.tr, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-            ),
-          ),
-        ],
+            if (helper.workPhotos.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              WorkPhotoStrip(urls: helper.workPhotos),
+            ],
+          ],
+        ),
       ),
     );
   }

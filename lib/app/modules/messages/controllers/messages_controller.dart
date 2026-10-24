@@ -122,7 +122,7 @@ class MessagesController extends GetxController {
       final avatar = other?.avatar ?? '';
       return ChatSummary(
         id: conv.id,
-        name: other?.name ?? 'Unknown',
+        name: other?.name ?? 'ui_unknown'.tr,
         image: ApiConstants.resolveImageUrl(avatar) ?? avatar,
         otherUserId: otherId,
         lastMessage: conv.lastMessage?.content ??
@@ -220,7 +220,7 @@ class MessagesController extends GetxController {
     if (summary != null) return summary;
 
     // Fallback: minimal summary so the chat screen can open and load messages.
-    return ChatSummary(id: conversationId, name: 'Chat', image: '');
+    return ChatSummary(id: conversationId, name: 'btn_chat'.tr, image: '');
   }
 
   /// Format time for display.

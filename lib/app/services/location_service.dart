@@ -23,7 +23,9 @@ class LocationService extends GetxService {
 
   Future<LocationService> init() async {
     _api = Get.find<ApiClient>();
-    await checkGpsStatus();
+    try {
+      await checkGpsStatus().timeout(const Duration(seconds: 2));
+    } catch (_) {}
     return this;
   }
 

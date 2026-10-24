@@ -46,7 +46,7 @@ class HomeHeader extends GetView<HomeController> {
               if (picked != null) {
                 try {
                   await auth.updateProfile({'address': picked.address});
-                  AppSnackbar.showSuccess('Address updated successfully');
+                  AppSnackbar.showSuccess('ui_address_updated_successfully'.tr);
                 } catch (_) {}
               }
             },

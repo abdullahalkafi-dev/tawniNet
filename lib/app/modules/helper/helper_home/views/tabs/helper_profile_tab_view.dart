@@ -27,7 +27,7 @@ class HelperProfileTabView extends GetView {
             _buildProfileOption(
               context,
               Icons.brightness_6_outlined,
-              'Theme Mode',
+              'ui_theme_mode'.tr,
               trailingText: Get.find<ThemeService>().themeModeName,
               onTap: () => _showThemeModeBottomSheet(context),
             ),
@@ -55,7 +55,7 @@ class HelperProfileTabView extends GetView {
   Widget _buildProfileHeader(BuildContext context) {
     return Obx(() {
       final user = Get.find<AuthService>().currentUser.value;
-      final name = user?.name ?? 'User';
+      final name = user?.name ?? 'ui_user'.tr;
       final email = user?.email ?? '';
       final avatar = user?.avatar;
 
@@ -198,7 +198,7 @@ class HelperProfileTabView extends GetView {
             ),
             const SizedBox(height: 20),
             Text(
-              'Select Theme Mode',
+              'ui_select_theme_mode'.tr,
               style: AppStyles.h2Of(context).copyWith(
                 fontSize: 20,
               ),
@@ -206,8 +206,8 @@ class HelperProfileTabView extends GetView {
             const SizedBox(height: 20),
             _buildThemeOptionTile(
               context,
-              title: 'System Default',
-              subtitle: 'Follow your device system setting',
+              title: 'ui_system_default'.tr,
+              subtitle: 'ui_follow_your_device_system_setting'.tr,
               mode: ThemeMode.system,
               currentMode: themeService.themeMode.value,
               onTap: () {
@@ -217,8 +217,8 @@ class HelperProfileTabView extends GetView {
             ),
             _buildThemeOptionTile(
               context,
-              title: 'Light Mode',
-              subtitle: 'Clean white background and dark text',
+              title: 'ui_light_mode'.tr,
+              subtitle: 'ui_clean_white_background_and_dark_text'.tr,
               mode: ThemeMode.light,
               currentMode: themeService.themeMode.value,
               onTap: () {
@@ -228,8 +228,8 @@ class HelperProfileTabView extends GetView {
             ),
             _buildThemeOptionTile(
               context,
-              title: 'Dark Mode',
-              subtitle: 'Deep charcoal background and light text',
+              title: 'ui_dark_mode'.tr,
+              subtitle: 'ui_deep_charcoal_background_and_light_text'.tr,
               mode: ThemeMode.dark,
               currentMode: themeService.themeMode.value,
               onTap: () {
@@ -318,31 +318,22 @@ class HelperProfileTabView extends GetView {
             ),
             const SizedBox(height: 20),
             Obx(() {
-              final isAr = localeService.isArabic;
+              // Read the observable so the tiles rebuild on change.
+              localeService.currentLocale.value;
               return Column(
                 children: [
-                  _buildLanguageOptionTile(
-                    context,
-                    title: 'English',
-                    subtitle: 'English (US)',
-                    flag: '🇺🇸',
-                    isSelected: !isAr,
-                    onTap: () {
-                      localeService.setLocale(const Locale('en', 'US'));
-                      Get.back();
-                    },
-                  ),
-                  _buildLanguageOptionTile(
-                    context,
-                    title: 'العربية',
-                    subtitle: 'Moroccan Arabic (الدارجة)',
-                    flag: '🇲🇦',
-                    isSelected: isAr,
-                    onTap: () {
-                      localeService.setLocale(const Locale('ar', 'MA'));
-                      Get.back();
-                    },
-                  ),
+                  for (final language in LocaleService.languages)
+                    _buildLanguageOptionTile(
+                      context,
+                      title: language.nativeName,
+                      subtitle: language.subtitle,
+                      flag: language.flag,
+                      isSelected: localeService.isSelected(language),
+                      onTap: () {
+                        localeService.setLocale(language.locale);
+                        Get.back();
+                      },
+                    ),
                 ],
               );
             }),

@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import '../../../../data/models/home_models.dart';
 import '../../../../core/values/app_colors.dart';
 import '../../../../core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/widgets/helper_trust_widgets.dart';
 
 class PopularServicesSection extends GetView<HomeController> {
   const PopularServicesSection({super.key});
@@ -179,7 +180,7 @@ class PopularServicesSection extends GetView<HomeController> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Expanded(
+                          Flexible(
                             child: Text(
                               service.name,
                               style: AppStyles.bodyLargeOf(context).copyWith(
@@ -190,6 +191,11 @@ class PopularServicesSection extends GetView<HomeController> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          if (service.isVerified) ...[
+                            const SizedBox(width: 4),
+                            const VerifiedBadge(compact: true),
+                          ],
+                          const Spacer(),
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(

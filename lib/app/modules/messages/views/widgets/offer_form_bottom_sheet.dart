@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:awnneaapp/app/core/utils/image_picker_errors.dart';
 
 class OfferFormBottomSheet extends StatefulWidget {
   final String conversationId;
@@ -154,7 +155,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
         }
       }
     } catch (_) {}
-    AppFeedback.info('Could not fetch current location coordinates');
+    AppFeedback.info('ui_could_not_fetch_current_location_coordinates'.tr);
   }
 
   @override
@@ -209,7 +210,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Title
-                  _buildLabel(context, 'Service Title'),
+                  _buildLabel(context, 'ui_service_title'.tr),
                   TextField(
                     controller: _titleController,
                     style: TextStyle(color: context.textPrimaryColor),
@@ -219,18 +220,18 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                   const SizedBox(height: 16),
 
                   // Description
-                  _buildLabel(context, 'Description'),
+                  _buildLabel(context, 'ui_description'.tr),
                   TextField(
                     controller: _descController,
                     style: TextStyle(color: context.textPrimaryColor),
-                    decoration: _buildInputDecoration(context, 'Describe your service'),
+                    decoration: _buildInputDecoration(context, 'ui_describe_your_service'.tr),
                     maxLines: 3,
                     maxLength: 2000,
                   ),
                   const SizedBox(height: 16),
 
                   // Price
-                  _buildLabel(context, 'Price (MAD)'),
+                  _buildLabel(context, 'ui_price_mad'.tr),
                   TextField(
                     controller: _priceController,
                     style: TextStyle(color: context.textPrimaryColor),
@@ -244,14 +245,14 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                   const SizedBox(height: 16),
 
                   // Price Type
-                  _buildLabel(context, 'Price Type'),
+                  _buildLabel(context, 'ui_price_type'.tr),
                   Row(
                     children: [
-                      _buildChoiceChip(context, 'Fixed', 'fixed', _priceType, (val) {
+                      _buildChoiceChip(context, 'ui_fixed'.tr, 'fixed', _priceType, (val) {
                         setState(() => _priceType = val);
                       }),
                       const SizedBox(width: 8),
-                      _buildChoiceChip(context, 'Hourly', 'hourly', _priceType, (val) {
+                      _buildChoiceChip(context, 'ui_hourly'.tr, 'hourly', _priceType, (val) {
                         setState(() => _priceType = val);
                       }),
                     ],
@@ -260,37 +261,37 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                   const SizedBox(height: 16),
 
                   // Date
-                  _buildDateField(context, 'Date *', _dateController),
+                  _buildDateField(context, 'ui_date'.tr, _dateController),
                   const SizedBox(height: 16),
 
                   // Time Range
                   Row(
                     children: [
                       Expanded(
-                        child: _buildTimeField(context, 'Start Time', _startTimeController),
+                        child: _buildTimeField(context, 'ui_start_time'.tr, _startTimeController),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: _buildTimeField(context, 'End Time', _endTimeController),
+                        child: _buildTimeField(context, 'ui_end_time'.tr, _endTimeController),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
 
                   // Work location (search — no GPS)
-                  _buildLabel(context, 'Work location *'),
+                  _buildLabel(context, 'ui_work_location'.tr),
                   _buildLocationField(context),
                   const SizedBox(height: 16),
 
                   // Payment Method
-                  _buildLabel(context, 'Payment Method'),
+                  _buildLabel(context, 'ui_payment_method'.tr),
                   Row(
                     children: [
-                      _buildChoiceChip(context, 'Cash', 'cash', _paymentMethod, (val) {
+                      _buildChoiceChip(context, 'ui_cash'.tr, 'cash', _paymentMethod, (val) {
                         setState(() => _paymentMethod = val);
                       }),
                       const SizedBox(width: 8),
-                      _buildChoiceChip(context, 'Online', 'online', _paymentMethod, (val) {
+                      _buildChoiceChip(context, 'earning_online'.tr, 'online', _paymentMethod, (val) {
                         setState(() => _paymentMethod = val);
                       }),
                     ],
@@ -310,7 +311,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Platform commission (20%) is held from your recharge wallet when sending, and refunded if the offer is cancelled or rejected.',
+                              'ui_platform_commission_20_is_held_from_your'.tr,
                               style: TextStyle(
                                 fontSize: 11,
                                 color: context.textPrimaryColor,
@@ -324,7 +325,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                   const SizedBox(height: 16),
 
                   // Images
-                  _buildLabel(context, 'Images (${_selectedImages.length}/4)'),
+                  _buildLabel(context, 'ui_images_count_of_4'.trParams({'count': '${_selectedImages.length}'})),
                   SizedBox(
                     height: 80,
                     child: ListView(
@@ -450,20 +451,23 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
 
   Widget _buildHourlyEstimate() {
     final rate = double.tryParse(_priceController.text.trim()) ?? 0;
-    final start = AppDateTime.tryParseTimeOfDay(_startTimeController.text);
-    final end = AppDateTime.tryParseTimeOfDay(_endTimeController.text);
+    final mins = AppDateTime.minutesBetween(
+      _startTimeController.text,
+      _endTimeController.text,
+    );
     String? estimate;
-    if (rate > 0 && start != null && end != null) {
-      var startMins = start.hour * 60 + start.minute;
-      var endMins = end.hour * 60 + end.minute;
-      var mins = endMins - startMins;
-      if (mins <= 0) mins += 24 * 60;
-      if (mins > 0) {
+    if (rate > 0 && mins != null) {
+      if (mins <= 0) {
+        estimate = 'time_end_after_start'.tr;
+      } else {
         final hours = mins / 60.0;
         final total = (rate * hours).round();
         estimate =
-            '${hours.toStringAsFixed(2)} h × ${rate.toStringAsFixed(0)} MAD/h\n'
-            'Client pays: $total MAD (rounded)';
+            'ui_hourly_estimate_detail'.trParams({
+              'hours': hours.toStringAsFixed(2),
+              'rate': rate.toStringAsFixed(0),
+              'total': '$total',
+            });
       }
     }
 
@@ -481,7 +485,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Hourly estimate',
+              'ui_hourly_estimate'.tr,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
@@ -491,7 +495,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
             const SizedBox(height: 4),
             Text(
               estimate ??
-                  'Set price + start/end time to see the rounded total.',
+                  'ui_set_price_start_end_time_to_see'.tr,
               style: TextStyle(
                 fontSize: 12,
                 color: context.textSecondaryColor,
@@ -519,7 +523,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
             style: TextStyle(color: context.textPrimaryColor),
             onChanged: _onAddressChanged,
             decoration: InputDecoration(
-              hintText: 'Search street, city, landmark…',
+              hintText: 'ui_search_street_city_landmark'.tr,
               hintStyle: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
               prefixIcon: Icon(Icons.location_on_outlined, color: context.textHintColor, size: 20),
               suffixIcon: _isSearchingAddress
@@ -690,9 +694,9 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
             child: TextField(
               controller: controller,
               style: TextStyle(color: context.textPrimaryColor),
-              decoration: _buildInputDecoration(context, 'Select date').copyWith(
+              decoration: _buildInputDecoration(context, 'ui_select_date'.tr).copyWith(
                 suffixIcon: Icon(Icons.calendar_today, size: 20, color: context.textHintColor),
-                hintText: 'Select date',
+                hintText: 'ui_select_date'.tr,
               ),
             ),
           ),
@@ -721,9 +725,9 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
             child: TextField(
               controller: controller,
               style: TextStyle(color: context.textPrimaryColor),
-              decoration: _buildInputDecoration(context, 'Select time').copyWith(
+              decoration: _buildInputDecoration(context, 'ui_select_time'.tr).copyWith(
                 suffixIcon: Icon(Icons.access_time, size: 20, color: context.textHintColor),
-                hintText: 'Select time',
+                hintText: 'ui_select_time'.tr,
               ),
             ),
           ),
@@ -783,16 +787,22 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
 
   Future<void> _addImage() async {
     if (_selectedImages.length >= 4) {
-      AppFeedback.error('Maximum 4 images allowed', title: 'Limit reached');
+      AppFeedback.error('ui_maximum_4_images_allowed'.tr, title: 'ui_limit_reached_2'.tr);
       return;
     }
 
     final picker = ImagePicker();
-    final picked = await picker.pickMultiImage(
-      maxWidth: 1024,
-      maxHeight: 1024,
-      imageQuality: 80,
-    );
+    final List<XFile> picked;
+    try {
+      picked = await picker.pickMultiImage(
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 80,
+      );
+    } catch (e) {
+      AppFeedback.error(imagePickerErrorMessage(e));
+      return;
+    }
     if (picked.isEmpty) return;
 
     final remaining = 4 - _selectedImages.length;
@@ -801,8 +811,8 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
 
     if (skipped > 0) {
       AppFeedback.error(
-        'Only 4 images allowed. $skipped image(s) were not added.',
-        title: 'Limit reached',
+        'ui_images_limit_skipped'.trParams({'max': '4', 'skipped': '$skipped'}),
+        title: 'ui_limit_reached_2'.tr,
       );
     }
 
@@ -840,8 +850,8 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
     if (failed > 0 && mounted) {
       AppFeedback.error(
         failed == toUpload.length
-            ? 'Failed to upload images. Please try again.'
-            : 'Failed to upload $failed of ${toUpload.length} image(s).',
+            ? 'ui_failed_to_upload_images_retry'.tr
+            : 'ui_failed_to_upload_some_images'.trParams({'failed': '$failed', 'total': '${toUpload.length}'}),
       );
     }
   }
@@ -852,14 +862,14 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
 
     if (title.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a service title')),
+        SnackBar(content: Text('ui_please_enter_a_service_title'.tr)),
       );
       return;
     }
 
     if (price <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid price')),
+        SnackBar(content: Text('ui_please_enter_a_valid_price'.tr)),
       );
       return;
     }
@@ -871,7 +881,18 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
     }
     if (isoDate == null || isoDate.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a date for this job')),
+        SnackBar(content: Text('ui_please_select_a_date_for_this_job'.tr)),
+      );
+      return;
+    }
+
+    final timeError = AppDateTime.validateTimeRange(
+      _startTimeController.text,
+      _endTimeController.text,
+    );
+    if (timeError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(timeError)),
       );
       return;
     }
@@ -879,7 +900,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
     final address = _addressController.text.trim();
     if (address.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a work location')),
+        SnackBar(content: Text('ui_please_select_a_work_location'.tr)),
       );
       return;
     }

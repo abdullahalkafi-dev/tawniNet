@@ -165,7 +165,7 @@ class _AppNotificationListViewState extends State<AppNotificationListView> {
         return DateFormat('h:mm a').format(date);
       }
       if (dateOnly == today.subtract(const Duration(days: 1))) {
-        return 'Yesterday';
+        return 'label_yesterday'.tr;
       }
       return DateFormat('MMM d').format(date);
     } catch (_) {

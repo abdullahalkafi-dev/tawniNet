@@ -133,6 +133,7 @@ class PostJobView extends GetView<PostJobController> {
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             ),
+            _buildPriceGuidance(context),
             const SizedBox(height: 20),
 
             _buildLabel(context, 'post_job_location'.tr),
@@ -142,7 +143,7 @@ class PostJobView extends GetView<PostJobController> {
 
             _buildLabel(context, 'post_add_photos'.tr),
             Text(
-              'Max 4 photos',
+              'ui_max_4_photos'.tr,
               style: AppStyles.bodyMedium.copyWith(
                 fontSize: 12,
                 color: context.textHintColor,
@@ -473,6 +474,64 @@ class PostJobView extends GetView<PostJobController> {
         ),
       ),
     );
+  }
+
+  /// Suggested price range / minimum hourly rate for the selected category.
+  Widget _buildPriceGuidance(BuildContext context) {
+    return Obx(() {
+      final category = controller.selectedCategory.value;
+      final message = category == null
+          ? null
+          : controller.isHourly.value
+              ? (category.minHourlyRate != null
+                  ? 'price_min_hourly'.trParams({
+                      'category': category.name,
+                      'min': category.minHourlyRate!.toStringAsFixed(0),
+                    })
+                  : null)
+              : _priceRangeText(category.name, category.suggestedPriceMin, category.suggestedPriceMax);
+      if (message == null) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.lightbulb_outline, size: 18, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  message,
+                  style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
+  }
+
+  String? _priceRangeText(String category, double? min, double? max) {
+    if (min != null && max != null) {
+      return 'price_typical_range'.trParams({
+        'category': category,
+        'min': min.toStringAsFixed(0),
+        'max': max.toStringAsFixed(0),
+      });
+    }
+    if (min != null) {
+      return 'price_typical_from'.trParams({'category': category, 'min': min.toStringAsFixed(0)});
+    }
+    if (max != null) {
+      return 'price_typical_up_to'.trParams({'category': category, 'max': max.toStringAsFixed(0)});
+    }
+    return null;
   }
 
   Widget _buildBudgetOption(BuildContext context, String title, IconData icon, bool hourly) {

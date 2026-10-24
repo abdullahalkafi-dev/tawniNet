@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../values/app_colors.dart';
 import '../values/app_styles.dart';
+import 'package:get/get.dart';
 
 class MoroccoPhoneField extends StatelessWidget {
   final TextEditingController controller;
@@ -23,7 +24,7 @@ class MoroccoPhoneField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          label ?? 'Moroccan Mobile Phone',
+          label ?? 'ui_moroccan_mobile_phone'.tr,
           style: AppStyles.bodyMediumOf(context).copyWith(
             fontWeight: FontWeight.w600,
           ),
@@ -120,7 +121,7 @@ class MoroccoPhoneField extends StatelessWidget {
             const Icon(Icons.mark_chat_unread_outlined, size: 13, color: AppColors.primary),
             const SizedBox(width: 5),
             Text(
-              'WhatsApp OTP verification (06 / 07 mobile)',
+              'ui_whatsapp_otp_verification_06_07_mobile'.tr,
               style: TextStyle(fontSize: 12, color: context.textSecondaryColor),
             ),
           ],

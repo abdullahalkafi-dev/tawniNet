@@ -8,6 +8,7 @@ import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:awnneaapp/app/core/utils/image_picker_errors.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
 import 'package:awnneaapp/app/core/utils/morocco_postal_helper.dart';
@@ -192,7 +193,7 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
         } catch (_) {}
       }
     } catch (e) {
-      _showError('Failed to pick image');
+      _showError(imagePickerErrorMessage(e));
     }
   }
 
@@ -209,7 +210,7 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
 
       for (final image in images) {
         if (uploadedPhotoKeys.length + selectedPhotoPaths.length >= 5) {
-          _showError('Maximum 5 photos allowed');
+          _showError('ui_maximum_5_photos_allowed'.tr);
           break;
         }
         selectedPhotoPaths.add(image.path);
@@ -217,7 +218,7 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
         _uploadPhotoInBackground(image.path);
       }
     } catch (e) {
-      _showError('Failed to pick images');
+      _showError(imagePickerErrorMessage(e));
     }
   }
 
@@ -235,7 +236,7 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
         await authService.updateProfile({'profilePhotos': uploadedPhotoKeys.toList()});
       } catch (_) {}
     } else {
-      _showError('Failed to upload an image');
+      _showError('ui_failed_to_upload_an_image'.tr);
     }
   }
 
@@ -392,11 +393,11 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
         if (Get.isRegistered<RoleService>()) {
           Get.find<RoleService>().setUserRole('helper');
         }
-        AppSnackbar.showSuccess('KYC verification approved! Welcome to Tarik.');
+        AppSnackbar.showSuccess('ui_kyc_verification_approved_welcome_to_3awninet'.tr);
         Get.offAllNamed(Routes.helperHome);
         return;
       } else if (updatedUser?.helperApplicationStatus == 'rejected') {
-        AppSnackbar.showError(updatedUser?.rejectionReason ?? 'Verification was not approved');
+        AppSnackbar.showError(updatedUser?.rejectionReason ?? 'ui_verification_was_not_approved'.tr);
         Get.offAllNamed(Routes.applicationRejected);
         return;
       } else if (updatedUser?.diditStatus == 'In Review' || updatedUser?.helperApplicationStatus == 'pending_appeal') {
@@ -405,7 +406,7 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
       }
 
       if (showFeedback) {
-        AppSnackbar.showSuccess('Verification status: ${updatedUser?.diditStatus ?? "In Progress"}');
+        AppSnackbar.showSuccess('ui_verification_status_value'.trParams({'status': updatedUser?.diditStatus ?? 'status_in_progress'.tr}));
       }
     } catch (e) {
       if (showFeedback) {
@@ -423,60 +424,77 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
   Future<void> submitFormStep() async {
     // 1. Rigorous Frontend Validations
     if (profilePhotoKey.value == null || profilePhotoKey.value!.isEmpty) {
-      _showError('Please upload a profile photo');
+      _showError('ui_please_upload_a_profile_photo'.tr);
       return;
     }
     if (ageController.text.trim().isEmpty) {
-      _showError('Please enter your age');
+      _showError('ui_please_enter_your_age'.tr);
       return;
     }
     final age = int.tryParse(ageController.text.trim());
     if (age == null || age < 13) {
-      _showError('Must be 13 years or older to apply');
+      _showError('ui_must_be_13_years_or_older_to'.tr);
       return;
     }
     final zipCode = cityController.text.trim();
     if (zipCode.isEmpty) {
-      _showError('Please enter your 5-digit Moroccan Zip Code');
+      _showError('ui_please_enter_your_5_digit_moroccan_zip'.tr);
       return;
     }
     if (!MoroccoPostalHelper.isValidPostalCode(zipCode)) {
-      _showError('Please enter a valid 5-digit Moroccan postal code (10000 to 95000)');
+      _showError('ui_please_enter_a_valid_5_digit_moroccan'.tr);
       return;
     }
     if (emailController.text.trim().isNotEmpty && !GetUtils.isEmail(emailController.text.trim())) {
-      _showError('Please enter a valid email address');
+      _showError('ui_please_enter_a_valid_email_address'.tr);
       return;
     }
     if (selectedServiceType.value == null) {
-      _showError('Please select a service category');
+      _showError('ui_please_select_a_service_category'.tr);
       return;
     }
     if (priceController.text.trim().isEmpty) {
-      _showError('Please enter your hourly rate (MAD)');
+      _showError('ui_please_enter_your_hourly_rate_mad'.tr);
       return;
     }
     final price = double.tryParse(priceController.text.trim());
     if (price == null || price <= 0) {
-      _showError('Hourly rate must be greater than 0 MAD');
+      _showError('ui_hourly_rate_must_be_greater_than_0'.tr);
+      return;
+    }
+    final minRate = selectedServiceType.value?.minHourlyRate;
+    if (minRate != null && price < minRate) {
+      _showError('price_below_min_hourly'.trParams({
+        'category': selectedServiceType.value!.name,
+        'min': minRate.toStringAsFixed(0),
+      }));
       return;
     }
     if (experienceController.text.trim().isEmpty) {
-      _showError('Please enter your experience in years');
+      _showError('ui_please_enter_your_experience_in_years'.tr);
       return;
     }
     final experience = int.tryParse(experienceController.text.trim());
     if (experience == null || experience < 0) {
-      _showError('Experience cannot be negative');
+      _showError('ui_experience_cannot_be_negative'.tr);
       return;
     }
     if (serviceRadiusController.text.trim().isEmpty) {
-      _showError('Please enter your service radius (km)');
+      _showError('ui_please_enter_your_service_radius_km'.tr);
       return;
     }
     final radius = double.tryParse(serviceRadiusController.text.trim());
     if (radius == null || radius <= 0) {
-      _showError('Service radius must be greater than 0 km');
+      _showError('ui_service_radius_must_be_greater_than_0'.tr);
+      return;
+    }
+    // Clients decide based on real work photos, so a portfolio is required.
+    if (selectedPhotoPaths.isNotEmpty) {
+      _showError('apply_photos_uploading'.tr);
+      return;
+    }
+    if (uploadedPhotoKeys.isEmpty) {
+      _showError('apply_work_photo_required'.tr);
       return;
     }
 
@@ -511,7 +529,7 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
       if (response.success) {
         await authService.getMe();
         if (isClosed) return;
-        AppSnackbar.showSuccess('Information saved. Proceeding to ID verification.');
+        AppSnackbar.showSuccess('ui_information_saved_proceeding_to_id_verification'.tr);
         Get.toNamed(Routes.helperKycVerification);
       } else {
         throw Exception(response.message ?? 'Failed to save application information');

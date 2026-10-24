@@ -1,3 +1,4 @@
+import 'package:awnneaapp/app/core/constants/app_info.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
@@ -45,7 +46,7 @@ class _PrivacyPolicyViewState extends State<PrivacyPolicyView> {
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Privacy Policy',
+          'profile_privacy'.tr,
           style: AppStyles.h2Of(context).copyWith(fontSize: 20),
         ),
         centerTitle: true,
@@ -59,7 +60,7 @@ class _PrivacyPolicyViewState extends State<PrivacyPolicyView> {
                 padding: const EdgeInsets.all(20),
                 child: Text(
                   _content.isEmpty
-                      ? 'Privacy policy will appear here once published by the admin.'
+                      ? 'legal_privacy_fallback'.trParams({'email': AppInfo.supportEmail})
                       : _content,
                   style: AppStyles.bodyMediumOf(context).copyWith(
                     height: 1.6,

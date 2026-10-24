@@ -1,3 +1,5 @@
+import 'package:get/get.dart';
+
 class MoroccoPhoneHelper {
   static final RegExp mobileRegex = RegExp(r'^\+212[67]\d{8}$');
   static final RegExp rawInputRegex = RegExp(r'^(\+212|00212|0)?[67]\d{8}$');
@@ -52,18 +54,18 @@ class MoroccoPhoneHelper {
   /// Validates Moroccan mobile phone number input
   static String? validate(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Phone number is required';
+      return 'ui_phone_number_is_required'.tr;
     }
 
     final cleaned = value.trim().replaceAll(RegExp(r'[\s\-\(\)]'), '');
 
     if (cleaned.startsWith('05') || cleaned.startsWith('+2125') || cleaned.startsWith('002125') || cleaned.startsWith('2125')) {
-      return 'Please enter a mobile phone number (06 or 07) to receive your WhatsApp code';
+      return 'ui_please_enter_a_mobile_phone_number_06'.tr;
     }
 
     final normalized = normalize(cleaned);
     if (!mobileRegex.hasMatch(normalized)) {
-      return 'Enter a valid Moroccan mobile number (e.g. 06 12 34 56 78 or +212 6...)';
+      return 'ui_enter_a_valid_moroccan_mobile_number_e'.tr;
     }
 
     return null;

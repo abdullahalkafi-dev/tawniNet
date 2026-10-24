@@ -127,7 +127,7 @@ class _BuyConnectsViewState extends State<BuyConnectsView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Recharge Wallet Balance',
+                    'ui_recharge_wallet_balance'.tr,
                     style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 14),
                   ),
                   const SizedBox(height: 4),
@@ -176,7 +176,7 @@ class _BuyConnectsViewState extends State<BuyConnectsView> {
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'New Balance after Top-Up',
+                    'ui_new_balance_after_top_up'.tr,
                     style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 14),
                   ),
                   const SizedBox(height: 4),

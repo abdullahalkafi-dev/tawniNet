@@ -175,7 +175,7 @@ class ChatDetailController extends GetxController {
       }
     } catch (e) {
       if (!isClosed) {
-        AppFeedback.error('Failed to load messages');
+        AppFeedback.error('ui_failed_to_load_messages'.tr);
       }
     } finally {
       _isFetchingMore = false;
@@ -233,12 +233,12 @@ class ChatDetailController extends GetxController {
       } else {
         // Remove optimistic message on failure
         messages.removeWhere((m) => m.id == tempId);
-        AppFeedback.error('Failed to send message');
+        AppFeedback.error('ui_failed_to_send_message'.tr);
       }
     } catch (_) {
       if (!isClosed) {
         messages.removeWhere((m) => m.id == tempId);
-        AppFeedback.error('Failed to send message');
+        AppFeedback.error('ui_failed_to_send_message'.tr);
       }
     }
   }
@@ -416,7 +416,7 @@ class ChatDetailController extends GetxController {
           final offerPrice = amountRaw is num
               ? amountRaw.toDouble()
               : (msg?.offerData?.price ?? 0.0);
-          final offerTitle = msg?.offerData?.title ?? 'Custom Service Offer';
+          final offerTitle = msg?.offerData?.title ?? 'ui_custom_service_offer'.tr;
           final sessId = resData?['sessionId'] as String? ?? '';
 
           _updateOfferStatus(offerMessageId, 'awaiting_payment');

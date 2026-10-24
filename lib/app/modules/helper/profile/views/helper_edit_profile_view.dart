@@ -11,6 +11,7 @@ import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:awnneaapp/app/core/utils/image_picker_errors.dart';
 
 class HelperEditProfileView extends StatefulWidget {
   const HelperEditProfileView({super.key});
@@ -128,16 +129,16 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
           await Get.find<AuthService>().getMe();
           if (mounted) {
             Get.snackbar(
-              'Success',
-              'Profile photo updated',
+              'booking_success'.tr,
+              'ui_profile_photo_updated'.tr,
               snackPosition: SnackPosition.BOTTOM,
             );
           }
         } else {
           if (mounted) {
             Get.snackbar(
-              'Error',
-              response.message ?? 'Failed to update photo',
+              'ui_error'.tr,
+              response.message ?? 'ui_failed_to_update_photo'.tr,
               snackPosition: SnackPosition.BOTTOM,
             );
           }
@@ -145,8 +146,8 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
       } else {
         if (mounted) {
           Get.snackbar(
-            'Error',
-            'Failed to upload image',
+            'ui_error'.tr,
+            'ui_failed_to_upload_image'.tr,
             snackPosition: SnackPosition.BOTTOM,
           );
         }
@@ -154,8 +155,8 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
     } catch (e) {
       if (mounted) {
         Get.snackbar(
-          'Error',
-          'Failed to pick image',
+          'ui_error'.tr,
+          imagePickerErrorMessage(e),
           snackPosition: SnackPosition.BOTTOM,
         );
       }
@@ -170,7 +171,7 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
     final totalPhotos = existingPhotos.length + newPhotoPaths.length;
     if (totalPhotos >= 5) {
       Get.snackbar(
-        'Limit Reached',
+        'ui_limit_reached'.tr,
         'helper_max_photos'.tr,
         snackPosition: SnackPosition.BOTTOM,
       );
@@ -192,8 +193,8 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
           break;
         }
       }
-    } catch (_) {
-      AppFeedback.error('Failed to pick photos');
+    } catch (e) {
+      AppFeedback.error(imagePickerErrorMessage(e));
     }
   }
 
@@ -256,19 +257,19 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
         selectedLongitude = locService.currentLongitude.value;
         addressSuggestions.clear();
         Get.snackbar(
-          'Location',
-          'Updated to current location',
+          'label_location'.tr,
+          'ui_updated_to_current_location'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
       } else {
         Get.snackbar(
-          'Location',
-          'Could not determine current address',
+          'label_location'.tr,
+          'ui_could_not_determine_current_address'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
       }
     } catch (_) {
-      Get.snackbar('Location', 'Failed to retrieve location', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('label_location'.tr, 'ui_failed_to_retrieve_location'.tr, snackPosition: SnackPosition.BOTTOM);
     }
   }
 
@@ -314,8 +315,8 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
       // Validate email if provided
       if (emailCtl.text.trim().isNotEmpty && !GetUtils.isEmail(emailCtl.text.trim())) {
         Get.snackbar(
-          'Error',
-          'Please enter a valid email address',
+          'ui_error'.tr,
+          'ui_please_enter_a_valid_email_address'.tr,
           snackPosition: SnackPosition.BOTTOM,
         );
         return;
@@ -349,7 +350,7 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
         if (mounted) {
           Get.back();
           Get.snackbar(
-            'Success',
+            'booking_success'.tr,
             'helper_profile_updated'.tr,
             snackPosition: SnackPosition.BOTTOM,
           );
@@ -357,8 +358,8 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
       } else {
         if (mounted) {
           Get.snackbar(
-            'Error',
-            response.message ?? 'Update failed',
+            'ui_error'.tr,
+            response.message ?? 'ui_update_failed'.tr,
             snackPosition: SnackPosition.BOTTOM,
           );
         }
@@ -366,7 +367,7 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
     } catch (e) {
       if (mounted) {
         Get.snackbar(
-          'Error',
+          'ui_error'.tr,
           e.toString(),
           snackPosition: SnackPosition.BOTTOM,
         );
@@ -710,7 +711,7 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
                         const Icon(Icons.add_photo_alternate_outlined, color: AppColors.primary, size: 28),
                         const SizedBox(height: 4),
                         Text(
-                          'Add Photo',
+                          'ui_add_photo'.tr,
                           style: TextStyle(
                             color: AppColors.primary,
                             fontSize: 11,

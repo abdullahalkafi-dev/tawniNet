@@ -110,7 +110,7 @@ class HelperMessagesTabView extends GetView<MessagesController> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'No conversations yet',
+                    'ui_no_conversations_yet'.tr,
                     style: AppStyles.h2Of(context).copyWith(
                       color: context.textSecondaryColor,
                       fontSize: 18,
@@ -118,7 +118,7 @@ class HelperMessagesTabView extends GetView<MessagesController> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Messages from clients will appear here\nwhen they start a conversation',
+                    'ui_messages_from_clients_will_appear_here_when'.tr,
                     textAlign: TextAlign.center,
                     style: AppStyles.bodyMedium.copyWith(
                       color: context.textHintColor,
@@ -127,7 +127,7 @@ class HelperMessagesTabView extends GetView<MessagesController> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Pull down to refresh',
+                    'ui_pull_down_to_refresh'.tr,
                     style: AppStyles.bodyMedium.copyWith(
                       color: context.textHintColor,
                       fontSize: 12,

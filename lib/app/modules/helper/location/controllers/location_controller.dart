@@ -59,7 +59,7 @@ class LocationController extends GetxController {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         _showLocationNotice(
-          'Location services (GPS) are turned off. Please enable GPS in device settings to proceed.',
+          'ui_location_services_gps_are_turned_off_please'.tr,
           isLocationOff: true,
         );
         return;
@@ -74,14 +74,14 @@ class LocationController extends GetxController {
 
       if (permission == LocationPermission.denied) {
         _showLocationNotice(
-          'Location permission is required to find helpers or jobs near you.',
+          'ui_location_permission_is_required_to_find_helpers'.tr,
         );
         return;
       }
 
       if (permission == LocationPermission.deniedForever) {
         _showLocationNotice(
-          'Location permission is permanently denied. Please enable location permissions in App Settings.',
+          'ui_location_permission_is_permanently_denied_please'.tr,
           openAppSettings: true,
         );
         return;
@@ -125,7 +125,7 @@ class LocationController extends GetxController {
       _navigateToDestination();
     } catch (e) {
       _showLocationNotice(
-        'Could not detect your GPS location. Please check your signal or choose "Enter Location Manually" below.',
+        'ui_could_not_detect_your_gps_location_please'.tr,
       );
     } finally {
       if (!isClosed) {
@@ -144,8 +144,8 @@ class LocationController extends GetxController {
     }
 
     Get.rawSnackbar(
-      titleText: const Text(
-        'Location Required',
+      titleText: Text(
+        'ui_location_required'.tr,
         style: TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.bold,
@@ -181,8 +181,8 @@ class LocationController extends GetxController {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text(
-                  'Settings',
+                child: Text(
+                  'ui_settings'.tr,
                   style: TextStyle(
                     color: Color(0xFFE53935),
                     fontWeight: FontWeight.bold,
@@ -246,7 +246,7 @@ class LocationController extends GetxController {
     final address = result['displayName'] as String?;
 
     if (lat == null || lon == null) {
-      _showError('Could not obtain coordinates for this location.');
+      _showError('ui_could_not_obtain_coordinates_for_this_location'.tr);
       return;
     }
 

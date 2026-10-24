@@ -68,7 +68,7 @@ class CategoriesSection extends GetView<HomeController> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Categories',
+              'home_categories'.tr,
               style: AppStyles.h2Of(context).copyWith(
                 fontSize: 18,
               ),
@@ -76,7 +76,7 @@ class CategoriesSection extends GetView<HomeController> {
             TextButton(
               onPressed: controller.onViewAllCategories,
               child: Text(
-                'View All',
+                'home_view_all'.tr,
                 style: AppStyles.bodyMedium.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.bold,

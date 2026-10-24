@@ -20,14 +20,14 @@ class HelperKycView extends GetView<ApplyHelperController> {
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Identity Verification',
+          'ui_identity_verification'.tr,
           style: AppStyles.h2Of(context).copyWith(fontSize: 20),
         ),
         centerTitle: true,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.redAccent),
-            tooltip: 'Logout',
+            tooltip: 'profile_logout'.tr,
             onPressed: () => controller.logout(),
           ),
         ],
@@ -66,7 +66,7 @@ class HelperKycView extends GetView<ApplyHelperController> {
               const SizedBox(height: 24),
 
               Text(
-                'Step 2 of 2: ID Verification',
+                'ui_step_2_of_2_id_verification'.tr,
                 style: AppStyles.bodyMedium.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.bold,
@@ -77,7 +77,7 @@ class HelperKycView extends GetView<ApplyHelperController> {
               const SizedBox(height: 8),
 
               Text(
-                'Verify Moroccan Identity',
+                'ui_verify_moroccan_identity'.tr,
                 style: AppStyles.h2Of(context).copyWith(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -87,7 +87,7 @@ class HelperKycView extends GetView<ApplyHelperController> {
               const SizedBox(height: 12),
 
               Text(
-                'To guarantee safety and trust for customers on Tarik, please complete an instant automated scan of your Moroccan National ID (CIN) or Passport.',
+                'ui_to_guarantee_safety_and_trust_for_customers'.tr,
                 style: AppStyles.bodyMediumOf(context).copyWith(
                   fontSize: 14,
                   height: 1.5,
@@ -100,22 +100,22 @@ class HelperKycView extends GetView<ApplyHelperController> {
               _buildFeatureCard(
                 context,
                 icon: Icons.credit_card_rounded,
-                title: 'Moroccan CIN or Passport',
-                subtitle: 'Government-issued ID verification',
+                title: 'ui_moroccan_cin_or_passport'.tr,
+                subtitle: 'ui_government_issued_id_verification'.tr,
               ),
               const SizedBox(height: 12),
               _buildFeatureCard(
                 context,
                 icon: Icons.face_retouching_natural_rounded,
-                title: 'Instant Biometric Liveness',
-                subtitle: 'Quick 5-second 3D facial verification',
+                title: 'ui_instant_biometric_liveness'.tr,
+                subtitle: 'ui_quick_5_second_3d_facial_verification'.tr,
               ),
               const SizedBox(height: 12),
               _buildFeatureCard(
                 context,
                 icon: Icons.lock_outline_rounded,
-                title: 'Bank-Grade Security',
-                subtitle: 'End-to-end encrypted and confidential',
+                title: 'ui_bank_grade_security'.tr,
+                subtitle: 'ui_end_to_end_encrypted_and_confidential'.tr,
               ),
               const SizedBox(height: 28),
 
@@ -156,7 +156,7 @@ class HelperKycView extends GetView<ApplyHelperController> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Verification Status',
+                              'ui_verification_status'.tr,
                               style: AppStyles.bodyMedium.copyWith(
                                 color: context.textSecondaryColor,
                                 fontSize: 12,
@@ -192,8 +192,8 @@ class HelperKycView extends GetView<ApplyHelperController> {
               // Primary Action: Start Didit Scan
               Obx(() => CustomButton(
                 text: controller.isStartingKyc.value
-                    ? 'Opening Didit...'
-                    : 'Start Moroccan ID Scan with Didit',
+                    ? 'ui_opening_didit'.tr
+                    : 'ui_start_moroccan_id_scan_with_didit'.tr,
                 icon: const Icon(Icons.qr_code_scanner_rounded),
                 onPressed: controller.isStartingKyc.value
                     ? () {}
@@ -218,8 +218,8 @@ class HelperKycView extends GetView<ApplyHelperController> {
                     : const Icon(Icons.refresh, size: 18),
                 label: Text(
                   controller.isSyncingKyc.value
-                      ? 'Checking Verification...'
-                      : 'I\'ve Completed Verification (Check Status)',
+                      ? 'ui_checking_verification'.tr
+                      : 'ui_i_ve_completed_verification_check_status'.tr,
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 style: OutlinedButton.styleFrom(

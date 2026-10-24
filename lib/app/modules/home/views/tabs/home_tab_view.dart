@@ -30,7 +30,7 @@ class HomeTabView extends GetView<HomeController> {
           const SizedBox(height: 24),
           Obx(() {
             final user = Get.find<AuthService>().currentUser.value;
-            final name = user?.name.split(' ').first ?? 'User';
+            final name = user?.name.split(' ').first ?? 'ui_user'.tr;
             return RichText(
               text: TextSpan(
                 style: AppStyles.h1Of(context).copyWith(

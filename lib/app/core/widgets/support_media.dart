@@ -4,6 +4,7 @@ import 'package:awnneaapp/app/modules/messages/views/widgets/media_downloader.da
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
+import 'package:get/get.dart';
 
 /// Shared support media grid for helper + client contact screens.
 /// Images: tap → full-screen preview + download.
@@ -105,7 +106,7 @@ class SupportMediaGrid extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Image',
+                            'ui_image'.tr,
                             style: AppStyles.bodyMedium.copyWith(
                               fontSize: 11,
                               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -147,10 +148,10 @@ class SupportImagePreviewPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: const Text('Image', style: TextStyle(fontSize: 16)),
+        title: Text('ui_image'.tr, style: TextStyle(fontSize: 16)),
         actions: [
           IconButton(
-            tooltip: 'Download',
+            tooltip: 'ui_download'.tr,
             icon: const Icon(Icons.download_rounded),
             onPressed: () => MediaDownloader.download(
               url: url,
@@ -158,7 +159,7 @@ class SupportImagePreviewPage extends StatelessWidget {
             ),
           ),
           IconButton(
-            tooltip: 'Open in browser',
+            tooltip: 'ui_open_in_browser'.tr,
             icon: const Icon(Icons.open_in_new),
             onPressed: () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
           ),
@@ -170,10 +171,10 @@ class SupportImagePreviewPage extends StatelessWidget {
           child: Image.network(
             url,
             fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => const Padding(
+            errorBuilder: (_, __, ___) => Padding(
               padding: EdgeInsets.all(24),
               child: Text(
-                'Could not load image.\nUse download or open in browser.',
+                'ui_could_not_load_image_use_download_or'.tr,
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.white70),
               ),
@@ -227,10 +228,10 @@ class _SupportVideoPreviewPageState extends State<SupportVideoPreviewPage> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: const Text('Video', style: TextStyle(fontSize: 16)),
+        title: Text('ui_video'.tr, style: TextStyle(fontSize: 16)),
         actions: [
           IconButton(
-            tooltip: 'Download',
+            tooltip: 'ui_download'.tr,
             icon: const Icon(Icons.download_rounded),
             onPressed: () => MediaDownloader.download(
               url: widget.url,
@@ -238,7 +239,7 @@ class _SupportVideoPreviewPageState extends State<SupportVideoPreviewPage> {
             ),
           ),
           IconButton(
-            tooltip: 'Open externally',
+            tooltip: 'ui_open_externally'.tr,
             icon: const Icon(Icons.open_in_new),
             onPressed: () => launchUrl(
               Uri.parse(widget.url),
@@ -256,8 +257,8 @@ class _SupportVideoPreviewPageState extends State<SupportVideoPreviewPage> {
                   children: [
                     const Icon(Icons.error_outline, color: Colors.white54, size: 40),
                     const SizedBox(height: 12),
-                    const Text(
-                      'Could not play video here.',
+                    Text(
+                      'ui_could_not_play_video_here'.tr,
                       style: TextStyle(color: Colors.white70),
                     ),
                     const SizedBox(height: 12),
@@ -266,7 +267,7 @@ class _SupportVideoPreviewPageState extends State<SupportVideoPreviewPage> {
                         Uri.parse(widget.url),
                         mode: LaunchMode.externalApplication,
                       ),
-                      child: const Text('Open in another app'),
+                      child: Text('ui_open_in_another_app'.tr),
                     ),
                   ],
                 ),

@@ -1,4 +1,6 @@
 import 'package:awnneaapp/app/data/models/home_models.dart';
+import 'package:awnneaapp/app/core/utils/helper_chat.dart';
+import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/category_service.dart';
@@ -142,34 +144,11 @@ class FindHelperController extends GetxController {
         final helpersList = data['helpers'] as List? ?? [];
         final total = data['totalPages'] as int? ?? 1;
 
-        final fetchedHelpers = helpersList.map((h) {
-          final map = h is Map ? Map<String, dynamic>.from(h) : <String, dynamic>{};
-          final serviceType = map['serviceType'];
-          String category = 'General';
-          if (serviceType is Map) {
-            category = serviceType['name']?.toString() ?? 'General';
-          }
-
-          String avatar = '';
-          final rawAvatar = map['avatar'];
-          if (rawAvatar is String && rawAvatar.isNotEmpty) {
-            avatar = rawAvatar;
-          }
-
-          return HelperJob(
-            id: map['_id']?.toString() ?? '',
-            helperName: map['name']?.toString() ?? 'Helper',
-            helperImage: avatar,
-            postedByUserId: map['_id']?.toString() ?? '',
-            timeAgo: _formatDate(map['createdAt']?.toString()),
-            category: category,
-            title: map['bio']?.toString() ?? 'Available for hire',
-            description: map['bio']?.toString() ?? 'Professional helper in your area',
-            distance: map['address']?.toString() ?? 'Nearby',
-            rating: (map['rating'] as num?)?.toDouble() ?? 0,
-            reviewCount: (map['reviewCount'] as num?)?.toInt() ?? 0,
-          );
-        }).toList();
+        final fetchedHelpers = helpersList
+            .map((h) => HelperJob.fromHelperJson(
+                  h is Map ? Map<String, dynamic>.from(h) : <String, dynamic>{},
+                ))
+            .toList();
 
         if (loadMore) {
           helpers.addAll(fetchedHelpers);
@@ -187,19 +166,11 @@ class FindHelperController extends GetxController {
     }
   }
 
-  String _formatDate(String? dateStr) {
-    if (dateStr == null) return 'Recently';
-    try {
-      final date = DateTime.parse(dateStr);
-      final diff = DateTime.now().difference(date);
-      if (diff.inDays > 30) return '${(diff.inDays / 30).floor()}mo ago';
-      if (diff.inDays > 0) return '${diff.inDays}d ago';
-      if (diff.inHours > 0) return '${diff.inHours}h ago';
-      return 'Just now';
-    } catch (_) {
-      return 'Recently';
-    }
+  void openHelper(HelperJob helper) {
+    Get.toNamed(Routes.helperProfile, arguments: helper.postedByUserId);
   }
+
+  Future<void> chatWithHelper(HelperJob helper) => openChatWithHelper(helper);
 
   Future<void> refreshData() async {
     currentPage.value = 1;

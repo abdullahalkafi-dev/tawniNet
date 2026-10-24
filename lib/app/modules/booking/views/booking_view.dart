@@ -85,7 +85,7 @@ class BookingView extends GetView<BookingController> {
               const SizedBox(height: 8),
               Center(
                 child: Text(
-                  'Pull down to refresh',
+                  'ui_pull_down_to_refresh'.tr,
                   style: TextStyle(
                     color: context.textHintColor,
                     fontSize: 12,
@@ -270,7 +270,7 @@ class BookingView extends GetView<BookingController> {
                       ),
                     ),
                     child: Text(
-                      'View details',
+                      'connects_view_details'.tr,
                       style: AppStyles.bodyMedium.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w600,
@@ -303,10 +303,10 @@ class BookingView extends GetView<BookingController> {
                       ),
                       child: Text(
                         isUnpaid
-                            ? 'Pay / Retry'
+                            ? 'ui_pay_retry'.tr
                             : isOpen
-                                ? 'Waiting'
-                                : 'Chat',
+                                ? 'ui_waiting'.tr
+                                : 'btn_chat'.tr,
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
@@ -333,7 +333,7 @@ class BookingView extends GetView<BookingController> {
         color = Colors.orange.shade700;
         break;
       case BookingStatus.open:
-        text = 'Looking for helper';
+        text = 'ui_looking_for_helper_2'.tr;
         color = Colors.blueGrey;
         break;
       case BookingStatus.inProgress:

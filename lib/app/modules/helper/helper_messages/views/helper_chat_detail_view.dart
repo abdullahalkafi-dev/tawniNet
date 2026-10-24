@@ -20,6 +20,7 @@ import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:awnneaapp/app/core/utils/image_picker_errors.dart';
 import 'dart:io';
 
 class HelperChatDetailView extends StatefulWidget {
@@ -43,12 +44,12 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
       chatController = Get.put(ChatDetailController());
       chatController.initConversation(chat.id, chat.otherUserId);
     } else if (args is String) {
-      chat = ChatSummary(id: args, name: 'Chat', image: '');
+      chat = ChatSummary(id: args, name: 'btn_chat'.tr, image: '');
       chatController = Get.put(ChatDetailController());
       chatController.initConversation(chat.id, '');
       _resolveChatMeta(args);
     } else {
-      chat = ChatSummary(id: '', name: 'Chat', image: '');
+      chat = ChatSummary(id: '', name: 'btn_chat'.tr, image: '');
       chatController = Get.put(ChatDetailController());
     }
   }
@@ -98,7 +99,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
             Obx(() {
               if (chatController.isTyping.value) {
                 return Text(
-                  'Typing...',
+                  'ui_typing'.tr,
                   style: AppStyles.bodyMedium.copyWith(
                     color: AppColors.primary,
                     fontSize: 12,
@@ -122,7 +123,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
               if (chatController.messages.isEmpty) {
                 return Center(
                   child: Text(
-                    'No messages yet. Say hello!',
+                    'ui_no_messages_yet_say_hello'.tr,
                     style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
                   ),
                 );
@@ -171,7 +172,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
     if (messageDate == today) {
       label = 'chat_today'.tr;
     } else if (messageDate == today.subtract(const Duration(days: 1))) {
-      label = 'Yesterday';
+      label = 'label_yesterday'.tr;
     } else {
       label = '${date.day}/${date.month}/${date.year}';
     }
@@ -684,7 +685,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
           children: [
             ListTile(
               leading: const Icon(Icons.photo_camera_outlined, color: AppColors.primary),
-              title: Text('Take Photo', style: TextStyle(color: context.textPrimaryColor)),
+              title: Text('ui_take_photo'.tr, style: TextStyle(color: context.textPrimaryColor)),
               onTap: () async {
                 Navigator.pop(context);
                 await _pickAndSendCameraPhoto();
@@ -692,7 +693,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
             ),
             ListTile(
               leading: const Icon(Icons.photo, color: AppColors.primary),
-              title: Text('Choose from Gallery', style: TextStyle(color: context.textPrimaryColor)),
+              title: Text('ui_choose_from_gallery'.tr, style: TextStyle(color: context.textPrimaryColor)),
               onTap: () async {
                 Navigator.pop(context);
                 await _pickAndSendImages();
@@ -700,7 +701,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
             ),
             ListTile(
               leading: const Icon(Icons.videocam, color: AppColors.primary),
-              title: Text('Send Video', style: TextStyle(color: context.textPrimaryColor)),
+              title: Text('ui_send_video'.tr, style: TextStyle(color: context.textPrimaryColor)),
               onTap: () async {
                 Navigator.pop(context);
                 await _pickAndSendVideo();
@@ -714,17 +715,29 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
 
   Future<void> _pickAndSendCameraPhoto() async {
     final picker = ImagePicker();
-    final file = await picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 80,
-    );
+    final XFile? file;
+    try {
+      file = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+      );
+    } catch (e) {
+      AppFeedback.error(imagePickerErrorMessage(e));
+      return;
+    }
     if (file == null) return;
     await _uploadAndSendImageFiles([file]);
   }
 
   Future<void> _pickAndSendImages() async {
     final picker = ImagePicker();
-    final pickedFiles = await picker.pickMultiImage(imageQuality: 80);
+    final List<XFile> pickedFiles;
+    try {
+      pickedFiles = await picker.pickMultiImage(imageQuality: 80);
+    } catch (e) {
+      AppFeedback.error(imagePickerErrorMessage(e));
+      return;
+    }
     if (pickedFiles.isEmpty) return;
     await _uploadAndSendImageFiles(pickedFiles.take(4).toList());
   }
@@ -751,7 +764,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
           }
         } else {
           if (mounted) {
-            AppFeedback.error('Failed to upload image ${imageKeys.length + 1}');
+            AppFeedback.error('ui_failed_to_upload_image_n'.trParams({'n': '${imageKeys.length + 1}'}));
           }
           return;
         }
@@ -762,7 +775,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
       }
     } catch (e) {
       if (mounted) {
-        AppFeedback.error('Failed to upload images');
+        AppFeedback.error('ui_failed_to_upload_images'.tr);
       }
     }
   }
@@ -777,7 +790,7 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
     if (pickedFile == null) return;
 
     final uploadProgress = 0.0.obs;
-    final uploadStatus = 'Compressing video...'.obs;
+    final uploadStatus = 'ui_compressing_video'.tr.obs;
     bool dialogShowing = false;
     File? compressed;
 
@@ -794,11 +807,11 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
           Get.back();
           dialogShowing = false;
         }
-        AppFeedback.error('Video must be under 400MB', title: 'File too large');
+        AppFeedback.error('ui_video_must_be_under_400mb'.tr, title: 'ui_file_too_large'.tr);
         return;
       }
 
-      uploadStatus.value = 'Uploading video...';
+      uploadStatus.value = 'ui_uploading_video'.tr;
       final api = Get.find<ApiClient>();
       final formData = dio.FormData.fromMap({
         'file': await dio.MultipartFile.fromFile(file.path),
@@ -823,14 +836,14 @@ class _HelperChatDetailViewState extends State<HelperChatDetailView> {
           chatController.sendVideoMessage(data['key']);
         }
       } else {
-        AppFeedback.error('Failed to upload video');
+        AppFeedback.error('ui_failed_to_upload_video'.tr);
       }
     } catch (e) {
       if (dialogShowing && Get.isDialogOpen == true) {
         Get.back();
       }
       if (mounted) {
-        AppFeedback.error('Failed to upload video');
+        AppFeedback.error('ui_failed_to_upload_video'.tr);
       }
     } finally {
       if (compressed != null) {

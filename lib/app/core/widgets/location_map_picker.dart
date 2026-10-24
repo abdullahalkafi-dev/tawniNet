@@ -23,14 +23,14 @@ class LocationMapPicker extends StatefulWidget {
   final double? initialLatitude;
   final double? initialLongitude;
   final String? initialAddress;
-  final String title;
+  final String? title;
 
   const LocationMapPicker({
     super.key,
     this.initialLatitude,
     this.initialLongitude,
     this.initialAddress,
-    this.title = 'Select Location',
+    this.title,
   });
 
   static Future<LocationPickResult?> show(
@@ -162,7 +162,7 @@ class _LocationMapPickerState extends State<LocationMapPicker> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.title,
+          widget.title ?? 'select_location'.tr,
           style: AppStyles.h2Of(context).copyWith(fontSize: 18),
         ),
         centerTitle: true,
@@ -256,7 +256,7 @@ class _LocationMapPickerState extends State<LocationMapPicker> {
                     child: Text(
                       'drag_map_to_set_location'.tr.isNotEmpty
                           ? 'drag_map_to_set_location'.tr
-                          : 'Drag map to place the pin on exact address',
+                          : 'ui_drag_map_to_place_the_pin_on'.tr,
                       style: AppStyles.bodySmallOf(context).copyWith(
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
@@ -278,7 +278,7 @@ class _LocationMapPickerState extends State<LocationMapPicker> {
               children: [
                 _buildFloatingButton(
                   icon: Icons.add,
-                  tooltip: 'Zoom In',
+                  tooltip: 'tracking_zoom_in'.tr,
                   onTap: () {
                     _mapController.move(
                       _mapController.camera.center,
@@ -289,7 +289,7 @@ class _LocationMapPickerState extends State<LocationMapPicker> {
                 const SizedBox(height: 8),
                 _buildFloatingButton(
                   icon: Icons.remove,
-                  tooltip: 'Zoom Out',
+                  tooltip: 'tracking_zoom_out'.tr,
                   onTap: () {
                     _mapController.move(
                       _mapController.camera.center,
@@ -300,7 +300,7 @@ class _LocationMapPickerState extends State<LocationMapPicker> {
                 const SizedBox(height: 8),
                 _buildFloatingButton(
                   icon: Icons.my_location,
-                  tooltip: 'My Location',
+                  tooltip: 'ui_my_location'.tr,
                   color: AppColors.primary,
                   iconColor: Colors.white,
                   onTap: _goToMyLocation,
@@ -341,7 +341,7 @@ class _LocationMapPickerState extends State<LocationMapPicker> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Selected Location',
+                              'ui_selected_location'.tr,
                               style: AppStyles.bodySmall.copyWith(
                                 color: context.textHintColor,
                                 fontWeight: FontWeight.w600,
@@ -359,7 +359,7 @@ class _LocationMapPickerState extends State<LocationMapPicker> {
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
-                                    'Detecting address...',
+                                    'ui_detecting_address'.tr,
                                     style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 13),
                                   ),
                                 ],

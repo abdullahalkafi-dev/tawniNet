@@ -11,6 +11,7 @@ import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/image_viewer_screen.dart';
 import 'package:awnneaapp/app/modules/booking/views/live_tracking_view.dart';
 import 'package:awnneaapp/app/modules/helper/helper_jobs/controllers/helper_jobs_controller.dart';
+import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -25,6 +26,10 @@ class ActiveJobDetailsView extends StatefulWidget {
 class _ActiveJobDetailsViewState extends State<ActiveJobDetailsView> {
   late final Map<String, dynamic> job;
   StreamSubscription? _remoteCancelSub;
+  // Guards against popping twice: the backend emits job:cancelled to the
+  // helper too, so both the socket listener and the cancel button try to
+  // close this screen. A second pop removes the home route -> black screen.
+  bool _leaving = false;
 
   @override
   void initState() {
@@ -41,13 +46,27 @@ class _ActiveJobDetailsViewState extends State<ActiveJobDetailsView> {
     if (jobId != null && jobId.isNotEmpty && Get.isRegistered<SocketService>()) {
       _remoteCancelSub = Get.find<SocketService>().onJobCancelled.listen((data) {
         final remoteId = (data['id'] ?? data['_id'])?.toString();
-        if (remoteId == jobId && mounted) {
-          if (Get.isRegistered<LocationService>()) {
-            Get.find<LocationService>().setActiveJobId(null);
-          }
-          Navigator.of(context).pop();
-        }
+        if (remoteId == jobId) _leaveScreen();
       });
+    }
+  }
+
+  /// Closes this screen exactly once, without ever emptying the navigator.
+  void _leaveScreen() {
+    if (_leaving || !mounted) return;
+    _leaving = true;
+    if (Get.isRegistered<LocationService>()) {
+      Get.find<LocationService>().setActiveJobId(null);
+    }
+    final route = ModalRoute.of(context);
+    final nav = Navigator.of(context);
+    if (route == null || !route.isActive) return;
+    // Close anything stacked above this screen (e.g. the cancel sheet) first.
+    nav.popUntil((r) => r == route);
+    if (nav.canPop()) {
+      nav.pop();
+    } else {
+      Get.offAllNamed(Routes.helperHome);
     }
   }
 
@@ -132,8 +151,8 @@ class _ActiveJobDetailsViewState extends State<ActiveJobDetailsView> {
                         );
                       },
                       icon: const Icon(Icons.map_outlined, color: Colors.white, size: 20),
-                      label: const Text(
-                        'Live Map',
+                      label: Text(
+                        'ui_live_map'.tr,
                         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                       ),
                       style: ElevatedButton.styleFrom(
@@ -158,12 +177,12 @@ class _ActiveJobDetailsViewState extends State<ActiveJobDetailsView> {
                         if (lat != null && lon != null) {
                           _openExternalDirections(lat, lon, job['address']?.toString() ?? 'Customer');
                         } else {
-                          AppFeedback.info('Coordinates not available for direct navigation');
+                          AppFeedback.info('ui_coordinates_not_available_for_direct_navigation'.tr);
                         }
                       },
                       icon: const Icon(Icons.directions, color: AppColors.primary, size: 20),
-                      label: const Text(
-                        'Directions',
+                      label: Text(
+                        'ui_directions'.tr,
                         style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 14),
                       ),
                       style: OutlinedButton.styleFrom(
@@ -192,7 +211,7 @@ class _ActiveJobDetailsViewState extends State<ActiveJobDetailsView> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                'Waiting for the client to confirm service is complete.',
+                'ui_waiting_for_the_client_to_confirm_service'.tr,
                 textAlign: TextAlign.center,
                 style: AppStyles.bodyMedium.copyWith(fontSize: 13),
               ),
@@ -281,7 +300,7 @@ class _ActiveJobDetailsViewState extends State<ActiveJobDetailsView> {
             location.isEmpty ? 'Not provided' : location,
           ),
           if (distanceText.isNotEmpty)
-            _buildInfoRow(context, 'Distance', distanceText),
+            _buildInfoRow(context, 'find_distance'.tr, distanceText),
           _buildInfoRow(context, 'label_budget'.tr, budget),
         ],
       ),
@@ -503,23 +522,20 @@ class _ActiveJobDetailsViewState extends State<ActiveJobDetailsView> {
                               final reason = reasonController.text.trim();
                               if (reason.length < 3) {
                                 AppFeedback.error(
-                                  'Please enter a reason (at least 3 characters).',
-                                  title: 'Reason required',
+                                  'ui_please_enter_a_reason_at_least_3'.tr,
+                                  title: 'ui_reason_required'.tr,
                                 );
                                 return;
                               }
-                              Get.back(); // Dismiss cancel bottom sheet
+                              // Pop the sheet by its own context: Get.back() would
+                              // close an open snackbar instead of the sheet.
+                              Navigator.of(dialogContext).pop();
                               final controller = Get.find<HelperJobsController>();
                               final ok = await controller.cancelJob(
                                 jobId,
                                 reason: reason,
                               );
-                              if (ok && mounted) {
-                                if (Get.isRegistered<LocationService>()) {
-                                  Get.find<LocationService>().setActiveJobId(null);
-                                }
-                                Navigator.of(context).pop();
-                              }
+                              if (ok) _leaveScreen();
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFE53935),

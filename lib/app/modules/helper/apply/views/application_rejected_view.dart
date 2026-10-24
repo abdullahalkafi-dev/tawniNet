@@ -24,12 +24,12 @@ class ApplicationRejectedView extends GetView<ApplyHelperController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Submit Review Appeal',
+                'ui_submit_review_appeal'.tr,
                 style: AppStyles.h2Of(context).copyWith(fontSize: 18),
               ),
               const SizedBox(height: 8),
               Text(
-                'Explain why your verification should be reconsidered or provide additional context.',
+                'ui_explain_why_your_verification_should_be_reconsid'.tr,
                 style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 13),
               ),
               const SizedBox(height: 16),
@@ -37,7 +37,7 @@ class ApplicationRejectedView extends GetView<ApplyHelperController> {
                 controller: appealController,
                 maxLines: 4,
                 decoration: InputDecoration(
-                  hintText: 'Enter your appeal explanation here...',
+                  hintText: 'ui_enter_your_appeal_explanation_here'.tr,
                   hintStyle: TextStyle(color: context.textHintColor, fontSize: 14),
                   filled: true,
                   fillColor: context.inputFillColor,
@@ -53,7 +53,7 @@ class ApplicationRejectedView extends GetView<ApplyHelperController> {
                 children: [
                   TextButton(
                     onPressed: () => Get.back(),
-                    child: Text('Cancel', style: TextStyle(color: context.textSecondaryColor)),
+                    child: Text('btn_cancel'.tr, style: TextStyle(color: context.textSecondaryColor)),
                   ),
                   const SizedBox(width: 8),
                   Obx(
@@ -63,7 +63,7 @@ class ApplicationRejectedView extends GetView<ApplyHelperController> {
                           : () async {
                               final message = appealController.text.trim();
                               if (message.length < 5) {
-                                AppSnackbar.showError('Appeal message must be at least 5 characters');
+                                AppSnackbar.showError('ui_appeal_message_must_be_at_least_5'.tr);
                                 return;
                               }
                               isSubmitting.value = true;
@@ -72,8 +72,8 @@ class ApplicationRejectedView extends GetView<ApplyHelperController> {
                                 await authService.submitAppeal(message);
                                 Get.back();
                                 AppSnackbar.showSuccess(
-                                  'Your appeal has been submitted and is pending admin review.',
-                                  title: 'Appeal Submitted',
+                                  'ui_your_appeal_has_been_submitted_and_is'.tr,
+                                  title: 'ui_appeal_submitted'.tr,
                                 );
                               } catch (e) {
                                 AppSnackbar.showError(e);
@@ -91,7 +91,7 @@ class ApplicationRejectedView extends GetView<ApplyHelperController> {
                               height: 16,
                               child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                             )
-                          : const Text('Submit Appeal', style: TextStyle(color: Colors.white)),
+                          : Text('ui_submit_appeal'.tr, style: TextStyle(color: Colors.white)),
                     ),
                   ),
                 ],
@@ -113,7 +113,7 @@ class ApplicationRejectedView extends GetView<ApplyHelperController> {
           final user = authService.currentUser.value;
           final rejectionReason = user?.rejectionReason ??
               user?.diditDecisionReason ??
-              'Application did not satisfy document or biometric requirements.';
+              'ui_application_did_not_satisfy_document_or_biometri'.tr;
           final appealStatus = user?.appealStatus ?? 'none';
           final appealCount = user?.appealCount ?? 0;
           final isAppealPending = appealStatus == 'pending';
@@ -147,7 +147,7 @@ class ApplicationRejectedView extends GetView<ApplyHelperController> {
                 const SizedBox(height: 8),
                 Text(
                   isAppealPending
-                      ? 'Your appeal is currently pending review by our compliance team.'
+                      ? 'ui_your_appeal_is_currently_pending_review_by'.tr
                       : 'app_status_not_approved'.tr,
                   style: AppStyles.bodyLarge.copyWith(
                     color: isAppealPending ? Colors.orange : AppColors.error,
@@ -159,7 +159,7 @@ class ApplicationRejectedView extends GetView<ApplyHelperController> {
                 const SizedBox(height: 16),
                 Text(
                   isAppealPending
-                      ? 'We are reviewing your appeal details. You will receive an update once a decision is made.'
+                      ? 'ui_we_are_reviewing_your_appeal_details_you'.tr
                       : 'app_status_rejected_desc'.tr,
                   style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 14),
                   textAlign: TextAlign.center,
@@ -200,7 +200,7 @@ class ApplicationRejectedView extends GetView<ApplyHelperController> {
                 const SizedBox(height: 32),
                 if (canAppeal) ...[
                   CustomButton(
-                    text: 'Submit Appeal (${3 - appealCount} attempts left)',
+                    text: 'ui_submit_appeal_attempts_left'.trParams({'count': '${3 - appealCount}'}),
                     onPressed: () => _showAppealDialog(context),
                   ),
                   const SizedBox(height: 16),

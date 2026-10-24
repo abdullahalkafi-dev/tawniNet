@@ -1,4 +1,3 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
@@ -42,77 +41,60 @@ void main() async {
     return true;
   };
 
-  // Firebase MUST be ready before any FirebaseMessaging access
-  try {
-    if (Firebase.apps.isEmpty) {
-      await Firebase.initializeApp().timeout(const Duration(seconds: 3));
-      debugPrint('[FCM] Firebase.initializeApp OK (main)');
-    }
-  } catch (e) {
-    debugPrint('[FCM] Firebase.initializeApp failed (main): $e');
-  }
-
-  // Initialize storage first (must be async)
+  // Storage (synchronous fast init)
   final storageService = await StorageService().init();
   Get.put(storageService, permanent: true);
 
   // API client
-  Get.put(ApiClient(storageService), permanent: true);
+  final apiClient = ApiClient(storageService);
+  Get.put(apiClient, permanent: true);
 
-  // Location service (depends on ApiClient)
+  // Synchronously register all GetX services so dependency injection is 100% available
+  final roleService = RoleService();
+  Get.put(roleService, permanent: true);
+  try {
+    await roleService.loadPersistedRole().timeout(const Duration(milliseconds: 300));
+  } catch (_) {}
+
+  final themeService = ThemeService();
+  try {
+    await themeService.init().timeout(const Duration(milliseconds: 300));
+  } catch (_) {}
+  Get.put(themeService, permanent: true);
+
+  final localeService = LocaleService();
+  try {
+    await localeService.init().timeout(const Duration(milliseconds: 300));
+  } catch (_) {}
+  Get.put(localeService, permanent: true);
+
   final locationService = LocationService();
-  await locationService.init();
   Get.put(locationService, permanent: true);
 
-  // Services
-  Get.put(RoleService(), permanent: true);
   Get.put(RefetchService(), permanent: true);
   Get.put(SocketService(), permanent: true);
   Get.put(CategoryService(), permanent: true);
   Get.put(JobService(), permanent: true);
   Get.put(WalletService(), permanent: true);
+
   final supportService = SupportService();
-  await supportService.init();
   Get.put(supportService, permanent: true);
   Get.put(ReviewService(), permanent: true);
 
-  // Auth service (depends on storage, api, role)
   final authService = AuthService();
-  await authService.init();
   Get.put(authService, permanent: true);
 
-  // Push notifications (FCM) — always register service so login can upload token
-  try {
-    final notificationService = NotificationService();
-    Get.put(notificationService, permanent: true);
-    await notificationService.init();
-  } catch (e) {
-    debugPrint('[FCM] NotificationService init skipped: $e');
-  }
+  final notificationService = NotificationService();
+  Get.put(notificationService, permanent: true);
   Get.put(NotificationApi(), permanent: true);
+
   final badge = NotificationBadgeController();
   Get.put(badge, permanent: true);
-  await badge.init();
 
-  // Messages controller (permanent — needs to stay alive for online status)
   Get.put(MessagesController(), permanent: true);
-
-  // Deep Link service for external returns (Didit, Payment gateways)
   Get.put(DeepLinkService(), permanent: true);
 
-  // Locale service (depends on storage)
-  final localeService = LocaleService();
-  await localeService.init();
-  Get.put(localeService, permanent: true);
-
-  // Theme service (depends on storage)
-  final themeService = ThemeService();
-  await themeService.init();
-  Get.put(themeService, permanent: true);
-
-  // Load persisted role
-  await Get.find<RoleService>().loadPersistedRole();
-
+  // Render UI IMMEDIATELY: SplashView appears on screen in ~100ms
   runApp(
     Obx(
       () => GetMaterialApp(
@@ -126,10 +108,7 @@ void main() async {
         translations: AppTranslations(),
         locale: localeService.currentLocale.value,
         fallbackLocale: const Locale('en', 'US'),
-        supportedLocales: const [
-          Locale('en', 'US'),
-          Locale('ar', 'MA'),
-        ],
+        supportedLocales: LocaleService.supportedLocales,
         localizationsDelegates: const [
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
@@ -146,4 +125,37 @@ void main() async {
       ),
     ),
   );
+
+  // Non-blocking deferred startup: runs AFTER the first frame is rendered on screen.
+  // Hardware sensors, GPS, FCM, network, and sockets will never freeze the UI.
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    // 1. Auth service init (loads saved user credentials & connects socket)
+    try {
+      await authService.init().timeout(const Duration(seconds: 4));
+    } catch (e) {
+      debugPrint('[Startup] AuthService init skipped/failed: $e');
+    }
+
+    // 2. GPS / Location service (hardware GPS status check)
+    try {
+      await locationService.init().timeout(const Duration(seconds: 3));
+    } catch (e) {
+      debugPrint('[Startup] LocationService init skipped/failed: $e');
+    }
+
+    // 3. Push notifications (Firebase & FCM)
+    try {
+      await notificationService.init().timeout(const Duration(seconds: 4));
+    } catch (e) {
+      debugPrint('[Startup] NotificationService init skipped/failed: $e');
+    }
+
+    // 4. Support and Badge controllers
+    try {
+      await supportService.init().timeout(const Duration(seconds: 2));
+    } catch (_) {}
+    try {
+      await badge.init().timeout(const Duration(seconds: 2));
+    } catch (_) {}
+  });
 }

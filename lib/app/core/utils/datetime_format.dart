@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 
 /// Shared date/time helpers.
@@ -59,6 +60,38 @@ class AppDateTime {
     final hourOnly = int.tryParse(value);
     if (hourOnly != null && hourOnly >= 0 && hourOnly <= 23) {
       return TimeOfDay(hour: hourOnly, minute: 0);
+    }
+    return null;
+  }
+
+  /// Shortest bookable slot, in minutes. Mirrors the backend rule.
+  static const int minBookingMinutes = 30;
+
+  /// Minutes between two time strings, or null if either is unparseable.
+  /// No overnight wrap: an end time at or before the start is negative/zero.
+  static int? minutesBetween(String? startRaw, String? endRaw) {
+    final start = tryParseTimeOfDay(startRaw);
+    final end = tryParseTimeOfDay(endRaw);
+    if (start == null || end == null) return null;
+    return (end.hour * 60 + end.minute) - (start.hour * 60 + start.minute);
+  }
+
+  /// Returns a translated error, or null when the range is valid.
+  /// Both empty is allowed unless [required] is true.
+  static String? validateTimeRange(
+    String? startRaw,
+    String? endRaw, {
+    bool required = false,
+  }) {
+    final hasStart = startRaw != null && startRaw.trim().isNotEmpty;
+    final hasEnd = endRaw != null && endRaw.trim().isNotEmpty;
+    if (!hasStart && !hasEnd && !required) return null;
+    if (!hasStart || !hasEnd) return 'time_both_required'.tr;
+    final mins = minutesBetween(startRaw, endRaw);
+    if (mins == null) return 'time_invalid'.tr;
+    if (mins <= 0) return 'time_end_after_start'.tr;
+    if (mins < minBookingMinutes) {
+      return 'time_min_duration'.trParams({'min': '$minBookingMinutes'});
     }
     return null;
   }

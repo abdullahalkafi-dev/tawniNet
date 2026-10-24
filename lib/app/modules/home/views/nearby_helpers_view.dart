@@ -1,5 +1,6 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/widgets/helper_trust_widgets.dart';
 import 'package:awnneaapp/app/data/models/home_models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -18,7 +19,7 @@ class NearbyHelpersView extends GetView<HomeController> {
           onPressed: () => Get.back(),
         ),
         title: Text(
-          'Nearby Helpers',
+          'home_nearby_helpers'.tr,
           style: AppStyles.h2Of(context).copyWith(fontSize: 18),
         ),
         centerTitle: true,
@@ -88,20 +89,30 @@ class NearbyHelpersView extends GetView<HomeController> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        job.helperName,
-                        style: AppStyles.bodyLargeOf(context).copyWith(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              job.helperName,
+                              style: AppStyles.bodyLargeOf(context).copyWith(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (job.isVerified) ...[
+                            const SizedBox(width: 4),
+                            const VerifiedBadge(compact: true),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: 2),
-                      Text(
-                        job.timeAgo,
-                        style: AppStyles.bodyMedium.copyWith(
-                          fontSize: 11,
-                          color: context.textHintColor,
-                        ),
+                      RatingSummary(
+                        rating: job.rating,
+                        reviewCount: job.reviewCount,
+                        fontSize: 11,
                       ),
                     ],
                   ),
@@ -153,8 +164,8 @@ class NearbyHelpersView extends GetView<HomeController> {
                       text: job.description.replaceAll(' Read More', ''),
                     ),
                     if (job.description.contains('Read More'))
-                      const TextSpan(
-                        text: ' Read More',
+                      TextSpan(
+                        text: 'ui_read_more'.tr,
                         style: TextStyle(
                           color: Color(0xFF5AB9A7),
                           fontWeight: FontWeight.bold,
@@ -165,6 +176,10 @@ class NearbyHelpersView extends GetView<HomeController> {
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),
+            if (job.workPhotos.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              WorkPhotoStrip(urls: job.workPhotos),
+            ],
             const SizedBox(height: 14),
             Row(
               children: [
@@ -204,9 +219,9 @@ class NearbyHelpersView extends GetView<HomeController> {
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                     ),
-                    child: const Text(
-                      'Chat',
-                      style: TextStyle(
+                    child: Text(
+                      'btn_chat'.tr,
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
                       ),

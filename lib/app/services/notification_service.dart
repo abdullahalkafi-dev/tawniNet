@@ -68,7 +68,7 @@ class NotificationService extends GetxService {
   static Future<bool> ensureFirebase() async {
     try {
       if (Firebase.apps.isNotEmpty) return true;
-      await Firebase.initializeApp();
+      await Firebase.initializeApp().timeout(const Duration(seconds: 2));
       debugPrint('[FCM] Firebase.initializeApp OK');
       return true;
     } catch (e) {

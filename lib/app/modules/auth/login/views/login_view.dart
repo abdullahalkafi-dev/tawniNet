@@ -46,7 +46,7 @@ class LoginView extends GetView<LoginController> {
               MoroccoPhoneField(
                 label: 'auth_phone'.tr.isNotEmpty && 'auth_phone'.tr != 'auth_phone'
                     ? 'auth_phone'.tr
-                    : 'Moroccan Mobile Phone',
+                    : 'ui_moroccan_mobile_phone'.tr,
                 controller: controller.phoneController,
               ),
 

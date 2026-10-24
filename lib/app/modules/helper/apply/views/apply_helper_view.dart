@@ -23,7 +23,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
           onPressed: () => _showLogoutDialog(context),
         ),
         title: Text(
-          'Helper Application',
+          'ui_helper_application'.tr,
           style: AppStyles.h2Of(context).copyWith(fontSize: 20),
         ),
         centerTitle: true,
@@ -42,7 +42,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  'Step 1 of 2: Profile & Services',
+                  'ui_step_1_of_2_profile_services'.tr,
                   style: AppStyles.bodyMedium.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.bold,
@@ -54,7 +54,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
             const SizedBox(height: 12),
             Center(
               child: Text(
-                'Personal & Work Details',
+                'ui_personal_work_details'.tr,
                 textAlign: TextAlign.center,
                 style: AppStyles.h2Of(context).copyWith(
                   fontSize: 22,
@@ -65,7 +65,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
             const SizedBox(height: 6),
             Center(
               child: Text(
-                'Please provide your service details. All information is saved securely before identity verification.',
+                'ui_please_provide_your_service_details_all_informat'.tr,
                 textAlign: TextAlign.center,
                 style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 13),
               ),
@@ -73,12 +73,12 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
             const SizedBox(height: 24),
             _buildAvatarSection(context),
             const SizedBox(height: 24),
-            _buildRequiredField(context, 'Full Name', 'Enter your full name', controller.fullNameController, readOnly: true),
+            _buildRequiredField(context, 'ui_full_name'.tr, 'apply_enter_name'.tr, controller.fullNameController, readOnly: true),
             const SizedBox(height: 16),
             _buildRequiredField(
               context,
               'Age',
-              'Enter your age (13+)',
+              'ui_enter_your_age_13'.tr,
               controller.ageController,
               keyboardType: TextInputType.number,
               inputFormatters: [
@@ -88,13 +88,13 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Must be 13 years or older to provide services',
+              'ui_must_be_13_years_or_older_to_2'.tr,
               style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: context.textHintColor),
             ),
             const SizedBox(height: 16),
             _buildRequiredField(
               context,
-              'Moroccan Postal Code',
+              'ui_moroccan_postal_code'.tr,
               '5-digit Postal Code (e.g. 20000)',
               controller.cityController,
               keyboardType: TextInputType.number,
@@ -104,11 +104,11 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
               ],
             ),
             const SizedBox(height: 16),
-            _buildRequiredField(context, 'Phone Number', '+212600000000', controller.phoneController, readOnly: true),
+            _buildRequiredField(context, 'ui_phone_number'.tr, '+212600000000', controller.phoneController, readOnly: true),
             const SizedBox(height: 16),
             _buildOptionalField(
               context,
-              'Email Address',
+              'apply_email'.tr,
               'your.email@example.com',
               controller.emailController,
               keyboardType: TextInputType.emailAddress,
@@ -116,28 +116,46 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
             const SizedBox(height: 16),
             _buildDropdownField(
               context: context,
-              label: 'Language',
+              label: 'profile_language'.tr,
               value: controller.selectedLanguage,
               items: controller.languages,
             ),
             const SizedBox(height: 16),
             _buildCategoryDropdownField(
               context: context,
-              label: 'Service Category',
+              label: 'ui_service_category'.tr,
               selected: controller.selectedServiceType,
               categories: controller.categories,
             ),
             const SizedBox(height: 16),
             CustomTextField(
-              label: 'Hourly Rate (MAD) *',
+              label: 'ui_hourly_rate_mad'.tr,
               hint: 'e.g. 100',
               controller: controller.priceController,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             ),
+            Obx(() {
+              final category = controller.selectedServiceType.value;
+              final min = category?.minHourlyRate;
+              if (category == null || min == null) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text(
+                  'price_min_hourly'.trParams({
+                    'category': category.name,
+                    'min': min.toStringAsFixed(0),
+                  }),
+                  style: AppStyles.bodyMedium.copyWith(
+                    fontSize: 12,
+                    color: context.textHintColor,
+                  ),
+                ),
+              );
+            }),
             const SizedBox(height: 16),
             CustomTextField(
-              label: 'Experience (Years) *',
+              label: 'ui_experience_years'.tr,
               hint: 'e.g. 3',
               controller: controller.experienceController,
               keyboardType: TextInputType.number,
@@ -145,7 +163,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
             ),
             const SizedBox(height: 16),
             CustomTextField(
-              label: 'Service Radius (km) *',
+              label: 'ui_service_radius_km'.tr,
               hint: 'e.g. 15',
               controller: controller.serviceRadiusController,
               keyboardType: TextInputType.number,
@@ -156,7 +174,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Bio (Optional)',
+                  'ui_bio_optional'.tr,
                   style: AppStyles.bodyMediumOf(context).copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -168,7 +186,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
                   minLines: 3,
                   style: TextStyle(color: context.textPrimaryColor),
                   decoration: InputDecoration(
-                    hintText: 'Introduce yourself and your skills to clients...',
+                    hintText: 'ui_introduce_yourself_and_your_skills_to_clients'.tr,
                     hintStyle: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
                     filled: true,
                     fillColor: context.inputFillColor,
@@ -196,8 +214,8 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
             // Next: Verify Identity Button
             Obx(() => CustomButton(
               text: controller.isLoading.value
-                  ? 'Saving Information...'
-                  : 'Next: Verify Identity',
+                  ? 'ui_saving_information'.tr
+                  : 'ui_next_verify_identity'.tr,
               icon: const Icon(Icons.arrow_forward_rounded),
               onPressed: controller.isLoading.value
                   ? () {}
@@ -210,7 +228,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'Step 2 will require scanning your Moroccan CIN / Passport.',
+                    'ui_step_2_will_require_scanning_your_moroccan'.tr,
                     style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: context.textSecondaryColor),
                   ),
                 ),
@@ -252,10 +270,10 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
               child: const Icon(Icons.power_settings_new, color: Colors.redAccent, size: 30),
             ),
             const SizedBox(height: 16),
-            Text('Logout Confirmation', style: AppStyles.h2Of(context).copyWith(fontSize: 20)),
+            Text('ui_logout_confirmation'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 20)),
             const SizedBox(height: 8),
             Text(
-              'Are you sure you want to log out?',
+              'ui_are_you_sure_you_want_to_log'.tr,
               style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor),
               textAlign: TextAlign.center,
             ),
@@ -270,7 +288,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: Text('Cancel', style: AppStyles.buttonText.copyWith(color: AppColors.primary)),
+                    child: Text('btn_cancel'.tr, style: AppStyles.buttonText.copyWith(color: AppColors.primary)),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -285,7 +303,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: const Text('Logout', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: Text('profile_logout'.tr, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],
@@ -472,7 +490,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
           const SizedBox(height: 8),
           RichText(
             text: TextSpan(
-              text: 'Profile Photo ',
+              text: 'ui_profile_photo'.tr,
               style: AppStyles.bodyMediumOf(context).copyWith(
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
@@ -520,7 +538,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
               value: value.value.isEmpty ? null : value.value,
               dropdownColor: context.cardColor,
               hint: Text(
-                hint ?? 'Select',
+                hint ?? 'ui_select'.tr,
                 style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
               ),
               isExpanded: true,
@@ -579,7 +597,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
               borderRadius: BorderRadius.circular(14),
               icon: Icon(Icons.keyboard_arrow_down_rounded, color: context.textSecondaryColor),
               hint: Text(
-                'Select service category',
+                'ui_select_service_category'.tr,
                 style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
               ),
               isExpanded: true,
@@ -661,9 +679,17 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Work Samples / Portfolio (Up to 5 photos)',
+          'apply_work_photos_label'.tr,
           style: AppStyles.bodyMediumOf(context).copyWith(
             fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'apply_work_photos_hint'.tr,
+          style: AppStyles.bodyMedium.copyWith(
+            fontSize: 12,
+            color: context.textHintColor,
           ),
         ),
         const SizedBox(height: 8),
@@ -687,7 +713,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
                         Icon(Icons.add_photo_alternate_outlined, size: 36, color: context.textHintColor),
                         const SizedBox(height: 8),
                         Text(
-                          'Upload Work Photos ($count/5)',
+                          'apply_upload_work_photos'.trParams({'count': '$count'}),
                           style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
                         ),
                       ],

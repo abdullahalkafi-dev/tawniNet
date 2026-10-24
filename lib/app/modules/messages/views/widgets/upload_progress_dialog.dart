@@ -15,7 +15,7 @@ class UploadProgressDialog extends StatelessWidget {
   /// Show the dialog and return it. Caller should dismiss with Get.back().
   static UploadProgressDialog show({RxDouble? progress, RxString? status}) {
     final p = progress ?? 0.0.obs;
-    final s = status ?? 'Preparing...'.obs;
+    final s = status ?? 'ui_preparing'.tr.obs;
 
     Get.dialog(
       UploadProgressDialog(progress: p, status: s),

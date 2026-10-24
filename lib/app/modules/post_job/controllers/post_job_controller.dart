@@ -12,6 +12,7 @@ import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:awnneaapp/app/core/utils/image_picker_errors.dart';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
 import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
 import 'package:awnneaapp/app/core/utils/datetime_format.dart';
@@ -174,8 +175,8 @@ class PostJobController extends GetxController {
         addressSuggestions.clear();
       } else {
         Get.snackbar(
-          'Location',
-          'Could not determine current address',
+          'label_location'.tr,
+          'ui_could_not_determine_current_address'.tr,
           snackPosition: SnackPosition.BOTTOM,
           margin: const EdgeInsets.all(16),
         );
@@ -237,8 +238,8 @@ class PostJobController extends GetxController {
   Future<void> pickImages() async {
     if (selectedImages.length >= kJobMaxImages) {
       AppFeedback.error(
-        'Maximum $kJobMaxImages images allowed',
-        title: 'Limit reached',
+        'ui_max_images_allowed'.trParams({'max': '$kJobMaxImages'}),
+        title: 'ui_limit_reached_2'.tr,
       );
       return;
     }
@@ -263,12 +264,12 @@ class PostJobController extends GetxController {
 
       if (skipped > 0) {
         AppFeedback.error(
-          'Only $kJobMaxImages images allowed. $skipped image(s) were not added.',
-          title: 'Limit reached',
+          'ui_images_limit_skipped'.trParams({'max': '$kJobMaxImages', 'skipped': '$skipped'}),
+          title: 'ui_limit_reached_2'.tr,
         );
       }
     } catch (e) {
-      _showError('Failed to pick images');
+      _showError(imagePickerErrorMessage(e));
     }
   }
 
@@ -315,9 +316,11 @@ class PostJobController extends GetxController {
     if (failed > 0) {
       throw Exception(
         failed == selectedImages.length
-            ? 'Failed to upload images. Please try again.'
-            : 'Failed to upload $failed of ${selectedImages.length} image(s). '
-                'Remove failed photos or retry.',
+            ? 'ui_failed_to_upload_images_retry'.tr
+            : 'ui_failed_to_upload_some_images_retry'.trParams({
+                'failed': '$failed',
+                'total': '${selectedImages.length}',
+              }),
       );
     }
 
@@ -329,15 +332,15 @@ class PostJobController extends GetxController {
   void postJob() {
     // Validate required fields
     if (titleController.text.trim().isEmpty) {
-      _showError('Please enter a job title');
+      _showError('ui_please_enter_a_job_title'.tr);
       return;
     }
     if (budgetController.text.trim().isEmpty) {
-      _showError('Please enter a budget');
+      _showError('ui_please_enter_a_budget'.tr);
       return;
     }
     if (selectedCategory.value == null) {
-      _showError('Please select a category');
+      _showError('ui_please_select_a_category'.tr);
       return;
     }
 
@@ -347,7 +350,28 @@ class PostJobController extends GetxController {
       if (parsed != null) isoDate = AppDateTime.toIsoDate(parsed);
     }
     if (isoDate == null || isoDate.isEmpty) {
-      _showError('Please select a preferred date');
+      _showError('ui_please_select_a_preferred_date'.tr);
+      return;
+    }
+
+    final minRate = selectedCategory.value!.minHourlyRate;
+    final budget = double.tryParse(budgetController.text.trim()) ?? 0;
+    if (isHourly.value && minRate != null && budget < minRate) {
+      _showError('price_below_min_hourly'.trParams({
+        'category': selectedCategory.value!.name,
+        'min': minRate.toStringAsFixed(0),
+      }));
+      return;
+    }
+
+    // Hourly jobs are billed from the time range, so both ends are required.
+    final timeError = AppDateTime.validateTimeRange(
+      startTimeController.text,
+      endTimeController.text,
+      required: isHourly.value,
+    );
+    if (timeError != null) {
+      _showError(timeError);
       return;
     }
 
@@ -367,7 +391,7 @@ class PostJobController extends GetxController {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Select Payment Method',
+                'ui_select_payment_method'.tr,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -380,7 +404,7 @@ class PostJobController extends GetxController {
                   Expanded(
                     child: Obx(
                       () => _buildPaymentOption(
-                        'Online Payment',
+                        'ui_online_payment'.tr,
                         Icons.credit_card,
                         isOnlinePayment.value,
                         () => isOnlinePayment.value = true,
@@ -391,7 +415,7 @@ class PostJobController extends GetxController {
                   Expanded(
                     child: Obx(
                       () => _buildPaymentOption(
-                        'Cash',
+                        'ui_cash'.tr,
                         Icons.account_balance_wallet_outlined,
                         !isOnlinePayment.value,
                         () => isOnlinePayment.value = false,
@@ -414,7 +438,7 @@ class PostJobController extends GetxController {
                         side: BorderSide(color: isDark ? AppColors.darkBorder : Colors.grey[300]!),
                       ),
                       child: Text(
-                        'Cancel',
+                        'btn_cancel'.tr,
                         style: TextStyle(
                           color: isDark ? AppColors.darkTextPrimary : Colors.black87,
                           fontWeight: FontWeight.bold,
@@ -436,8 +460,8 @@ class PostJobController extends GetxController {
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
-                        'Continue',
+                      child: Text(
+                        'ui_continue'.tr,
                         style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -538,8 +562,8 @@ class PostJobController extends GetxController {
             } else {
               // Stay so the client can retry payment or edit the job
               Get.snackbar(
-                'Payment',
-                'Job saved as unpaid. Complete payment from My Bookings.',
+                'profile_payment'.tr,
+                'ui_job_saved_as_unpaid_complete_payment_from'.tr,
                 snackPosition: SnackPosition.BOTTOM,
                 backgroundColor: Colors.orange.shade100,
                 colorText: Colors.orange.shade900,
@@ -551,8 +575,8 @@ class PostJobController extends GetxController {
         }
 
         Get.snackbar(
-          'Success',
-          'Job posted successfully!',
+          'booking_success'.tr,
+          'ui_job_posted_successfully'.tr,
           snackPosition: SnackPosition.BOTTOM,
           backgroundColor: Colors.green.shade100,
           colorText: Colors.green.shade900,
