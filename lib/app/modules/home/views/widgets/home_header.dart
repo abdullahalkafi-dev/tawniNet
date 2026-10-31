@@ -1,3 +1,4 @@
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'package:awnneaapp/app/modules/home/controllers/home_controller.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/notification_badge_controller.dart';
@@ -22,13 +23,7 @@ class HomeHeader extends GetView<HomeController> {
           return ClipRRect(
             borderRadius: BorderRadius.circular(25),
             child: avatar != null && avatar.isNotEmpty
-                ? Image.network(
-                    avatar,
-                    width: 50,
-                    height: 50,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _buildAvatarPlaceholder(context),
-                  )
+                ? AppNetworkImage(url: avatar, width: 50, height: 50, fit: BoxFit.cover)
                 : _buildAvatarPlaceholder(context),
           );
         }),
@@ -107,8 +102,8 @@ class HomeHeader extends GetView<HomeController> {
                   color: context.textPrimaryColor,
                 ),
               ),
-              Positioned(
-                right: 2,
+              PositionedDirectional(
+                end: 2,
                 top: 2,
                 child: Obx(() {
                   final count = Get.isRegistered<NotificationBadgeController>()

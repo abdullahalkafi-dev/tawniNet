@@ -8,12 +8,18 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
+import 'package:awnneaapp/app/core/widgets/helper_form_fields.dart';
 
 class LocationController extends GetxController {
   final searchQuery = ''.obs;
   final searchResults = <Map<String, dynamic>>[].obs;
   final isGettingLocation = false.obs;
   final isSearching = false.obs;
+  final isSavingCity = false.obs;
+  /// Set when the address search failed (rate limit, no network...); null otherwise.
+  final searchError = RxnString();
+  /// The last search ended without any match.
+  final searchedEmpty = false.obs;
 
   Timer? _debounce;
 
@@ -123,6 +129,9 @@ class LocationController extends GetxController {
 
       // 7. Successfully advance to destination route
       _navigateToDestination();
+    } on ApiException catch (e) {
+      // The position was read but the server refused or could not save it.
+      _showError(e);
     } catch (e) {
       _showLocationNotice(
         'ui_could_not_detect_your_gps_location_please'.tr,
@@ -213,31 +222,64 @@ class LocationController extends GetxController {
   void searchLocation(String query) {
     searchQuery.value = query;
     _debounce?.cancel();
+    searchError.value = null;
+    searchedEmpty.value = false;
 
     if (query.trim().length < 3) {
       searchResults.clear();
       return;
     }
 
-    _debounce = Timer(const Duration(milliseconds: 600), () async {
+    _debounce = Timer(const Duration(milliseconds: 600), () => _runSearch(query));
+  }
+
+  /// Search again with the text already typed (the "try again" button).
+  void retrySearch() => _runSearch(searchQuery.value);
+
+  Future<void> _runSearch(String query) async {
+    if (isClosed || query.trim().length < 3) return;
+    isSearching.value = true;
+    searchError.value = null;
+    searchedEmpty.value = false;
+    try {
+      final locationService = Get.find<LocationService>();
+      final results = await locationService.forwardGeocode(query);
+      if (isClosed || query != searchQuery.value) return; // a newer search is running
+      searchResults.assignAll(results);
+      searchedEmpty.value = results.isEmpty;
+    } on GeocodeException catch (e) {
       if (isClosed) return;
-      isSearching.value = true;
+      searchResults.clear();
+      searchError.value = e.isRateLimited ? e.message : 'location_search_failed'.tr;
+    } catch (_) {
+      if (isClosed) return;
+      searchResults.clear();
+      searchError.value = 'location_search_failed'.tr;
+    } finally {
+      if (!isClosed) isSearching.value = false;
+    }
+  }
+
+  /// Saves the centre of a city: always works, even when address search does not.
+  Future<void> selectCity(String name) async {
+    final center = kMoroccanCityCenters[name];
+    if (center == null || isSavingCity.value) return;
+    isSavingCity.value = true;
+    try {
+      await _saveLocation(
+        latitude: center[0],
+        longitude: center[1],
+        address: '$name, Morocco',
+      );
       try {
-        final locationService = Get.find<LocationService>();
-        final results = await locationService.forwardGeocode(query);
-        if (!isClosed) {
-          searchResults.assignAll(results);
-        }
-      } catch (_) {
-        if (!isClosed) {
-          searchResults.clear();
-        }
-      } finally {
-        if (!isClosed) {
-          isSearching.value = false;
-        }
-      }
-    });
+        await Get.find<AuthService>().getMe();
+      } catch (_) {}
+      _navigateToDestination();
+    } catch (e) {
+      _showError(e);
+    } finally {
+      if (!isClosed) isSavingCity.value = false;
+    }
   }
 
   void selectLocation(Map<String, dynamic> result) async {

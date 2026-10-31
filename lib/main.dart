@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
@@ -23,21 +24,23 @@ import 'app/services/notification_service.dart';
 import 'app/services/notification_api.dart';
 import 'app/services/notification_badge_controller.dart';
 import 'app/services/deep_link_service.dart';
+import 'app/services/app_config_service.dart';
+import 'app/services/app_lifecycle_service.dart';
+import 'app/services/app_error_reporter.dart';
 import 'app/modules/messages/controllers/messages_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Global error handler — logs errors to terminal
+  // Every uncaught error goes through one place. In debug it is printed; a crash
+  // reporter (Firebase Crashlytics / Sentry) is connected to AppErrorReporter.report.
   FlutterError.onError = (FlutterErrorDetails details) {
-    debugPrint('[FlutterError] ${details.exception}');
-    debugPrint(details.stack.toString());
+    AppErrorReporter.report(details.exception, details.stack, source: 'flutter');
   };
 
   // Catch async errors that escape the framework
   WidgetsBinding.instance.platformDispatcher.onError = (error, stack) {
-    debugPrint('[PlatformError] $error');
-    debugPrint(stack.toString());
+    AppErrorReporter.report(error, stack, source: 'platform');
     return true;
   };
 
@@ -64,9 +67,13 @@ void main() async {
 
   final localeService = LocaleService();
   try {
-    await localeService.init().timeout(const Duration(milliseconds: 300));
+    await localeService.init().timeout(const Duration(milliseconds: 800));
   } catch (_) {}
   Get.put(localeService, permanent: true);
+
+  // Server-controlled settings (commission, support contacts, minimum app version…)
+  final appConfig = AppConfigService();
+  Get.put(appConfig, permanent: true);
 
   final locationService = LocationService();
   Get.put(locationService, permanent: true);
@@ -93,12 +100,13 @@ void main() async {
 
   Get.put(MessagesController(), permanent: true);
   Get.put(DeepLinkService(), permanent: true);
+  Get.put(AppLifecycleService(), permanent: true);
 
   // Render UI IMMEDIATELY: SplashView appears on screen in ~100ms
   runApp(
     Obx(
       () => GetMaterialApp(
-        title: "Awnnea App",
+        title: '3awniNet',
         initialRoute: AppPages.initial,
         getPages: AppPages.routes,
         theme: AppTheme.lightTheme,
@@ -134,7 +142,12 @@ void main() async {
       await authService.init().timeout(const Duration(seconds: 4));
     } catch (e) {
       debugPrint('[Startup] AuthService init skipped/failed: $e');
+      // The splash must not wait for ever.
+      if (!authService.ready.isCompleted) authService.ready.complete();
     }
+
+    // 1b. Server settings (async; the splash waits for it a little)
+    unawaited(appConfig.init());
 
     // 2. GPS / Location service (hardware GPS status check)
     try {

@@ -1,3 +1,5 @@
+import 'package:awnneaapp/app/core/widgets/error_retry.dart';
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/services/wallet_service.dart';
@@ -16,6 +18,7 @@ class _EarningSummaryViewState extends State<EarningSummaryView> {
   double jobEarnings = 0.0;
   double platformFees = 0.0;
   bool isLoading = true;
+  bool failed = false;
 
   @override
   void initState() {
@@ -24,26 +27,16 @@ class _EarningSummaryViewState extends State<EarningSummaryView> {
   }
 
   Future<void> _fetchWallet() async {
+    setState(() => failed = false);
     try {
       final walletService = Get.find<WalletService>();
       final res = await walletService.getWalletBalance();
       if (mounted) {
-        final transactions = (res['transactions'] as List<dynamic>?)
-                ?.map((e) => Map<String, dynamic>.from(e as Map))
-                .toList() ??
-            [];
-
-        double earnings = 0.0;
-        double fees = 0.0;
-        for (final t in transactions) {
-          final type = (t['type'] ?? '').toString();
-          final amount = (t['amount'] as num?)?.toDouble() ?? 0.0;
-          if (type == 'earning_payout' || type == 'commission_refund') {
-            earnings += amount;
-          } else if (type == 'commission_deduction') {
-            fees += amount.abs();
-          }
-        }
+        // Lifetime totals computed by the server (the transaction list is only the latest page).
+        final totals = (res['totals'] as Map?) ?? const {};
+        double total(String type) => (totals[type] as num?)?.toDouble() ?? 0.0;
+        final earnings = total('earning_payout') + total('commission_refund');
+        final fees = total('commission_deduction').abs();
 
         setState(() {
           balance = (res['balance'] as num?)?.toDouble() ?? 0.0;
@@ -53,7 +46,12 @@ class _EarningSummaryViewState extends State<EarningSummaryView> {
         });
       }
     } catch (_) {
-      if (mounted) setState(() => isLoading = false);
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          failed = true;
+        });
+      }
     }
   }
 
@@ -74,8 +72,10 @@ class _EarningSummaryViewState extends State<EarningSummaryView> {
         centerTitle: true,
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
+          ? const SummaryListSkeleton()
+          : failed
+              ? ErrorRetry(onRetry: _fetchWallet)
+              : SingleChildScrollView(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,7 +138,7 @@ class _EarningSummaryViewState extends State<EarningSummaryView> {
         children: [
           Text(
             'earning_total'.tr,
-            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14),
           ),
           const SizedBox(height: 8),
           Text(
@@ -159,7 +159,7 @@ class _EarningSummaryViewState extends State<EarningSummaryView> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.1),
+        color: AppColors.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(

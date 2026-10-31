@@ -21,10 +21,10 @@ class WalletService extends GetxService {
     return {'balance': 0.0, 'currency': 'MAD', 'transactions': []};
   }
 
-  Future<Map<String, dynamic>> getTransactions({int page = 1, int limit = 20}) async {
+  Future<Map<String, dynamic>> getTransactions({int page = 1, int limit = 20, String? type}) async {
     final response = await _api.get(
       ApiConstants.walletTransactions,
-      queryParameters: {'page': page, 'limit': limit},
+      queryParameters: {'page': page, 'limit': limit, if (type != null) 'type': type},
       fromData: (data) => data,
     );
 

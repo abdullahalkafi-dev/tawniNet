@@ -1,0 +1,182 @@
+{
+ "success": true,
+ "message": "Categories fetched successfully",
+ "data": [
+  {
+   "names": {
+    "en": "Home Cleaning",
+    "fr": "Ménage à domicile",
+    "ar": "تنظيف المنازل",
+    "es": "Limpieza del hogar"
+   },
+   "_id": "6ae5fb9981c513a58eb79780",
+   "name": "Home Cleaning",
+   "icon": "http://192.168.0.200:5000/api/v1/upload/files/cleaning_icon.svg",
+   "isActive": true,
+   "slug": "home_cleaning",
+   "sortOrder": 1,
+   "isPopular": true,
+   "minHourlyRate": 50,
+   "suggestedPriceMin": 150,
+   "suggestedPriceMax": 400,
+   "createdAt": "2026-10-31T14:30:49.494Z",
+   "updatedAt": "2026-10-31T14:30:49.494Z",
+   "__v": 0,
+   "displayName": "Ménage à domicile"
+  },
+  {
+   "names": {
+    "en": "Furniture Assembly & DIY",
+    "fr": "Montage de meubles & bricolage",
+    "ar": "تركيب الأثاث والأعمال اليدوية",
+    "es": "Montaje de muebles y bricolaje"
+   },
+   "_id": "6ae5fb9981c513a58eb79781",
+   "name": "Furniture Assembly & DIY",
+   "icon": "http://192.168.0.200:5000/api/v1/upload/files/furniture_assembly_icon.svg",
+   "isActive": true,
+   "slug": "furniture_assembly",
+   "sortOrder": 2,
+   "isPopular": true,
+   "minHourlyRate": 70,
+   "suggestedPriceMin": 150,
+   "suggestedPriceMax": 500,
+   "createdAt": "2026-10-31T14:30:49.496Z",
+   "updatedAt": "2026-10-31T14:30:49.496Z",
+   "__v": 0,
+   "displayName": "Montage de meubles & bricolage"
+  },
+  {
+   "names": {
+    "en": "Gardening & Plant Care",
+    "fr": "Jardinage & soin des plantes",
+    "ar": "البستنة والعناية بالنباتات",
+    "es": "Jardinería y cuidado de plantas"
+   },
+   "_id": "6ae5fb9981c513a58eb79782",
+   "name": "Gardening & Plant Care",
+   "icon": "http://192.168.0.200:5000/api/v1/upload/files/garden_icon.svg",
+   "isActive": true,
+   "slug": "gardening",
+   "sortOrder": 3,
+   "isPopular": false,
+   "minHourlyRate": 50,
+   "suggestedPriceMin": 150,
+   "suggestedPriceMax": 400,
+   "createdAt": "2026-10-31T14:30:49.499Z",
+   "updatedAt": "2026-10-31T14:30:49.499Z",
+   "__v": 0,
+   "displayName": "Jardinage & soin des plantes"
+  },
+  {
+   "names": {
+    "en": "Tech Support & Devices",
+    "fr": "Assistance technique & appareils",
+    "ar": "الدعم التقني والأجهزة",
+    "es": "Soporte técnico y dispositivos"
+   },
+   "_id": "6ae5fb9981c513a58eb79783",
+   "name": "Tech Support & Devices",
+   "icon": "http://192.168.0.200:5000/api/v1/upload/files/tech_support_icon.svg",
+   "isActive": true,
+   "slug": "tech_support",
+   "sortOrder": 4,
+   "isPopular": true,
+   "minHourlyRate": 80,
+   "suggestedPriceMin": 100,
+   "suggestedPriceMax": 400,
+   "createdAt": "2026-10-31T14:30:49.501Z",
+   "updatedAt": "2026-10-31T14:30:49.501Z",
+   "__v": 0,
+   "displayName": "Assistance technique & appareils"
+  },
+  {
+   "names": {
+    "en": "Tutoring & Education",
+    "fr": "Cours particuliers & éducation",
+    "ar": "الدروس الخصوصية والتعليم",
+    "es": "Clases particulares y educación"
+   },
+   "_id": "6ae5fb9981c513a58eb79784",
+   "name": "Tutoring & Education",
+   "icon": "http://192.168.0.200:5000/api/v1/upload/files/tutoring_icon.svg",
+   "isActive": true,
+   "slug": "tutoring",
+   "sortOrder": 5,
+   "isPopular": false,
+   "minHourlyRate": 60,
+   "suggestedPriceMin": 100,
+   "suggestedPriceMax": 300,
+   "createdAt": "2026-10-31T14:30:49.503Z",
+   "updatedAt": "2026-10-31T14:30:49.503Z",
+   "__v": 0,
+   "displayName": "Cours particuliers & éducation"
+  },
+  {
+   "names": {
+    "en": "Pet Care & Walking",
+    "fr": "Garde & promenade d'animaux",
+    "ar": "رعاية الحيوانات الأليفة والتنزه بها",
+    "es": "Cuidado y paseo de mascotas"
+   },
+   "_id": "6ae5fb9981c513a58eb79785",
+   "name": "Pet Care & Walking",
+   "icon": "http://192.168.0.200:5000/api/v1/upload/files/pet_care_icon.svg",
+   "isActive": true,
+   "slug": "pet_care",
+   "sortOrder": 6,
+   "isPopular": false,
+   "minHourlyRate": 40,
+   "suggestedPriceMin": 50,
+   "suggestedPriceMax": 200,
+   "createdAt": "2026-10-31T14:30:49.505Z",
+   "updatedAt": "2026-10-31T14:30:49.505Z",
+   "__v": 0,
+   "displayName": "Garde & promenade d'animaux"
+  },
+  {
+   "names": {
+    "en": "Tailoring & Alterations",
+    "fr": "Couture & retouches",
+    "ar": "الخياطة والتعديلات",
+    "es": "Costura y arreglos"
+   },
+   "_id": "6ae5fb9981c513a58eb79786",
+   "name": "Tailoring & Alterations",
+   "icon": "http://192.168.0.200:5000/api/v1/upload/files/tailoring_icon.svg",
+   "isActive": true,
+   "slug": "tailoring",
+   "sortOrder": 7,
+   "isPopular": false,
+   "minHourlyRate": 50,
+   "suggestedPriceMin": 50,
+   "suggestedPriceMax": 300,
+   "createdAt": "2026-10-31T14:30:49.507Z",
+   "updatedAt": "2026-10-31T14:30:49.507Z",
+   "__v": 0,
+   "displayName": "Couture & retouches"
+  },
+  {
+   "names": {
+    "en": "Event & Hospitality",
+    "fr": "Événements & hôtellerie",
+    "ar": "المناسبات والضيافة",
+    "es": "Eventos y hostelería"
+   },
+   "_id": "6ae5fb9981c513a58eb79787",
+   "name": "Event & Hospitality",
+   "icon": "http://192.168.0.200:5000/api/v1/upload/files/event_helper_icon.svg",
+   "isActive": true,
+   "slug": "events",
+   "sortOrder": 8,
+   "isPopular": false,
+   "minHourlyRate": 60,
+   "suggestedPriceMin": 300,
+   "suggestedPriceMax": 1000,
+   "createdAt": "2026-10-31T14:30:49.509Z",
+   "updatedAt": "2026-10-31T14:30:49.509Z",
+   "__v": 0,
+   "displayName": "Événements & hôtellerie"
+  }
+ ]
+}

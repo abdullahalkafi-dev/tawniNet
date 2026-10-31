@@ -20,7 +20,7 @@ class ForgotPasswordView extends GetView<ForgotPasswordController> {
         ),
         actions: const [
           Padding(
-            padding: EdgeInsets.only(right: 16),
+            padding: EdgeInsetsDirectional.only(end: 16),
             child: ThemeToggleIconButton(),
           ),
         ],

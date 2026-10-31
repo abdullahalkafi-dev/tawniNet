@@ -1,0 +1,115 @@
+{
+ "success": true,
+ "message": "Job fetched successfully",
+ "data": {
+  "_id": "6ae5fc848a0aef46cd1f4e8d",
+  "title": "Smoke test cleaning",
+  "description": "x",
+  "date": "2026-11-01T00:00:00.000Z",
+  "startTime": "9:00 AM",
+  "endTime": "12:00 PM",
+  "startAt": "2026-11-01T09:00:00.000Z",
+  "endAt": "2026-11-01T12:00:00.000Z",
+  "budget": 180,
+  "budgetType": "hourly",
+  "hourlyRate": 60,
+  "hours": 3,
+  "paymentMethod": "cash",
+  "paymentStatus": "none",
+  "status": "completed",
+  "isCustomOffer": false,
+  "createdAt": "2026-10-31T14:34:44.702Z",
+  "updatedAt": "2026-10-31T14:34:44.798Z",
+  "images": [],
+  "category": {
+   "_id": "6ae5fb9981c513a58eb79780",
+   "name": "Home Cleaning",
+   "slug": "home_cleaning",
+   "names": {
+    "en": "Home Cleaning",
+    "fr": "Ménage à domicile",
+    "ar": "تنظيف المنازل",
+    "es": "Limpieza del hogar"
+   },
+   "icon": "http://192.168.0.200:5000/api/v1/upload/files/cleaning_icon.svg"
+  },
+  "address": "12 Rue Test, Rabat",
+  "location": {
+   "type": "Point",
+   "coordinates": [
+    -6.85,
+    33.99
+   ]
+  },
+  "commissionDeducted": 36,
+  "feePercentage": 20,
+  "helperNet": 144,
+  "acceptedAt": "2026-10-31T14:34:44.739Z",
+  "onTheWayAt": "2026-10-31T14:34:44.754Z",
+  "arrivedAt": "2026-10-31T14:34:44.771Z",
+  "helperFinishedAt": "2026-10-31T14:34:44.782Z",
+  "disputeOpen": false,
+  "completedAt": "2026-10-31T14:34:44.796Z",
+  "refundStatus": "none",
+  "history": [
+   {
+    "action": "created",
+    "by": "6ae5fb9981c513a58eb79792",
+    "byRole": "client",
+    "at": "2026-10-31T14:34:44.704Z",
+    "_id": "6ae5fc848a0aef46cd1f4e8e"
+   },
+   {
+    "action": "accepted",
+    "by": "6ae5fb9981c513a58eb79789",
+    "byRole": "helper",
+    "note": "Commission 36 MAD (20%)",
+    "at": "2026-10-31T14:34:44.743Z",
+    "_id": "6ae5fc848a0aef46cd1f4ea2"
+   },
+   {
+    "action": "on_the_way",
+    "by": "6ae5fb9981c513a58eb79789",
+    "byRole": "helper",
+    "at": "2026-10-31T14:34:44.757Z",
+    "_id": "6ae5fc848a0aef46cd1f4eab"
+   },
+   {
+    "action": "arrived",
+    "by": "6ae5fb9981c513a58eb79789",
+    "byRole": "helper",
+    "at": "2026-10-31T14:34:44.773Z",
+    "_id": "6ae5fc848a0aef46cd1f4eb7"
+   },
+   {
+    "action": "finished",
+    "by": "6ae5fb9981c513a58eb79789",
+    "byRole": "helper",
+    "at": "2026-10-31T14:34:44.785Z",
+    "_id": "6ae5fc848a0aef46cd1f4ec6"
+   },
+   {
+    "action": "completed",
+    "by": "6ae5fb9981c513a58eb79792",
+    "byRole": "client",
+    "at": "2026-10-31T14:34:44.798Z",
+    "_id": "6ae5fc848a0aef46cd1f4ed7"
+   }
+  ],
+  "postedBy": {
+   "_id": "6ae5fb9981c513a58eb79792",
+   "name": "Omar Tazi",
+   "avatar": null,
+   "rating": 0,
+   "reviewCount": 0
+  },
+  "assignedTo": {
+   "_id": "6ae5fb9981c513a58eb79789",
+   "name": "Karim Bennani",
+   "avatar": null,
+   "rating": 5,
+   "reviewCount": 2,
+   "phone": "+212612345671"
+  }
+ }
+}

@@ -30,7 +30,7 @@ class ApplicationPendingView extends GetView<ApplyHelperController> {
                   width: 100,
                   height: 100,
                   decoration: BoxDecoration(
-                    color: (isAppeal ? Colors.orange : AppColors.primary).withOpacity(0.1),
+                    color: (isAppeal ? Colors.orange : AppColors.primary).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(

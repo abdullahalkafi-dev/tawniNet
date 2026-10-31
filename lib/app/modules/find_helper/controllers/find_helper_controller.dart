@@ -1,3 +1,5 @@
+import 'package:awnneaapp/app/core/utils/app_feedback.dart';
+import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
 import 'package:awnneaapp/app/data/models/home_models.dart';
 import 'package:awnneaapp/app/core/utils/helper_chat.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
@@ -17,7 +19,11 @@ class FindHelperController extends GetxController {
 
   final categories = <Category>[].obs;
   final helpers = <HelperJob>[].obs;
-  final isLoading = false.obs;
+  final isLoading = true.obs;
+  final loadFailed = false.obs;
+
+  /// Nobody within the chosen distance: the screen offers to widen it.
+  final expandSuggested = false.obs;
   final isLoadingMore = false.obs;
   final currentPage = 1.obs;
   final totalPages = 1.obs;
@@ -100,12 +106,25 @@ class FindHelperController extends GetxController {
     searchHelpers();
   }
 
-  Future<void> searchHelpers({bool loadMore = false}) async {
+  /// Widen the search to 50 km (when nobody is close by).
+  void widenSearch() {
+    distanceValue.value = 50;
+    applyFiltersInPlace();
+  }
+
+  /// Only the answer to the newest search is used (a slow older answer must not
+  /// overwrite the list of a newer filter).
+  int _searchSeq = 0;
+
+  /// [silent]: pull-to-refresh / resync. The current list stays on screen (no skeleton, no empty flash).
+  Future<void> searchHelpers({bool loadMore = false, bool silent = false}) async {
+    final seq = ++_searchSeq;
     if (loadMore) {
       if (currentPage.value >= totalPages.value) return;
       isLoadingMore.value = true;
-    } else {
+    } else if (!silent || helpers.isEmpty) {
       isLoading.value = true;
+      loadFailed.value = false;
       helpers.clear();
     }
 
@@ -139,6 +158,7 @@ class FindHelperController extends GetxController {
         queryParameters: queryParams,
       );
 
+      if (seq != _searchSeq) return; // a newer search replaced this one
       if (!isClosed && response.success && response.data != null) {
         final data = response.data as Map<String, dynamic>;
         final helpersList = data['helpers'] as List? ?? [];
@@ -157,9 +177,17 @@ class FindHelperController extends GetxController {
           helpers.assignAll(fetchedHelpers);
         }
         totalPages.value = total;
+        expandSuggested.value = data['expandRadiusSuggested'] == true;
       }
-    } catch (_) {} finally {
-      if (!isClosed) {
+    } catch (e) {
+      if (seq != _searchSeq) return;
+      if (loadMore || helpers.isNotEmpty) {
+        AppFeedback.error(AppSnackbar.extractErrorMessage(e));
+      } else {
+        loadFailed.value = true;
+      }
+    } finally {
+      if (!isClosed && seq == _searchSeq) {
         isLoading.value = false;
         isLoadingMore.value = false;
       }
@@ -174,6 +202,6 @@ class FindHelperController extends GetxController {
 
   Future<void> refreshData() async {
     currentPage.value = 1;
-    await searchHelpers();
+    await searchHelpers(silent: true);
   }
 }

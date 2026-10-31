@@ -1,10 +1,13 @@
+import 'package:awnneaapp/app/core/utils/app_feedback.dart';
+import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'package:awnneaapp/app/core/widgets/app_pull_to_refresh.dart';
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/notification_badge_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:awnneaapp/app/modules/helper/helper_home/controllers/helper_home_controller.dart';
@@ -25,6 +28,7 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
             children: [
               const SizedBox(height: 16),
               _buildHeader(context),
+              _buildOffDutyBanner(context),
               const SizedBox(height: 20),
               _buildSearchBar(context),
               const SizedBox(height: 20),
@@ -36,24 +40,48 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
     );
   }
 
+  /// Shown while the helper is off duty, so an empty list or a refused "Accept" is understood.
+  Widget _buildOffDutyBanner(BuildContext context) {
+    return Obx(() {
+      final available = Get.find<AuthService>().currentUser.value?.isAvailable ?? true;
+      if (available) return const SizedBox.shrink();
+      return Container(
+        margin: const EdgeInsets.only(top: 14),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.orange.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.pause_circle_outline, color: Colors.orange),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text('helper_off_duty_banner'.tr, style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 13)),
+            ),
+            TextButton(
+              onPressed: () async {
+                try {
+                  await Get.find<AuthService>().setAvailability(true);
+                } catch (e) {
+                  AppFeedback.error(AppSnackbar.extractErrorMessage(e));
+                }
+              },
+              child: Text('helper_go_on_duty'.tr),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
   Widget _buildHeader(BuildContext context) {
     return Row(
       children: [
         Obx(() {
           final user = Get.find<AuthService>().currentUser.value;
-          final avatar = user?.avatar;
-          return ClipRRect(
-            borderRadius: BorderRadius.circular(40),
-            child: avatar != null && avatar.isNotEmpty
-                ? Image.network(
-                    avatar,
-                    width: 60,
-                    height: 60,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _buildAvatarPlaceholder(context, 60),
-                  )
-                : _buildAvatarPlaceholder(context, 60),
-          );
+          return AppAvatar(url: user?.avatar, name: user?.name ?? '', size: 60);
         }),
         const SizedBox(width: 12),
         Expanded(
@@ -95,13 +123,13 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(Icons.notifications_outlined, color: AppColors.primary, size: 24),
               ),
-              Positioned(
-                right: -4,
+              PositionedDirectional(
+                end: -4,
                 top: -4,
                 child: Obx(() {
                   final count = Get.isRegistered<NotificationBadgeController>()
@@ -171,11 +199,42 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
 
   Widget _buildJobList(BuildContext context) {
     return Obx(() {
-      if (controller.isLoading.value) {
-        return const Center(
-          child: Padding(
-            padding: EdgeInsets.all(40),
-            child: CircularProgressIndicator(),
+      if (!controller.hasLoadedOnce.value && !controller.loadFailed.value) {
+        return Shimmer(
+          child: Column(
+            children: List.generate(
+              4,
+              (_) => const Padding(
+                padding: EdgeInsets.only(bottom: 16),
+                child: JobCardSkeleton(),
+              ),
+            ),
+          ),
+        );
+      }
+
+      if (controller.loadFailed.value && controller.nearbyJobs.isEmpty) {
+        return ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 400),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.cloud_off_outlined, size: 56, color: context.textHintColor),
+                const SizedBox(height: 12),
+                Text(
+                  'ui_could_not_load_jobs_pull_down_to'.tr,
+                  textAlign: TextAlign.center,
+                  style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: controller.fetchNearbyJobs,
+                  icon: const Icon(Icons.refresh),
+                  label: Text('booking_retry'.tr),
+                ),
+              ],
+            ),
           ),
         );
       }
@@ -218,7 +277,7 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
               border: Border.all(color: context.borderSubtle),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: Colors.black.withValues(alpha: 0.02),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -229,42 +288,38 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
               children: [
                 Row(
                   children: [
-                    if (job.helperImage.isNotEmpty)
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          job.helperImage,
-                          width: 40,
-                          height: 40,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
-                            width: 40,
-                            height: 40,
-                            color: context.inputFillLight,
-                            child: Icon(Icons.person, color: context.textHintColor),
-                          ),
-                        ),
-                      ),
-                    if (job.helperImage.isNotEmpty) const SizedBox(width: 12),
+                    AppAvatar(url: job.helperImage, name: job.helperName, size: 40),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            job.helperName,
+                            job.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: AppStyles.h2Of(context).copyWith(fontSize: 16),
                           ),
-                          if (job.category.isNotEmpty)
-                            Text(
-                              job.category,
-                              style: AppStyles.bodyMedium.copyWith(
-                                fontSize: 13,
-                                color: AppColors.primary,
-                              ),
+                          Text(
+                            [job.helperName, if (job.category.isNotEmpty) job.category].join(' · '),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppStyles.bodyMedium.copyWith(
+                              fontSize: 13,
+                              color: AppColors.primary,
                             ),
+                          ),
                         ],
                       ),
                     ),
+                    if (job.budget != null)
+                      Text(
+                        job.price,
+                        style: AppStyles.bodyLargeOf(context).copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.primary,
+                        ),
+                      ),
                   ],
                 ),
                 if (job.bio != null && job.bio!.isNotEmpty) ...[
@@ -286,7 +341,7 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.15),
+                          color: AppColors.primary.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Row(
@@ -378,16 +433,4 @@ class HelperHomeTabView extends GetView<HelperHomeController> {
     });
   }
 
-  Widget _buildAvatarPlaceholder(BuildContext context, double size) {
-    return Container(
-      width: size,
-      height: size,
-      color: context.inputFillLight,
-      padding: EdgeInsets.all(size * 0.3),
-      child: SvgPicture.asset(
-        'assets/svgs/profile_icon.svg',
-        colorFilter: ColorFilter.mode(context.textHintColor, BlendMode.srcIn),
-      ),
-    );
-  }
 }

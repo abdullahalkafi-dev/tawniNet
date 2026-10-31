@@ -3,7 +3,7 @@ import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/values/app_currency.dart';
 import 'package:awnneaapp/app/data/models/home_models.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
 import 'package:awnneaapp/app/core/widgets/helper_trust_widgets.dart';
@@ -60,9 +60,9 @@ class PopularServicesView extends GetView<HomeController> {
                 () => Row(
                   children: [
                     _buildFilterChip(context, 'label_all'.tr, selectedFilter),
-                    _buildFilterChip(context, 'label_cleaning'.tr, selectedFilter),
-                    _buildFilterChip(context, 'label_repairing'.tr, selectedFilter),
-                    _buildFilterChip(context, 'label_painting'.tr, selectedFilter),
+                    // The real categories (the list used to be four fixed words).
+                    for (final cat in controller.categories)
+                      _buildFilterChip(context, cat.name, selectedFilter),
                   ],
                 ),
               ),
@@ -130,7 +130,7 @@ class PopularServicesView extends GetView<HomeController> {
     return GestureDetector(
       onTap: () => selectedFilter.value = label,
       child: Container(
-        margin: const EdgeInsets.only(right: 12),
+        margin: const EdgeInsetsDirectional.only(end: 12),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : context.cardColor,
@@ -138,7 +138,7 @@ class PopularServicesView extends GetView<HomeController> {
           border: Border.all(
             color: isSelected
                 ? AppColors.primary
-                : (context.isDarkMode ? AppColors.darkBorder : const Color(0xFF5AB9A7).withOpacity(0.5)),
+                : (context.isDarkMode ? AppColors.darkBorder : const Color(0xFF5AB9A7).withValues(alpha: 0.5)),
             width: 1.2,
           ),
         ),
@@ -165,7 +165,7 @@ class PopularServicesView extends GetView<HomeController> {
         border: Border.all(color: context.borderSubtle),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.01),
+            color: Colors.black.withValues(alpha: 0.01),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -177,27 +177,7 @@ class PopularServicesView extends GetView<HomeController> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  service.image,
-                  height: 60,
-                  width: 60,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 60,
-                      height: 60,
-                      color: context.inputFillLight,
-                      padding: const EdgeInsets.all(12),
-                      child: SvgPicture.asset(
-                        'assets/svgs/profile_icon.svg',
-                        colorFilter: ColorFilter.mode(
-                          context.textHintColor,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                child: AppNetworkImage(url: service.image, width: 60, height: 60, fit: BoxFit.cover),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -231,7 +211,7 @@ class PopularServicesView extends GetView<HomeController> {
                           ),
                           decoration: BoxDecoration(
                             color: context.isDarkMode
-                                ? const Color(0xFF1E3A8A).withOpacity(0.3)
+                                ? const Color(0xFF1E3A8A).withValues(alpha: 0.3)
                                 : const Color(0xFFEFF6FF),
                             borderRadius: BorderRadius.circular(6),
                           ),
@@ -262,7 +242,7 @@ class PopularServicesView extends GetView<HomeController> {
                         Icon(
                           Icons.circle,
                           size: 6,
-                          color: AppColors.primary.withOpacity(0.8),
+                          color: AppColors.primary.withValues(alpha: 0.8),
                         ),
                         const SizedBox(width: 6),
                         Text(
@@ -317,7 +297,7 @@ class PopularServicesView extends GetView<HomeController> {
                       ),
                       side: BorderSide.none,
                       backgroundColor: context.isDarkMode
-                          ? AppColors.primary.withOpacity(0.12)
+                          ? AppColors.primary.withValues(alpha: 0.12)
                           : const Color(0xFFF2FAF8),
                     ),
                     child: Text(

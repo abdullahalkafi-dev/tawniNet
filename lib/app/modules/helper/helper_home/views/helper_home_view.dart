@@ -1,8 +1,6 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
-import 'package:awnneaapp/app/core/widgets/gps_required_barrier.dart';
-import 'package:awnneaapp/app/services/location_service.dart';
-import 'package:awnneaapp/app/services/role_service.dart';
+import 'package:awnneaapp/app/core/widgets/nav_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/helper_home_controller.dart';
@@ -11,43 +9,27 @@ import 'tabs/helper_jobs_tab_view.dart';
 import 'package:awnneaapp/app/modules/helper/helper_messages/views/helper_messages_tab_view.dart';
 import 'tabs/helper_profile_tab_view.dart';
 
+/// Helper shell. The location is no longer required to use the app: the GPS is
+/// only asked for when the helper starts travelling to a job.
 class HelperHomeView extends GetView<HelperHomeController> {
-  HelperHomeView({super.key});
+  const HelperHomeView({super.key});
 
-  final List<Widget> _pages = [
-    const HelperHomeTabView(),
-    const HelperJobsTabView(),
-    const HelperMessagesTabView(),
-    const HelperProfileTabView(),
+  // Each tab is built when it is first opened, then kept (no reload on every switch).
+  static final List<Widget Function()> _pages = [
+    () => const HelperHomeTabView(),
+    () => const HelperJobsTabView(),
+    () => const HelperMessagesTabView(),
+    () => const HelperProfileTabView(),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final locationService = Get.find<LocationService>();
-
     return Obx(() {
-      final isGpsReady = locationService.isGpsReady;
-      final isHelper = Get.isRegistered<RoleService>()
-          ? Get.find<RoleService>().isHelper
-          : true;
-
-      // When the user is a helper and GPS is not enabled/ready:
-      // Lock the entire view and turn off all bottom navigation.
-      if (isHelper && !isGpsReady) {
-        return Scaffold(
-          body: SafeArea(
-            child: GpsRequiredBarrier(
-              onGpsEnabled: () => controller.checkGpsAndSync(),
-            ),
-          ),
-        );
-      }
-
       final tabIndex = controller.currentIndex.value;
 
       return Scaffold(
         body: SafeArea(
-          child: _pages[tabIndex],
+          child: LazyIndexedStack(index: tabIndex, builders: _pages),
         ),
         bottomNavigationBar: SafeArea(
           top: false,
@@ -71,8 +53,8 @@ class HelperHomeView extends GetView<HelperHomeController> {
                 label: 'helper_jobs_tab'.tr,
               ),
               BottomNavigationBarItem(
-                icon: const Icon(Icons.message_outlined),
-                activeIcon: const Icon(Icons.message),
+                icon: const MessagesNavIcon(icon: Icons.message_outlined),
+                activeIcon: const MessagesNavIcon(icon: Icons.message),
                 label: 'helper_messages_tab'.tr,
               ),
               BottomNavigationBarItem(

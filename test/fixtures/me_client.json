@@ -1,0 +1,45 @@
+{
+ "success": true,
+ "message": "User fetched successfully",
+ "data": {
+  "_id": "6ae5fb9981c513a58eb79792",
+  "name": "Omar Tazi",
+  "email": "omar.client@tarik.test",
+  "phone": "+212698765431",
+  "avatar": null,
+  "coverPhoto": null,
+  "role": "user",
+  "status": "active",
+  "location": {
+   "type": "Point",
+   "coordinates": [
+    -7.64,
+    33.588
+   ]
+  },
+  "address": "Racine, Casablanca, Morocco",
+  "locale": "fr",
+  "isAvailable": true,
+  "notificationPrefs": {
+   "push": true,
+   "sound": true,
+   "vibrate": true,
+   "payments": true,
+   "appUpdates": true,
+   "newService": true
+  },
+  "acceptedLegalVersion": null,
+  "isHelperFormSubmitted": false,
+  "helperApplicationStatus": null,
+  "applicationHistory": [],
+  "profilePhotos": [],
+  "documentUrl": null,
+  "selfieUrl": null,
+  "diditDiagnostics": {
+   "warnings": []
+  },
+  "appealStatus": "none",
+  "appealCount": 0,
+  "cancelStrikes": 0
+ }
+}

@@ -22,12 +22,14 @@ class RefetchService extends GetxService {
     }
   }
 
-  /// Refetch multiple keys.
+  /// Refetch multiple keys. One failing fetch never stops the others.
   Future<void> invalidateMany(List<String> keys) async {
     for (final key in keys) {
       final cb = _callbacks[key];
       if (cb != null) {
-        await cb();
+        try {
+          await cb();
+        } catch (_) {}
       }
     }
   }
@@ -39,9 +41,24 @@ class RefetchService extends GetxService {
 
   /// Refetch everything registered.
   Future<void> invalidateAll() async {
-    for (final cb in _callbacks.values) {
-      await cb();
+    for (final cb in _callbacks.values.toList()) {
+      try {
+        await cb();
+      } catch (_) {}
     }
+  }
+
+  /// Refetch everything registered, all at once (app back in the foreground,
+  /// connection restored). Failures are ignored: the screens keep showing
+  /// what they already have.
+  Future<void> resyncAll() async {
+    await Future.wait(
+      _callbacks.values.toList().map((cb) async {
+        try {
+          await cb();
+        } catch (_) {}
+      }),
+    );
   }
 
   /// Clear all registered callbacks (on logout).

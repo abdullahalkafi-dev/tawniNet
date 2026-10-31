@@ -129,8 +129,8 @@ class ApplicationRejectedView extends GetView<ApplyHelperController> {
                   height: 90,
                   decoration: BoxDecoration(
                     color: isAppealPending
-                        ? Colors.orange.withOpacity(0.12)
-                        : AppColors.error.withOpacity(0.1),
+                        ? Colors.orange.withValues(alpha: 0.12)
+                        : AppColors.error.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -170,10 +170,10 @@ class ApplicationRejectedView extends GetView<ApplyHelperController> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: context.isDarkMode
-                        ? AppColors.error.withOpacity(0.12)
-                        : AppColors.error.withOpacity(0.05),
+                        ? AppColors.error.withValues(alpha: 0.12)
+                        : AppColors.error.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.error.withOpacity(0.2)),
+                    border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

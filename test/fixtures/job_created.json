@@ -1,0 +1,40 @@
+{
+ "success": true,
+ "message": "Job created successfully",
+ "data": {
+  "title": "Fixture open job",
+  "date": "2026-11-01T00:00:00.000Z",
+  "startTime": "9:00 AM",
+  "endTime": "11:00 AM",
+  "startAt": "2026-11-01T09:00:00.000Z",
+  "endAt": "2026-11-01T11:00:00.000Z",
+  "budget": 160,
+  "hourlyRate": 80,
+  "hours": 2,
+  "budgetType": "hourly",
+  "paymentMethod": "cash",
+  "status": "open",
+  "address": "5 Rue Test, Rabat",
+  "location": {
+   "type": "Point",
+   "coordinates": [
+    -6.85,
+    33.99
+   ]
+  },
+  "images": [],
+  "postedBy": "6ae5fb9981c513a58eb79792",
+  "category": "6ae5fb9981c513a58eb79780",
+  "commissionDeducted": 0,
+  "disputeOpen": false,
+  "escrowCredited": false,
+  "paymentStatus": "none",
+  "isCustomOffer": false,
+  "refundStatus": "none",
+  "_id": "6ae5fcb08a0aef46cd1f4f47",
+  "history": [],
+  "createdAt": "2026-10-31T14:35:28.751Z",
+  "updatedAt": "2026-10-31T14:35:28.751Z",
+  "__v": 0
+ }
+}

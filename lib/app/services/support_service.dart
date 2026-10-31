@@ -10,12 +10,13 @@ class SupportService extends GetxService {
     return this;
   }
 
-  Future<Map<String, dynamic>> createTicket(String subject, String message) async {
+  Future<Map<String, dynamic>> createTicket(String subject, String message, {String? category}) async {
     final response = await _api.post(
       ApiConstants.supportTickets,
       data: {
         'subject': subject,
         'message': message,
+        if (category != null && category.isNotEmpty) 'category': category,
       },
       fromData: (data) => data,
     );
@@ -24,6 +25,14 @@ class SupportService extends GetxService {
       return response.data as Map<String, dynamic>;
     }
     throw Exception(response.message ?? 'Failed to create support ticket');
+  }
+
+  /// Reopen a resolved ticket (allowed for 7 days after it was resolved).
+  Future<void> reopenTicket(String ticketId) async {
+    final response = await _api.post('${ApiConstants.supportTickets}/$ticketId/reopen');
+    if (!response.success) {
+      throw Exception(response.message ?? 'Failed to reopen ticket');
+    }
   }
 
   Future<List<dynamic>> getUserTickets() async {

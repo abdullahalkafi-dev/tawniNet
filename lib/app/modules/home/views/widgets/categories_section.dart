@@ -1,63 +1,13 @@
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
 import 'package:awnneaapp/app/modules/home/controllers/home_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import '../../../../core/values/app_colors.dart';
 import '../../../../core/values/app_styles.dart';
 
 class CategoriesSection extends GetView<HomeController> {
   const CategoriesSection({super.key});
-
-  String _getCategoryFallback(String name) {
-    switch (name) {
-      case 'Carrying':
-        return 'assets/svgs/carrying_icon.svg';
-      case 'Cleaning':
-        return 'assets/svgs/cleaning_icon.svg';
-      case 'Electrician':
-        return 'assets/svgs/electrician_icon.svg';
-      case 'Barber':
-        return 'assets/svgs/barber_icon.svg';
-      case 'Floor':
-        return 'assets/svgs/floor_icon.svg';
-      case 'Shifting':
-        return 'assets/svgs/shifting2_icon.svg';
-      case 'Garden':
-        return 'assets/svgs/garden_icon.svg';
-      case 'Moving':
-        return 'assets/svgs/shifting_icon.svg';
-      default:
-        return 'assets/svgs/cleaning_icon.svg';
-    }
-  }
-
-  Widget _buildCategoryIcon(String? iconUrl, String name, double size) {
-    if (iconUrl != null && iconUrl.isNotEmpty) {
-      return SvgPicture.network(
-        iconUrl,
-        width: size,
-        height: size,
-        placeholderBuilder: (context) => Icon(
-          Icons.category_outlined,
-          size: size,
-          color: AppColors.primary,
-        ),
-        errorBuilder: (context, error, stackTrace) {
-          // Fallback to local asset
-          return SvgPicture.asset(
-            _getCategoryFallback(name),
-            width: size,
-            height: size,
-          );
-        },
-      );
-    }
-    return SvgPicture.asset(
-      _getCategoryFallback(name),
-      width: size,
-      height: size,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,9 +19,7 @@ class CategoriesSection extends GetView<HomeController> {
           children: [
             Text(
               'home_categories'.tr,
-              style: AppStyles.h2Of(context).copyWith(
-                fontSize: 18,
-              ),
+              style: AppStyles.h2Of(context).copyWith(fontSize: 18),
             ),
             TextButton(
               onPressed: controller.onViewAllCategories,
@@ -87,16 +35,51 @@ class CategoriesSection extends GetView<HomeController> {
           ],
         ),
         const SizedBox(height: 12),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final double gap = 12.0;
-            final double itemWidth = (constraints.maxWidth - (gap * 3)) / 4;
+        Obx(() {
+          final cats = controller.categories;
 
-            return Obx(
-              () => Wrap(
+          // First load: tiles that look like the real ones.
+          if (cats.isEmpty && controller.isLoadingCategories.value) {
+            return const CategoryGridSkeleton(count: 8);
+          }
+
+          if (cats.isEmpty) {
+            return Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: context.cardColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: context.borderSubtle),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.cloud_off_outlined, color: context.textHintColor),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'post_categories_failed'.tr,
+                      style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: controller.fetchCategories,
+                    child: Text('booking_retry'.tr),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              const double gap = 12.0;
+              final double itemWidth = (constraints.maxWidth - (gap * 3)) / 4;
+
+              return Wrap(
                 spacing: gap,
                 runSpacing: 20.0,
-                children: controller.categories.map((cat) {
+                children: cats.map((cat) {
                   return GestureDetector(
                     onTap: () => controller.onCategorySelected(cat),
                     child: SizedBox(
@@ -109,31 +92,20 @@ class CategoriesSection extends GetView<HomeController> {
                               color: context.cardColor,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(color: context.borderSubtle),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.01),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
                             ),
                             alignment: Alignment.center,
-                              child: Container(
-                                width: itemWidth * 0.82,
-                                height: itemWidth * 0.82,
-                                decoration: BoxDecoration(
-                                  color: context.isDarkMode
-                                      ? AppColors.primary.withOpacity(0.12)
-                                      : const Color(0xFFF0FDF8),
-                                  shape: BoxShape.circle,
-                                ),
-                                alignment: Alignment.center,
-                                child: _buildCategoryIcon(
-                                  cat.resolvedIconUrl,
-                                  cat.name,
-                                  30,
-                                ),
+                            child: Container(
+                              width: itemWidth * 0.82,
+                              height: itemWidth * 0.82,
+                              decoration: BoxDecoration(
+                                color: context.isDarkMode
+                                    ? AppColors.primary.withValues(alpha: 0.12)
+                                    : const Color(0xFFF0FDF8),
+                                shape: BoxShape.circle,
                               ),
+                              alignment: Alignment.center,
+                              child: CategoryIcon(category: cat, size: 30),
+                            ),
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -143,7 +115,7 @@ class CategoriesSection extends GetView<HomeController> {
                               fontWeight: FontWeight.w500,
                             ),
                             textAlign: TextAlign.center,
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ],
@@ -151,10 +123,10 @@ class CategoriesSection extends GetView<HomeController> {
                     ),
                   );
                 }).toList(),
-              ),
-            );
-          },
-        ),
+              );
+            },
+          );
+        }),
       ],
     );
   }

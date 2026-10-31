@@ -1,3 +1,4 @@
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'package:awnneaapp/app/core/utils/datetime_format.dart';
 import 'package:awnneaapp/app/core/utils/job_display.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
@@ -89,7 +90,7 @@ class _CompletedJobDetailsViewState extends State<CompletedJobDetailsView> {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
@@ -113,7 +114,7 @@ class _CompletedJobDetailsViewState extends State<CompletedJobDetailsView> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.12),
+                  color: AppColors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.primary),
                 ),
@@ -133,7 +134,7 @@ class _CompletedJobDetailsViewState extends State<CompletedJobDetailsView> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.12),
+                  color: Colors.orange.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: Colors.orange.shade700),
                 ),
@@ -290,7 +291,7 @@ class _CompletedJobDetailsViewState extends State<CompletedJobDetailsView> {
     final clientName = JobDisplay.personName(job['postedBy'],
         fallback: JobDisplay.safeText(job['clientName']));
     final categoryName = JobDisplay.categoryName(job['category'],
-        fallback: JobDisplay.safeText(job['jobType'], fallback: 'Service'));
+        fallback: JobDisplay.safeText(job['jobType'], fallback: 'ui_service'.tr));
     final bookingDate = job['date'] != null
         ? AppDateTime.formatDateDisplay(job['date'].toString())
         : AppDateTime.formatDateDisplay(job['bookingDate']?.toString() ?? '');
@@ -323,7 +324,7 @@ class _CompletedJobDetailsViewState extends State<CompletedJobDetailsView> {
           _buildInfoRow(
             context,
             'label_location'.tr,
-            location.isEmpty ? 'Not provided' : location,
+            location.isEmpty ? 'job_not_provided'.tr : location,
           ),
           if (distanceText.isNotEmpty)
             _buildInfoRow(context, 'find_distance'.tr, distanceText),
@@ -400,7 +401,7 @@ class _CompletedJobDetailsViewState extends State<CompletedJobDetailsView> {
               final resolvedUrl = ApiConstants.resolveImageUrl(rawUrl) ?? rawUrl;
 
               return Padding(
-                padding: const EdgeInsets.only(right: 12),
+                padding: const EdgeInsetsDirectional.only(end: 12),
                 child: GestureDetector(
                   onTap: () {
                     Get.to(
@@ -412,15 +413,7 @@ class _CompletedJobDetailsViewState extends State<CompletedJobDetailsView> {
                   },
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      resolvedUrl,
-                      width: 95,
-                      height: 95,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(width: 95, height: 95, color: context.inputFillLight);
-                      },
-                    ),
+                    child: AppNetworkImage(url: resolvedUrl, width: 95, height: 95, fit: BoxFit.cover),
                   ),
                 ),
               );
@@ -442,7 +435,7 @@ class _CompletedJobDetailsViewState extends State<CompletedJobDetailsView> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
           color: context.cardColor,
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -2))],
         ),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),

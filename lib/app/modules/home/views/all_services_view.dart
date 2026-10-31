@@ -1,68 +1,30 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
-import 'package:awnneaapp/app/data/models/home_models.dart';
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
 
-class AllServicesView extends GetView<HomeController> {
+class AllServicesView extends StatefulWidget {
   const AllServicesView({super.key});
 
-  String _getCategoryFallback(String name) {
-    switch (name) {
-      case 'Carrying':
-        return 'assets/svgs/carrying_icon.svg';
-      case 'Cleaning':
-        return 'assets/svgs/cleaning_icon.svg';
-      case 'Electrician':
-        return 'assets/svgs/electrician_icon.svg';
-      case 'Barber':
-        return 'assets/svgs/barber_icon.svg';
-      case 'Floor':
-        return 'assets/svgs/floor_icon.svg';
-      case 'Shifting':
-        return 'assets/svgs/shifting2_icon.svg';
-      case 'Garden':
-        return 'assets/svgs/garden_icon.svg';
-      case 'Moving':
-        return 'assets/svgs/shifting_icon.svg';
-      default:
-        return 'assets/svgs/cleaning_icon.svg';
-    }
-  }
+  @override
+  State<AllServicesView> createState() => _AllServicesViewState();
+}
 
-  Widget _buildCategoryIcon(String? iconUrl, String name, double size) {
-    if (iconUrl != null && iconUrl.isNotEmpty) {
-      return SvgPicture.network(
-        iconUrl,
-        width: size,
-        height: size,
-        placeholderBuilder: (context) => Icon(
-          Icons.category_outlined,
-          size: size,
-          color: AppColors.primary,
-        ),
-        errorBuilder: (context, error, stackTrace) {
-          return SvgPicture.asset(
-            _getCategoryFallback(name),
-            width: size,
-            height: size,
-          );
-        },
-      );
-    }
-    return SvgPicture.asset(
-      _getCategoryFallback(name),
-      width: size,
-      height: size,
-    );
+class _AllServicesViewState extends State<AllServicesView> {
+  final HomeController controller = Get.find<HomeController>();
+  final TextEditingController _search = TextEditingController();
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final allCategories = controller.categories.toList();
-
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
@@ -87,6 +49,8 @@ class AllServicesView extends GetView<HomeController> {
                 border: Border.all(color: context.borderSubtle),
               ),
               child: TextField(
+                controller: _search,
+                onChanged: (_) => setState(() {}),
                 style: TextStyle(color: context.textPrimaryColor),
                 decoration: InputDecoration(
                   icon: Icon(Icons.search, color: context.textHintColor),
@@ -98,74 +62,98 @@ class AllServicesView extends GetView<HomeController> {
               ),
             ),
             const SizedBox(height: 24),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final double gap = 12.0;
-                final double itemWidth = (constraints.maxWidth - (gap * 3)) / 4;
+            Obx(() {
+              final query = _search.text.trim().toLowerCase();
+              final all = controller.categories.toList();
+              if (all.isEmpty && controller.isLoadingCategories.value) {
+                return const CategoryGridSkeleton(count: 12);
+              }
+              if (all.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 40),
+                  child: Column(
+                    children: [
+                      Icon(Icons.cloud_off_outlined, size: 40, color: context.textHintColor),
+                      const SizedBox(height: 12),
+                      Text('post_categories_failed'.tr,
+                          textAlign: TextAlign.center,
+                          style: AppStyles.bodyMedium.copyWith(color: context.textHintColor)),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: controller.fetchCategories,
+                        icon: const Icon(Icons.refresh),
+                        label: Text('booking_retry'.tr),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              final cats = query.isEmpty
+                  ? all
+                  : all.where((c) => c.name.toLowerCase().contains(query)).toList();
+              if (cats.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 40),
+                  child: Text('search_no_results'.tr,
+                      style: AppStyles.bodyMedium.copyWith(color: context.textHintColor)),
+                );
+              }
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  const double gap = 12.0;
+                  final double itemWidth = (constraints.maxWidth - (gap * 3)) / 4;
 
-                return Wrap(
-                  spacing: gap,
-                  runSpacing: 20.0,
-                  children: allCategories.map((cat) {
-                    return GestureDetector(
-                      onTap: () => controller.onCategorySelected(cat),
-                      child: SizedBox(
-                        width: itemWidth,
-                        child: Column(
-                          children: [
-                            Container(
-                              height: itemWidth,
-                              decoration: BoxDecoration(
-                                color: context.cardColor,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: context.borderSubtle,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.01),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              alignment: Alignment.center,
-                              child: Container(
-                                width: itemWidth * 0.82,
-                                height: itemWidth * 0.82,
+                  return Wrap(
+                    spacing: gap,
+                    runSpacing: 20.0,
+                    children: cats.map((cat) {
+                      return GestureDetector(
+                        onTap: () => controller.onCategorySelected(cat),
+                        child: SizedBox(
+                          width: itemWidth,
+                          child: Column(
+                            children: [
+                              Container(
+                                height: itemWidth,
                                 decoration: BoxDecoration(
-                                  color: context.isDarkMode
-                                      ? AppColors.primary.withOpacity(0.12)
-                                      : const Color(0xFFF0FDF8),
-                                  shape: BoxShape.circle,
+                                  color: context.cardColor,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: context.borderSubtle),
                                 ),
                                 alignment: Alignment.center,
-                                child: _buildCategoryIcon(
-                                  cat.resolvedIconUrl,
-                                  cat.name,
-                                  30,
+                                child: Container(
+                                  width: itemWidth * 0.82,
+                                  height: itemWidth * 0.82,
+                                  decoration: BoxDecoration(
+                                    color: context.isDarkMode
+                                        ? AppColors.primary.withValues(alpha: 0.12)
+                                        : const Color(0xFFF0FDF8),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: CategoryIcon(category: cat, size: 30),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              cat.name,
-                              style: AppStyles.bodyMediumOf(context).copyWith(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
+                              const SizedBox(height: 8),
+                              Text(
+                                cat.name,
+                                style: AppStyles.bodyMediumOf(context).copyWith(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  }).toList(),
-                );
-              },
-            ),
+                      );
+                    }).toList(),
+                  );
+                },
+              );
+            }),
             const SizedBox(height: 30),
           ],
         ),

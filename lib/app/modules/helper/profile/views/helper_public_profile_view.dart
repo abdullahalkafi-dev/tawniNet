@@ -1,3 +1,5 @@
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
@@ -35,7 +37,7 @@ class _HelperPublicProfileViewState extends State<HelperPublicProfileView> {
       body: Obx(() {
         final user = Get.find<AuthService>().currentUser.value;
         if (user == null) {
-          return const Center(child: CircularProgressIndicator());
+          return const DetailSkeleton();
         }
 
         return RefreshIndicator(
@@ -79,13 +81,7 @@ class _HelperPublicProfileViewState extends State<HelperPublicProfileView> {
         children: [
           ClipOval(
             child: avatar != null && avatar.isNotEmpty
-                ? Image.network(
-                    avatar,
-                    width: 100,
-                    height: 100,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => _buildAvatarPlaceholder(context),
-                  )
+                ? AppNetworkImage(url: avatar, width: 100, height: 100, fit: BoxFit.cover)
                 : _buildAvatarPlaceholder(context),
           ),
           const SizedBox(height: 12),
@@ -236,14 +232,7 @@ class _HelperPublicProfileViewState extends State<HelperPublicProfileView> {
                 },
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    ApiConstants.resolveImageUrl(photoUrls[index]) ?? photoUrls[index],
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: context.inputFillLight,
-                      child: Icon(Icons.image, color: context.textHintColor),
-                    ),
-                  ),
+                  child: AppNetworkImage(url: ApiConstants.resolveImageUrl(photoUrls[index]) ?? photoUrls[index], fit: BoxFit.cover),
                 ),
               );
             },

@@ -1,6 +1,9 @@
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'dart:async';
 import 'dart:io';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
+import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
+import 'package:awnneaapp/app/core/widgets/helper_form_fields.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
@@ -31,8 +34,9 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
   late TextEditingController priceCtl;
   late TextEditingController experienceCtl;
   late TextEditingController radiusCtl;
-  late TextEditingController cityCtl;
-  late TextEditingController languageCtl;
+  String? _city;
+  final List<String> _languages = [];
+  bool _nameLocked = false;
 
   // Location
   late TextEditingController addressCtl;
@@ -70,12 +74,10 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
     radiusCtl = TextEditingController(
       text: user?.serviceRadius != null ? user!.serviceRadius!.toStringAsFixed(0) : '',
     );
-    cityCtl = TextEditingController(
-      text: user?.address != null && user!.address!.contains(',')
-          ? user.address!.split(',').first.trim()
-          : '',
-    );
-    languageCtl = TextEditingController(text: user?.language ?? '');
+    _city = matchMoroccanCity(user?.city, user?.address);
+    _languages.addAll(parseHelperLanguages(user?.language));
+    // After identity verification the name must match the ID: only support changes it.
+    _nameLocked = user?.helperApplicationStatus == 'approved';
 
     addressCtl = TextEditingController(text: user?.address ?? '');
     selectedLatitude = user?.latitude;
@@ -96,8 +98,6 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
     priceCtl.dispose();
     experienceCtl.dispose();
     radiusCtl.dispose();
-    cityCtl.dispose();
-    languageCtl.dispose();
     addressCtl.dispose();
     super.dispose();
   }
@@ -307,9 +307,11 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
       final finalPhotos = <String>[...existingPhotos];
       for (final path in newPhotoPaths) {
         final key = await _uploadFile(path);
-        if (key != null) {
-          finalPhotos.add(key);
+        if (key == null) {
+          AppFeedback.error('ui_failed_to_upload_an_image'.tr);
+          return;
         }
+        finalPhotos.add(key);
       }
 
       // Validate email if provided
@@ -324,18 +326,17 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
 
       // 2. Prepare payload
       final data = <String, dynamic>{
-        if (nameCtl.text.trim().isNotEmpty) 'name': nameCtl.text.trim(),
+        if (!_nameLocked && nameCtl.text.trim().isNotEmpty) 'name': nameCtl.text.trim(),
         if (emailCtl.text.trim().isNotEmpty) 'email': emailCtl.text.trim(),
-        if (phoneCtl.text.trim().isNotEmpty) 'phone': phoneCtl.text.trim(),
         if (bioCtl.text.trim().isNotEmpty) 'bio': bioCtl.text.trim(),
-        if (cityCtl.text.trim().isNotEmpty) 'city': cityCtl.text.trim(),
-        if (languageCtl.text.trim().isNotEmpty) 'language': languageCtl.text.trim(),
-        if (priceCtl.text.trim().isNotEmpty)
-          'pricePerHour': double.tryParse(priceCtl.text.trim()),
-        if (experienceCtl.text.trim().isNotEmpty)
-          'experience': int.tryParse(experienceCtl.text.trim()),
-        if (radiusCtl.text.trim().isNotEmpty)
-          'serviceRadius': double.tryParse(radiusCtl.text.trim()),
+        if (_city != null) 'city': _city,
+        if (_languages.isNotEmpty) 'language': _languages.join(', '),
+        if (double.tryParse(priceCtl.text.trim().replaceAll(',', '.')) != null)
+          'pricePerHour': double.parse(priceCtl.text.trim().replaceAll(',', '.')),
+        if (int.tryParse(experienceCtl.text.trim()) != null)
+          'experience': int.parse(experienceCtl.text.trim()),
+        if (double.tryParse(radiusCtl.text.trim().replaceAll(',', '.')) != null)
+          'serviceRadius': double.parse(radiusCtl.text.trim().replaceAll(',', '.')),
         if (addressCtl.text.trim().isNotEmpty) 'address': addressCtl.text.trim(),
         if (selectedLatitude != null) 'latitude': selectedLatitude,
         if (selectedLongitude != null) 'longitude': selectedLongitude,
@@ -368,7 +369,7 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
       if (mounted) {
         Get.snackbar(
           'ui_error'.tr,
-          e.toString(),
+          AppSnackbar.extractErrorMessage(e),
           snackPosition: SnackPosition.BOTTOM,
         );
       }
@@ -405,11 +406,11 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
             // ── Section 1: Personal Information
             _buildSectionHeader(context, 'helper_personal_info'.tr),
             const SizedBox(height: 16),
-            _buildField(context, 'apply_full_name'.tr, nameCtl),
+            _buildField(context, 'apply_full_name'.tr, nameCtl, readOnly: _nameLocked),
             const SizedBox(height: 16),
             _buildField(context, 'apply_email'.tr, emailCtl, keyboardType: TextInputType.emailAddress),
             const SizedBox(height: 16),
-            _buildField(context, 'helper_phone'.tr, phoneCtl, keyboardType: TextInputType.phone),
+            _buildField(context, 'helper_phone'.tr, phoneCtl, readOnly: true, keyboardType: TextInputType.phone),
             const SizedBox(height: 16),
             _buildBioField(context),
             const SizedBox(height: 30),
@@ -439,16 +440,17 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
               ],
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildField(context, 'helper_city'.tr, cityCtl),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildField(context, 'helper_language'.tr, languageCtl),
-                ),
-              ],
+            CityDropdown(value: _city, onChanged: (c) => setState(() => _city = c)),
+            const SizedBox(height: 16),
+            LanguageChips(
+              selected: _languages,
+              onToggle: (lang, on) => setState(() {
+                if (on) {
+                  _languages.add(lang);
+                } else {
+                  _languages.remove(lang);
+                }
+              }),
             ),
             const SizedBox(height: 16),
             _buildField(
@@ -510,17 +512,13 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
                       fit: BoxFit.cover,
                     )
                   : avatar != null && avatar.isNotEmpty
-                      ? Image.network(
-                          avatar,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => _buildAvatarPlaceholder(context),
-                        )
+                      ? AppNetworkImage(url: avatar, fit: BoxFit.cover)
                       : _buildAvatarPlaceholder(context),
             ),
           ),
-          Positioned(
+          PositionedDirectional(
             bottom: 5,
-            right: 5,
+            end: 5,
             child: GestureDetector(
               onTap: isUploadingAvatar.value ? null : _pickAndUploadAvatar,
               child: Container(
@@ -670,11 +668,7 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
               for (int i = 0; i < existingPhotos.length; i++)
                 _buildPhotoThumbnail(
                   context,
-                  imageWidget: Image.network(
-                    existingPhotos[i],
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
-                  ),
+                  imageWidget: AppNetworkImage(url: existingPhotos[i], fit: BoxFit.cover),
                   onRemove: () => _removeExistingPhoto(i),
                 ),
 
@@ -744,9 +738,9 @@ class _HelperEditProfileViewState extends State<HelperEditProfileView> {
             child: imageWidget,
           ),
         ),
-        Positioned(
+        PositionedDirectional(
           top: 4,
-          right: 4,
+          end: 4,
           child: GestureDetector(
             onTap: onRemove,
             child: Container(

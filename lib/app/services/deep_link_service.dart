@@ -81,42 +81,36 @@ class DeepLinkService extends GetxService {
     return false;
   }
 
+  /// The link only says "the user came back from the verification page". The
+  /// outcome is always read from the server: the `status` in the URL can be
+  /// written by anybody, so it is ignored.
   void _handleDiditCallback(Uri uri) async {
     final sessionId = uri.queryParameters['sessionId'] ?? uri.queryParameters['session_id'];
-    final status = (uri.queryParameters['status'] ?? '').toLowerCase();
-    debugPrint('[DeepLink] Didit callback sessionId=$sessionId status=$status');
+    debugPrint('[DeepLink] Didit callback sessionId=$sessionId');
 
     if (!Get.isRegistered<AuthService>()) return;
     final authService = Get.find<AuthService>();
     if (!authService.isLoggedIn.value) return;
 
-    final initialUser = authService.currentUser.value;
-    if (initialUser?.helperApplicationStatus == 'approved' || status == 'approved') {
-      if (Get.isRegistered<RoleService>()) {
-        Get.find<RoleService>().setUserRole('helper');
-      }
-      AppFeedback.success('ui_kyc_verification_approved_welcome_to_3awninet'.tr);
-      Get.offAllNamed(Routes.helperHome);
-      return;
-    }
-
     // Give UI a moment to be active
     await Future.delayed(const Duration(milliseconds: 300));
 
     try {
-      if (sessionId != null && sessionId.isNotEmpty) {
-        await authService.syncDiditSession(sessionId);
+      final knownSession = authService.currentUser.value?.diditSessionId;
+      final session = (sessionId != null && sessionId.isNotEmpty) ? sessionId : knownSession;
+      if (session != null && session.isNotEmpty) {
+        await authService.syncDiditSession(session);
       }
       await authService.getMe();
       final user = authService.currentUser.value;
 
-      if (user?.helperApplicationStatus == 'approved' || status == 'approved') {
+      if (user?.helperApplicationStatus == 'approved') {
         if (Get.isRegistered<RoleService>()) {
           Get.find<RoleService>().setUserRole('helper');
         }
         AppFeedback.success('ui_kyc_verification_approved_welcome_to_3awninet'.tr);
         Get.offAllNamed(Routes.helperHome);
-      } else if (user?.helperApplicationStatus == 'rejected' || status == 'declined' || status == 'rejected') {
+      } else if (user?.helperApplicationStatus == 'rejected') {
         AppFeedback.error(user?.rejectionReason ?? 'ui_verification_was_not_approved'.tr);
         Get.offAllNamed(Routes.applicationRejected);
       } else if (user?.diditStatus == 'In Review' || user?.helperApplicationStatus == 'pending_appeal') {

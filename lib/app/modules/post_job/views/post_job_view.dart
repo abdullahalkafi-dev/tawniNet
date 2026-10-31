@@ -46,7 +46,7 @@ class PostJobView extends GetView<PostJobController> {
             _buildTextField(
               context,
               controller.dateController,
-              'mm/dd/yyyy',
+              'post_date_format'.tr,
               icon: Icons.calendar_today,
               readOnly: true,
               onTap: () => controller.pickDate(context),
@@ -134,6 +134,21 @@ class PostJobView extends GetView<PostJobController> {
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             ),
             _buildPriceGuidance(context),
+            Obx(() {
+              final preview = controller.totalPreview.value;
+              if (!controller.isHourly.value) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  preview ?? 'post_total_hint'.tr,
+                  style: AppStyles.bodyMedium.copyWith(
+                    fontSize: 13,
+                    fontWeight: preview != null ? FontWeight.w700 : FontWeight.w400,
+                    color: preview != null ? AppColors.primary : context.textHintColor,
+                  ),
+                ),
+              );
+            }),
             const SizedBox(height: 20),
 
             _buildLabel(context, 'post_job_location'.tr),
@@ -190,6 +205,33 @@ class PostJobView extends GetView<PostJobController> {
   Widget _buildCategoryDropdown(BuildContext context) {
     return Obx(() {
       final cats = controller.categories;
+      if (cats.isEmpty && controller.categoriesFailed.value) {
+        return InkWell(
+          onTap: controller.fetchCategories,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: context.inputFillColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: context.borderSubtle),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.refresh, color: AppColors.primary, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'post_categories_failed'.tr,
+                    style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
       if (cats.isEmpty) {
         return Container(
           width: double.infinity,
@@ -328,10 +370,11 @@ class PostJobView extends GetView<PostJobController> {
                   initialAddress: controller.addressController.text.trim(),
                 );
                 if (picked != null) {
-                  controller.addressController.text = picked.address;
-                  controller.selectedLatitude.value = picked.latitude;
-                  controller.selectedLongitude.value = picked.longitude;
-                  controller.searchResults.clear();
+                  controller.setPickedLocation(
+                    picked.address,
+                    picked.latitude,
+                    picked.longitude,
+                  );
                 }
               },
               child: Padding(
@@ -595,9 +638,9 @@ class PostJobView extends GetView<PostJobController> {
                           fit: BoxFit.cover,
                         ),
                       ),
-                      Positioned(
+                      PositionedDirectional(
                         top: 4,
-                        right: 4,
+                        end: 4,
                         child: GestureDetector(
                           onTap: () => controller.removeImage(index),
                           child: Container(

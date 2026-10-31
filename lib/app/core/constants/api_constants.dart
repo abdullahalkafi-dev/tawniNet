@@ -72,15 +72,9 @@ class ApiConstants {
   static const int receiveTimeoutMs = 30000;
 
   // ─── Auth ───────────────────────────────────────────────
-  static const String register = '/auth/register';
-  static const String verifyOtp = '/auth/verify-otp';
-  static const String resendOtp = '/auth/resend-otp';
-  static const String login = '/auth/login';
-  static const String googleLogin = '/auth/google-login';
   static const String refreshToken = '/auth/refresh-token';
-  static const String forgotPassword = '/auth/forgot-password';
-  static const String verifyResetOtp = '/auth/verify-reset-otp';
-  static const String resetPassword = '/auth/reset-password';
+  static const String logout = '/auth/logout';
+  static const String changePassword = '/auth/change-password';
 
   // ─── Moroccan Phone & WhatsApp Auth ────────────────────
   static const String phoneRegister = '/auth/phone-register';
@@ -102,6 +96,11 @@ class ApiConstants {
   static const String helperAppeal = '/user/helper/appeal';
   static const String helperApplicationStatus = '/user/helper/application-status';
   static const String deviceToken = '/user/device-token';
+  static const String availability = '/user/availability';
+  static const String acceptLegal = '/user/accept-legal';
+
+  // ─── Public config ──────────────────────────────────────
+  static const String appConfig = '/config';
 
   // ─── Categories ─────────────────────────────────────────
   static const String categories = '/categories';
@@ -126,6 +125,10 @@ class ApiConstants {
   static String completeJob(String id) => '/jobs/$id/complete';
   static String cashReceived(String id) => '/jobs/$id/cash-received';
   static String cancelJob(String id) => '/jobs/$id/cancel';
+  static String jobOnTheWay(String id) => '/jobs/$id/on-the-way';
+  static String jobArrived(String id) => '/jobs/$id/arrived';
+  static String jobFinish(String id) => '/jobs/$id/finish';
+  static String jobReportProblem(String id) => '/jobs/$id/report-problem';
   static String jobCheckout(String id) => '/jobs/$id/checkout';
 
   // ─── Legal (public) ────────────────────────────────────
@@ -171,6 +174,14 @@ class ApiConstants {
       '/chat/conversations/$conversationId/offer/$offerId/edit';
   static String chatMarkRead(String conversationId) =>
       '/chat/conversations/$conversationId/read';
+  static const String chatUnreadCount = '/chat/unread-count';
+  static const String chatPresence = '/chat/presence';
+  static String chatBlock(String conversationId) =>
+      '/chat/conversations/$conversationId/block';
+  static String chatUnblock(String conversationId) =>
+      '/chat/conversations/$conversationId/unblock';
+  static String chatReport(String conversationId) =>
+      '/chat/conversations/$conversationId/report';
 
   // ─── Admin ──────────────────────────────────────────────
   static const String adminStats = '/admin/stats';

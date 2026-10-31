@@ -1,3 +1,7 @@
+import 'package:awnneaapp/app/core/widgets/review_card.dart';
+import 'package:awnneaapp/app/core/widgets/error_retry.dart';
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
@@ -5,7 +9,6 @@ import 'package:awnneaapp/app/core/widgets/emoji_picker_panel.dart';
 import 'package:awnneaapp/app/core/widgets/helper_trust_widgets.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/image_viewer_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import '../controllers/helper_profile_controller.dart';
 
@@ -28,7 +31,7 @@ class HelperProfileView extends GetView<HelperProfileController> {
       ),
       body: Obx(() {
         if (controller.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
+          return const DetailSkeleton();
         }
 
         final helper = controller.helper.value;
@@ -83,27 +86,7 @@ class HelperProfileView extends GetView<HelperProfileController> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(50),
-              child: Image.network(
-                helper.avatar ?? '',
-                width: 100,
-                height: 100,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 100,
-                    height: 100,
-                    color: context.inputFillLight,
-                    padding: const EdgeInsets.all(20),
-                    child: SvgPicture.asset(
-                      'assets/svgs/profile_icon.svg',
-                      colorFilter: ColorFilter.mode(
-                        context.textHintColor,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  );
-                },
-              ),
+              child: AppNetworkImage(url: helper.avatar ?? '', width: 100, height: 100, fit: BoxFit.cover),
             ),
           ),
           const SizedBox(height: 16),
@@ -193,7 +176,7 @@ class HelperProfileView extends GetView<HelperProfileController> {
         border: Border.all(color: context.borderSubtle),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -303,17 +286,8 @@ class HelperProfileView extends GetView<HelperProfileController> {
                 },
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: Image.network(
-                    ApiConstants.resolveImageUrl(photoUrls[index]) ??
-                        photoUrls[index],
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        color: context.inputFillLight,
-                        child: Icon(Icons.broken_image, color: context.textHintColor),
-                      );
-                    },
-                  ),
+                  child: AppNetworkImage(url: ApiConstants.resolveImageUrl(photoUrls[index]) ??
+                        photoUrls[index], fit: BoxFit.cover),
                 ),
               );
             },
@@ -340,7 +314,26 @@ class HelperProfileView extends GetView<HelperProfileController> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: context.borderSubtle),
             ),
-            child: const Center(child: CircularProgressIndicator()),
+            child: const Shimmer(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SkeletonLine(height: 12, widthFactor: 0.4),
+                    SizedBox(height: 10),
+                    SkeletonLine(height: 10),
+                    SizedBox(height: 6),
+                    SkeletonLine(height: 10, widthFactor: 0.7),
+                  ],
+                ),
+              ),
+            ),
+          )
+        else if (controller.reviewsFailed.value)
+          ErrorRetry(
+            minHeight: 120,
+            onRetry: () => controller.fetchReviews(controller.helper.value?.id ?? ''),
           )
         else if (controller.reviews.isEmpty)
           Container(
@@ -377,83 +370,7 @@ class HelperProfileView extends GetView<HelperProfileController> {
     );
   }
 
-  Widget _buildReviewCard(BuildContext context, Map<String, dynamic> review) {
-    final rating = ((review['rating'] as num?) ?? 0).round().clamp(0, 5);
-    final name = (review['reviewerName'] ?? 'Client').toString();
-    final avatar = (review['reviewerAvatar'] ?? '').toString();
-    final comment = (review['comment'] ?? '').toString();
-    final date = (review['date'] ?? '').toString();
-    final resolvedAvatar = ApiConstants.resolveImageUrl(avatar) ?? avatar;
-
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: context.cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.borderSubtle),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Image.network(
-                  resolvedAvatar,
-                  width: 36,
-                  height: 36,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
-                    width: 36,
-                    height: 36,
-                    color: context.inputFillLight,
-                    child: Icon(Icons.person, size: 18, color: context.textHintColor),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  name,
-                  style: AppStyles.bodyLargeOf(context).copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (date.isNotEmpty)
-                Text(
-                  date,
-                  style: TextStyle(fontSize: 11, color: context.textHintColor),
-                ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: List.generate(5, (i) {
-              return Icon(
-                i < rating ? Icons.star : Icons.star_border,
-                color: Colors.amber,
-                size: 16,
-              );
-            }),
-          ),
-          if (comment.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              comment,
-              style: AppStyles.bodyMediumOf(context).copyWith(height: 1.4),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
+  Widget _buildReviewCard(BuildContext context, Map<String, dynamic> review) => ReviewCard(review: review);
 
   void _showEmojiPicker(BuildContext context) {
     showModalBottomSheet(
@@ -479,7 +396,7 @@ class HelperProfileView extends GetView<HelperProfileController> {
             color: context.cardColor,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 20,
                 offset: const Offset(0, -5),
               ),

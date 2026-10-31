@@ -4,7 +4,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:get/get.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:awnneaapp/app/core/constants/api_constants.dart';
+import 'package:awnneaapp/app/core/constants/map_config.dart';
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
+import 'package:awnneaapp/app/core/utils/app_feedback.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
@@ -31,9 +33,16 @@ class _LiveTrackingViewState extends State<LiveTrackingView> {
   late final String category;
   late final LatLng destinationPoint;
 
+  /// The job has no coordinates (should not happen once the job is accepted): no map is shown.
+  late final bool hasDestination;
+
   LatLng? helperPoint;
   DateTime? lastPingTime;
   bool _hasUserInteracted = false;
+  StreamSubscription? _endedSubscription;
+  Timer? _staleTimer;
+
+  static const _distance = Distance();
 
   @override
   void initState() {
@@ -45,16 +54,17 @@ class _LiveTrackingViewState extends State<LiveTrackingView> {
         : <String, dynamic>{};
 
     jobId = args['jobId']?.toString() ?? '';
-    jobTitle = args['jobTitle']?.toString() ?? 'Job Tracking';
-    address = args['address']?.toString() ?? 'Service Location';
+    jobTitle = args['jobTitle']?.toString() ?? 'tracking_title'.tr;
+    address = args['address']?.toString() ?? '';
     workerUserId = args['workerUserId']?.toString() ?? '';
     workerName = args['workerName']?.toString() ?? '';
     workerImage = args['workerImage']?.toString() ?? '';
     category = args['category']?.toString() ?? '';
 
-    final destLat = (args['latitude'] as num?)?.toDouble() ?? 33.5731; // Casablanca fallback
-    final destLon = (args['longitude'] as num?)?.toDouble() ?? -7.5898;
-    destinationPoint = LatLng(destLat, destLon);
+    final destLat = (args['latitude'] as num?)?.toDouble();
+    final destLon = (args['longitude'] as num?)?.toDouble();
+    hasDestination = destLat != null && destLon != null;
+    destinationPoint = LatLng(destLat ?? 0, destLon ?? 0);
 
     final initHelperLat = (args['helperLat'] as num?)?.toDouble();
     final initHelperLon = (args['helperLon'] as num?)?.toDouble();
@@ -63,10 +73,31 @@ class _LiveTrackingViewState extends State<LiveTrackingView> {
     }
 
     _subscribeToLiveTracking();
+    // Re-evaluate "last seen" every 15 s so a silent helper is flagged.
+    _staleTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+      if (mounted) setState(() {});
+    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fitCameraToBounds();
     });
+  }
+
+  /// Whole minutes since the last position, or null if none arrived yet.
+  int? get _minutesSinceLastPing =>
+      lastPingTime == null ? null : DateTime.now().difference(lastPingTime!).inMinutes;
+
+  bool get _isStale => (_minutesSinceLastPing ?? 0) >= 2;
+
+  /// Straight-line distance and a rough arrival time (about 25 km/h in town).
+  (String, String)? get _distanceAndEta {
+    final h = helperPoint;
+    if (h == null || !hasDestination) return null;
+    final meters = _distance(h, destinationPoint);
+    final km = meters / 1000;
+    final label = km < 1 ? '${meters.round()} m' : '${km.toStringAsFixed(1)} km';
+    final minutes = (km / 25 * 60).ceil().clamp(1, 600);
+    return (label, 'tracking_eta_minutes'.trParams({'n': '$minutes'}));
   }
 
   void _subscribeToLiveTracking() {
@@ -84,9 +115,12 @@ class _LiveTrackingViewState extends State<LiveTrackingView> {
           final lon = (data['longitude'] as num?)?.toDouble();
           if (lat != null && lon != null) {
             final isFirstPoint = helperPoint == null;
+            final stamp = (data['updatedAt'] as num?)?.toInt();
             setState(() {
               helperPoint = LatLng(lat, lon);
-              lastPingTime = DateTime.now();
+              lastPingTime = stamp != null
+                  ? DateTime.fromMillisecondsSinceEpoch(stamp)
+                  : DateTime.now();
             });
             if (isFirstPoint && !_hasUserInteracted) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -96,11 +130,19 @@ class _LiveTrackingViewState extends State<LiveTrackingView> {
           }
         }
       });
+
+      // The helper arrived / the job ended: tracking stops.
+      _endedSubscription = socketService.onTrackingEnded.listen((data) {
+        if (!mounted) return;
+        if (data['jobId']?.toString() != jobId) return;
+        AppFeedback.info('tracking_ended'.tr);
+        Get.back();
+      });
     }
   }
 
   void _fitCameraToBounds() {
-    if (!mounted) return;
+    if (!mounted || !hasDestination) return;
     try {
       if (helperPoint != null) {
         final dLat = (helperPoint!.latitude - destinationPoint.latitude).abs();
@@ -146,6 +188,8 @@ class _LiveTrackingViewState extends State<LiveTrackingView> {
   @override
   void dispose() {
     _trackingSubscription?.cancel();
+    _endedSubscription?.cancel();
+    _staleTimer?.cancel();
     if (Get.isRegistered<SocketService>() && jobId.isNotEmpty) {
       Get.find<SocketService>().leaveTracking(jobId);
     }
@@ -178,6 +222,26 @@ class _LiveTrackingViewState extends State<LiveTrackingView> {
     final bottomInset = MediaQuery.paddingOf(context).bottom;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    if (!hasDestination) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(jobTitle, style: AppStyles.h2Of(context).copyWith(fontSize: 18)),
+          centerTitle: true,
+          leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Get.back()),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Text(
+              'tracking_no_location'.tr,
+              textAlign: TextAlign.center,
+              style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -205,11 +269,7 @@ class _LiveTrackingViewState extends State<LiveTrackingView> {
               },
             ),
             children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.awnneaapp',
-                tileBuilder: isDark ? darkModeTileBuilder : null,
-              ),
+              MapConfig.tileLayer(dark: isDark),
               // Dashed line between Helper and Destination
               if (helperPoint != null)
                 PolylineLayer(
@@ -286,30 +346,45 @@ class _LiveTrackingViewState extends State<LiveTrackingView> {
                     width: 10,
                     height: 10,
                     decoration: BoxDecoration(
-                      color: helperPoint != null ? const Color(0xFF16A34A) : Colors.amber,
+                      color: helperPoint == null
+                          ? Colors.amber
+                          : _isStale
+                              ? Colors.orange
+                              : const Color(0xFF16A34A),
                       shape: BoxShape.circle,
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      helperPoint != null
-                          ? 'tracking_gps_active'.tr
-                          : 'tracking_gps_connecting'.tr,
+                      helperPoint == null
+                          ? 'tracking_gps_connecting'.tr
+                          : _isStale
+                              ? 'tracking_last_seen'.trParams({'n': '${_minutesSinceLastPing ?? 0}'})
+                              : 'tracking_gps_active'.tr,
                       style: AppStyles.bodyMedium.copyWith(
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
                     ),
                   ),
+                  if (_distanceAndEta != null)
+                    Text(
+                      '${_distanceAndEta!.$1} · ${_distanceAndEta!.$2}',
+                      style: AppStyles.bodyMedium.copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                        color: AppColors.primary,
+                      ),
+                    ),
                 ],
               ),
             ),
           ),
 
           // Floating Map Action Buttons (Right Side)
-          Positioned(
-            right: 16,
+          PositionedDirectional(
+            end: 16,
             top: 80,
             child: Column(
               children: [
@@ -390,20 +465,7 @@ class _LiveTrackingViewState extends State<LiveTrackingView> {
                   if (workerName.isNotEmpty) ...[
                     Row(
                       children: [
-                        Builder(
-                          builder: (context) {
-                            final resolved = ApiConstants.resolveImageUrl(workerImage);
-                            final hasImg = resolved != null && resolved.isNotEmpty;
-                            return CircleAvatar(
-                              radius: 24,
-                              backgroundColor: AppColors.primary.withValues(alpha: 0.15),
-                              backgroundImage: hasImg ? NetworkImage(resolved) : null,
-                              child: hasImg
-                                  ? null
-                                  : const Icon(Icons.person, color: AppColors.primary, size: 24),
-                            );
-                          },
-                        ),
+                        AppAvatar(url: workerImage, name: workerName, size: 48),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(

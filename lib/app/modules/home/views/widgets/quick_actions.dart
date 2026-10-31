@@ -20,7 +20,7 @@ class QuickActions extends GetView<HomeController> {
               subtitle: 'ui_browse_services'.tr,
               icon: Icons.search,
               color: context.isDarkMode
-                  ? AppColors.primary.withOpacity(0.15)
+                  ? AppColors.primary.withValues(alpha: 0.15)
                   : const Color(0xFFE5F7F5),
               iconBgColor: AppColors.primary,
               iconColorOverride: Colors.white,
@@ -71,7 +71,7 @@ class QuickActions extends GetView<HomeController> {
             ? null
             : [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.01),
+                  color: Colors.black.withValues(alpha: 0.01),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),

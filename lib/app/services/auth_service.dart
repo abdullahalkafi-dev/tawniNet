@@ -1,5 +1,9 @@
+import 'dart:async';
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:awnneaapp/app/core/widgets/app_dialogs.dart';
+import 'package:awnneaapp/app/services/app_config_service.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/storage_service.dart';
 import 'package:awnneaapp/app/services/role_service.dart';
@@ -19,6 +23,12 @@ import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/utils/morocco_phone_helper.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
 
+/// Minimum password length (the server enforces the same rule).
+const int kMinPasswordLength = 8;
+
+/// Storage key: the Terms version accepted at sign-up, recorded at the first login.
+const String kPendingLegalKey = 'pending_legal_version';
+
 class AuthService extends GetxService {
   late final ApiClient _api;
   late final StorageService _storage;
@@ -27,6 +37,34 @@ class AuthService extends GetxService {
   final currentUser = Rxn<AuthUser>();
   final isLoggedIn = false.obs;
   final isEmailVerified = false.obs;
+
+  /// Completes when the saved session has been loaded (the splash waits for it).
+  final Completer<void> ready = Completer<void>();
+
+  /// Where the signed-in user belongs: client home, or the helper's current
+  /// step (application form → ID check → pending/rejected → helper home).
+  /// A saved location is NOT required: it is asked for when it is needed.
+  String destinationFor(AuthUser? user) {
+    if (user == null) return Routes.roleSelection;
+    if (user.role != 'helper') return Routes.home;
+    if (!user.isHelperFormSubmitted) return Routes.applyAsHelper;
+    switch (user.helperApplicationStatus) {
+      case 'approved':
+        return Routes.helperHome;
+      case 'pending_appeal':
+        return Routes.applicationPending;
+      case 'rejected':
+        return Routes.applicationRejected;
+      case 'pending':
+      default:
+        return user.diditStatus == 'In Review'
+            ? Routes.applicationPending
+            : Routes.helperKycVerification;
+    }
+  }
+
+  /// Open the right screen for the current user (after login / signup / splash).
+  void goToDestination() => Get.offAllNamed(destinationFor(currentUser.value));
 
   // ─── Init ───────────────────────────────────────────────
 
@@ -58,10 +96,30 @@ class AuthService extends GetxService {
       }
     }
 
-    // Set auth failed callback
-    _api.onAuthFailed = () => logout();
+    if (!ready.isCompleted) ready.complete();
+
+    // The session is definitively over (server refused the refresh token).
+    _api.onAuthFailed = () => logout(notifyServer: false);
+    // Keep the live connection on the newest token.
+    _api.onTokenRefreshed = (token) {
+      try {
+        Get.find<SocketService>().updateToken(token);
+      } catch (_) {}
+    };
 
     return this;
+  }
+
+  /// Refresh the saved profile from the server before the app routes anywhere,
+  /// so a user who was blocked / rejected / approved meanwhile sees the truth.
+  /// Network trouble keeps the cached profile; a refused session logs out once.
+  Future<void> refreshSession({Duration timeout = const Duration(seconds: 5)}) async {
+    if (!isLoggedIn.value) return;
+    try {
+      await getMe().timeout(timeout);
+    } catch (e) {
+      if (kDebugMode) debugPrint('[Auth] profile refresh skipped: $e');
+    }
   }
 
   // ─── Phone Registration (Morocco WhatsApp OTP) ─────────
@@ -259,112 +317,76 @@ class AuthService extends GetxService {
     throw Exception(response.message ?? 'Failed to submit appeal');
   }
 
-  // ─── Legacy Email Register & Login Fallbacks ─────────────
+  // ─── Account actions ────────────────────────────────────
 
-  Future<Map<String, dynamic>> register({
-    required String email,
-    required String password,
-    required String name,
-  }) async {
-    final role = _roleService.role;
-    final response = await _api.post(
-      ApiConstants.register,
-      data: {
-        'email': email,
-        'password': password,
-        'name': name,
-        'role': role,
-      },
-    );
-
-    if (response.success) {
-      return {
-        'status': response.data?['status'] ?? 'unverified',
-        'email': response.data?['email'] ?? email,
-      };
-    }
-
-    throw Exception(response.message ?? 'Registration failed');
-  }
-
-  Future<void> verifyOtp({required String email, required String otp}) async {
-    final response = await _api.post(
-      ApiConstants.verifyOtp,
-      data: {'email': email, 'otp': otp},
-    );
-
-    if (response.success && response.data != null) {
-      await _handleAuthResponse(response.data);
-    } else {
-      throw Exception(response.message ?? 'OTP verification failed');
-    }
-  }
-
-  Future<void> resendOtp({required String email}) async {
-    final response = await _api.post(
-      ApiConstants.resendOtp,
-      data: {'email': email},
-    );
-    if (!response.success) {
-      throw Exception(response.message ?? 'Failed to resend OTP');
-    }
-  }
-
-  Future<String> login({
-    required String email,
-    required String password,
-  }) async {
-    final response = await _api.post(
-      ApiConstants.login,
-      data: {'email': email, 'password': password},
-    );
-
-    if (response.success && response.data != null) {
-      await _handleAuthResponse(response.data);
-      return currentUser.value?.role ?? 'user';
-    }
-
-    throw Exception(response.message ?? 'Login failed');
-  }
-
-  Future<void> forgotPassword({required String email}) async {
-    final response = await _api.post(
-      ApiConstants.forgotPassword,
-      data: {'email': email},
-    );
-    if (!response.success) {
-      throw Exception(response.message ?? 'Failed to send reset OTP');
-    }
-  }
-
-  Future<String> verifyResetOtp({
-    required String email,
-    required String otp,
-  }) async {
-    final response = await _api.post(
-      ApiConstants.verifyResetOtp,
-      data: {'email': email, 'otp': otp},
-    );
-
-    if (response.success && response.data != null) {
-      return response.data['resetToken'] ?? '';
-    }
-
-    throw Exception(response.message ?? 'Reset OTP verification failed');
-  }
-
-  Future<void> resetPassword({
-    required String resetToken,
+  /// Change the password. The server ends every other session and returns a
+  /// fresh token pair for this device.
+  Future<void> changePassword({
+    required String currentPassword,
     required String newPassword,
   }) async {
     final response = await _api.post(
-      ApiConstants.resetPassword,
-      data: {'resetToken': resetToken, 'newPassword': newPassword},
+      ApiConstants.changePassword,
+      data: {'currentPassword': currentPassword, 'newPassword': newPassword},
+      fromData: (d) => d,
     );
-
-    if (!response.success) {
-      throw Exception(response.message ?? 'Password reset failed');
+    final data = response.data;
+    if (response.success && data is Map) {
+      final access = data['accessToken']?.toString();
+      final refresh = data['refreshToken']?.toString();
+      if (access != null && refresh != null) {
+        await _storage.saveTokens(accessToken: access, refreshToken: refresh);
+        try {
+          Get.find<SocketService>().updateToken(access);
+        } catch (_) {}
+      }
+      return;
     }
+    throw ApiException(response.message ?? 'err_http_unknown'.tr);
+  }
+
+  /// Delete (anonymise) the account. Needs the password; fails with a clear
+  /// message while jobs are active or the wallet still holds money.
+  Future<void> deleteAccount(String password) async {
+    final response = await _api.delete(
+      ApiConstants.userMe,
+      data: {'password': password},
+    );
+    if (!response.success) {
+      throw ApiException(response.message ?? 'err_http_unknown'.tr);
+    }
+    await logout(notifyServer: false);
+  }
+
+  /// Helper "available / off duty" switch.
+  Future<void> setAvailability(bool available) async {
+    final response = await _api.patch(
+      ApiConstants.availability,
+      data: {'isAvailable': available},
+    );
+    if (!response.success) {
+      throw ApiException(response.message ?? 'err_http_unknown'.tr);
+    }
+    final user = currentUser.value;
+    if (user != null) {
+      currentUser.value = user.copyWithAvailability(available);
+      await _storage.saveUserJson(currentUser.value!.toJson());
+    }
+  }
+
+  /// Record that the user accepted the given Terms / Privacy version.
+  Future<void> acceptLegal(int version) async {
+    final response = await _api.post(ApiConstants.acceptLegal, data: {'version': version});
+    if (!response.success) {
+      throw ApiException(response.message ?? 'err_http_unknown'.tr);
+    }
+    await getMe();
+  }
+
+  /// Save notification switches (push / sound / vibrate / payments / appUpdates / newService).
+  Future<void> saveNotificationPrefs(Map<String, bool> prefs) async {
+    await _api.patch(ApiConstants.userMe, data: {'notificationPrefs': prefs});
+    await getMe();
   }
 
   // ─── Get Me (fetch fresh profile) ───────────────────────
@@ -390,17 +412,37 @@ class AuthService extends GetxService {
 
   static bool _loggingOut = false;
 
-  Future<void> logout() async {
+  Future<void> logout({bool notifyServer = true}) async {
     if (_loggingOut) return;
     _loggingOut = true;
     try {
-      await _performLogout();
+      await _performLogout(notifyServer: notifyServer);
     } finally {
       _loggingOut = false;
     }
   }
 
-  Future<void> _performLogout() async {
+  /// End this device's session on the server (best effort, never blocks logout).
+  Future<void> _endServerSession() async {
+    try {
+      final access = await _storage.getAccessToken();
+      final refresh = await _storage.getRefreshToken();
+      if (access == null || access.isEmpty) return;
+      await dio.Dio(dio.BaseOptions(
+        connectTimeout: const Duration(seconds: 4),
+        receiveTimeout: const Duration(seconds: 4),
+      )).post(
+        '${ApiConstants.baseUrl}${ApiConstants.logout}',
+        data: {if (refresh != null) 'refreshToken': refresh},
+        options: dio.Options(headers: {'Authorization': 'Bearer $access'}),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _performLogout({bool notifyServer = true}) async {
+    if (notifyServer) {
+      await _endServerSession();
+    }
     // 0. Unregister FCM (best-effort, short timeout) — before clearing tokens
     try {
       if (Get.isRegistered<NotificationService>()) {
@@ -496,6 +538,50 @@ class AuthService extends GetxService {
     });
   }
 
+  // ─── Terms of Service ───────────────────────────────────
+
+  /// Sign-up accepted the Terms before the account existed: record it now.
+  Future<void> _submitPendingLegal() async {
+    try {
+      final raw = await _storage.read(kPendingLegalKey);
+      final version = int.tryParse(raw ?? '');
+      if (version == null) return;
+      await acceptLegal(version);
+      await _storage.write(kPendingLegalKey, '');
+    } catch (_) {
+      // retried at the next login
+    }
+  }
+
+  bool _legalPromptOpen = false;
+
+  /// After the Terms changed (new version), ask the user once to accept them.
+  Future<void> promptLegalIfNeeded() async {
+    if (_legalPromptOpen || !isLoggedIn.value) return;
+    final user = currentUser.value;
+    if (user == null || !Get.isRegistered<AppConfigService>()) return;
+    final config = Get.find<AppConfigService>();
+    final current = config.legalVersion.value;
+    final accepted = user.acceptedLegalVersion;
+    // Existing accounts without a record are asked as well.
+    if (accepted != null && accepted >= current) return;
+    _legalPromptOpen = true;
+    try {
+      final ok = await AppDialogs.confirm(
+        title: 'legal_update_title'.tr,
+        message: 'legal_update_body'.tr,
+        confirmLabel: 'legal_update_accept'.tr,
+        cancelLabel: 'legal_update_read'.tr,
+      );
+      if (ok) {
+        await acceptLegal(current);
+      }
+    } catch (_) {
+    } finally {
+      _legalPromptOpen = false;
+    }
+  }
+
   // ─── Internal Helpers ───────────────────────────────────
 
   Future<void> _handleAuthResponse(dynamic data) async {
@@ -522,6 +608,8 @@ class AuthService extends GetxService {
 
     isLoggedIn.value = true;
     isEmailVerified.value = currentUser.value?.status == 'active';
+
+    unawaited(_submitPendingLegal());
 
     // Connect socket after successful auth
     try {

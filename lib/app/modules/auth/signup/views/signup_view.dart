@@ -8,6 +8,7 @@ import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/widgets/morocco_phone_field.dart';
 import '../../../../core/widgets/theme_toggle_icon_button.dart';
 import '../../../../core/widgets/app_back_button.dart';
+import 'package:awnneaapp/app/modules/common/views/legal_view.dart';
 
 class SignupView extends GetView<SignupController> {
   const SignupView({super.key});
@@ -82,7 +83,52 @@ class SignupView extends GetView<SignupController> {
                   controller: controller.confirmPasswordController,
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 16),
+              // Required: the Terms and the Privacy Policy (each opens its text).
+              Obx(
+                () => Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Checkbox(
+                      value: controller.acceptedTerms.value,
+                      onChanged: (v) => controller.acceptedTerms.value = v ?? false,
+                      activeColor: AppColors.primary,
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Wrap(
+                          children: [
+                            Text('auth_accept_prefix'.tr, style: AppStyles.bodyMediumOf(context)),
+                            GestureDetector(
+                              onTap: () => Get.to(() => const LegalView(kind: 'terms')),
+                              child: Text(
+                                ' ${'legal_terms_title'.tr} ',
+                                style: AppStyles.bodyMedium.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            Text('auth_accept_and'.tr, style: AppStyles.bodyMediumOf(context)),
+                            GestureDetector(
+                              onTap: () => Get.to(() => const LegalView(kind: 'privacy')),
+                              child: Text(
+                                ' ${'profile_privacy'.tr}',
+                                style: AppStyles.bodyMedium.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
               Obx(
                 () => CustomButton(
                   text: 'auth_signup'.tr,

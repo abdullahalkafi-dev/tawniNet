@@ -1,0 +1,17 @@
+{
+ "data": {
+  "accessToken": "fixture-access-token",
+  "refreshToken": "fixture-refresh-token",
+  "user": {
+   "_id": "6ae5fb9981c513a58eb79792",
+   "name": "Omar Tazi",
+   "phone": "+212698765431",
+   "email": "omar.client@tarik.test",
+   "avatar": null,
+   "role": "user",
+   "status": "active",
+   "isPhoneVerified": true,
+   "helperApplicationStatus": null
+  }
+ }
+}

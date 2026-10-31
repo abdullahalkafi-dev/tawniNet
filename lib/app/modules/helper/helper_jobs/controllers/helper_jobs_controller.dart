@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:awnneaapp/app/core/constants/refetch_keys.dart';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
+import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
-import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/job_service.dart';
 import 'package:awnneaapp/app/services/location_service.dart';
 import 'package:awnneaapp/app/services/refetch_service.dart';
@@ -13,11 +13,23 @@ class HelperJobsController extends GetxController {
   final activeJobs = <dynamic>[].obs;
   final completedJobs = <dynamic>[].obs;
   final cancelledJobs = <dynamic>[].obs;
+
+  /// True while the very first load runs (drives the skeleton).
   final isLoading = false.obs;
+  final hasLoadedOnce = false.obs;
+
+  /// The last load failed and there is nothing to show (drives the retry state).
+  final loadFailed = false.obs;
+
+  final completedHasMore = false.obs;
+  final cancelledHasMore = false.obs;
+  final isLoadingMore = false.obs;
+  int _completedPage = 1;
+  int _cancelledPage = 1;
 
   String? _pendingOpenJobId;
-  StreamSubscription? _jobCancelledSub;
-  StreamSubscription? _jobCompletedSub;
+  final _subs = <StreamSubscription>[];
+  Timer? _refreshDebounce;
 
   @override
   void onInit() {
@@ -34,8 +46,10 @@ class HelperJobsController extends GetxController {
 
   @override
   void onClose() {
-    _jobCancelledSub?.cancel();
-    _jobCompletedSub?.cancel();
+    for (final s in _subs) {
+      s.cancel();
+    }
+    _refreshDebounce?.cancel();
     try {
       Get.find<RefetchService>().unregister(RefetchKeys.helperJobs);
     } catch (_) {}
@@ -46,7 +60,7 @@ class HelperJobsController extends GetxController {
   void setPendingOpenJobId(String? jobId) {
     if (jobId == null || jobId.isEmpty) return;
     _pendingOpenJobId = jobId;
-    if (activeJobs.isNotEmpty || completedJobs.isNotEmpty || cancelledJobs.isNotEmpty) {
+    if (hasLoadedOnce.value) {
       _openPendingJobDetails();
     }
   }
@@ -67,47 +81,83 @@ class HelperJobsController extends GetxController {
   }
 
   Future<void> _fetchJobsImpl({bool userInitiated = false}) async {
-    isLoading.value = true;
+    if (!hasLoadedOnce.value) isLoading.value = true;
     try {
-      final jobService = Get.find<JobService>();
-      final res = await jobService.getMyAssignedJobs();
+      final res = await Get.find<JobService>().getMyAssignedJobs();
 
-      activeJobs.assignAll(res['active'] ?? []);
-      completedJobs.assignAll(res['completed'] ?? []);
-      cancelledJobs.assignAll(res['cancelled'] ?? []);
+      activeJobs.assignAll((res['active'] as List?) ?? []);
+      completedJobs.assignAll((res['completed'] as List?) ?? []);
+      cancelledJobs.assignAll((res['cancelled'] as List?) ?? []);
 
-      // Automatically sync active job ID to location service
-      if (Get.isRegistered<LocationService>()) {
-        final loc = Get.find<LocationService>();
-        if (activeJobs.isNotEmpty) {
-          final first = activeJobs.first;
-          final jobId = (first is Map ? (first['id'] ?? first['_id']) : null)?.toString();
-          if (jobId != null && jobId.isNotEmpty) {
-            loc.setActiveJobId(jobId);
-          }
-        } else {
-          loc.setActiveJobId(null);
-        }
-      }
+      final counts = res['counts'] is Map ? res['counts'] as Map : const {};
+      completedHasMore.value = completedJobs.length < ((counts['completed'] as num?)?.toInt() ?? 0);
+      cancelledHasMore.value = cancelledJobs.length < ((counts['cancelled'] as num?)?.toInt() ?? 0);
+      _completedPage = 1;
+      _cancelledPage = 1;
 
+      hasLoadedOnce.value = true;
+      loadFailed.value = false;
+      _syncTracking();
       _openPendingJobDetails();
     } catch (e) {
-      if (!isClosed &&
-          (userInitiated ||
-              (activeJobs.isEmpty &&
-                  completedJobs.isEmpty &&
-                  cancelledJobs.isEmpty))) {
-        AppFeedback.error(
-          e.toString().replaceAll('Exception: ', '').isEmpty
-              ? 'ui_could_not_load_jobs_pull_down_to'.tr
-              : e.toString().replaceAll('Exception: ', ''),
-          title: 'helper_my_job'.tr,
-        );
+      // The lists are NOT cleared on a failed refresh: the helper keeps seeing what he had.
+      if (!isClosed) {
+        final nothingToShow =
+            activeJobs.isEmpty && completedJobs.isEmpty && cancelledJobs.isEmpty;
+        if (nothingToShow && !hasLoadedOnce.value) loadFailed.value = true;
+        if (userInitiated) {
+          AppFeedback.error(AppSnackbar.extractErrorMessage(e), title: 'helper_my_job'.tr);
+        }
       }
     } finally {
       if (!isClosed) {
         isLoading.value = false;
       }
+    }
+  }
+
+  Future<void> loadMore(String tab) async {
+    if (isLoadingMore.value) return;
+    final isCompleted = tab == 'completed';
+    if (!(isCompleted ? completedHasMore.value : cancelledHasMore.value)) return;
+    isLoadingMore.value = true;
+    try {
+      final page = (isCompleted ? _completedPage : _cancelledPage) + 1;
+      final res = await Get.find<JobService>().getMyAssignedJobsPage(tab, page);
+      final docs = (res['docs'] as List?) ?? [];
+      final target = isCompleted ? completedJobs : cancelledJobs;
+      final known = target.whereType<Map>().map((m) => (m['_id'] ?? m['id']).toString()).toSet();
+      target.addAll(docs.where((d) => d is Map && !known.contains((d['_id'] ?? d['id']).toString())));
+      final more = (res['totalPages'] as num? ?? 0) > page;
+      if (isCompleted) {
+        _completedPage = page;
+        completedHasMore.value = more;
+      } else {
+        _cancelledPage = page;
+        cancelledHasMore.value = more;
+      }
+    } catch (e) {
+      AppFeedback.error(AppSnackbar.extractErrorMessage(e));
+    } finally {
+      isLoadingMore.value = false;
+    }
+  }
+
+  /// Share the position with the client exactly while a job is "on the way".
+  void _syncTracking() {
+    if (!Get.isRegistered<LocationService>()) return;
+    final loc = Get.find<LocationService>();
+    String? travelling;
+    for (final job in activeJobs) {
+      if (job is Map && (job['status'] ?? '').toString() == 'on_the_way') {
+        travelling = (job['id'] ?? job['_id'])?.toString();
+        break;
+      }
+    }
+    if (travelling != null && travelling.isNotEmpty) {
+      loc.startJobTracking(travelling);
+    } else {
+      loc.stopJobTracking();
     }
   }
 
@@ -170,47 +220,130 @@ class HelperJobsController extends GetxController {
     }
   }
 
+  /// Any change on one of my jobs refreshes the lists. Bursts become one request.
+  void _scheduleRefresh() {
+    _refreshDebounce?.cancel();
+    _refreshDebounce = Timer(const Duration(milliseconds: 400), () {
+      if (!isClosed) _invalidatePipeline().catchError((_) {});
+    });
+  }
+
   void _setupSocketListeners() {
     if (!Get.isRegistered<SocketService>()) return;
     final socket = Get.find<SocketService>();
 
-    _jobCancelledSub = socket.onJobCancelled.listen((data) {
-      final jid = (data['id'] ?? data['_id'])?.toString();
-      if (jid != null && jid.isNotEmpty) {
-        final reason = (data['cancellationReason'] ?? data['reason'] ?? 'Cancelled by client').toString();
-        final title = (data['title'] ?? 'Job').toString();
-        final wasActive = activeJobs.any((item) {
-          if (item is! Map) return false;
-          final id = (item['id'] ?? item['_id'] ?? '').toString();
-          return id == jid;
-        });
-
-        // The helper receives this event for their own cancellations too.
-        final cancelledByRaw = data['cancelledBy'];
-        final cancelledBy = (cancelledByRaw is Map
-                ? (cancelledByRaw['_id'] ?? cancelledByRaw['id'])
-                : cancelledByRaw)
-            ?.toString();
-        final myId = Get.isRegistered<AuthService>()
-            ? Get.find<AuthService>().currentUser.value?.id
-            : null;
-        final cancelledByMe = cancelledBy != null && cancelledBy == myId;
-
-        _moveJobToCancelledLocally(jid, reason: reason, rawJob: data);
-
-        if (wasActive && !cancelledByMe) {
-          AppFeedback.info('"$title" was cancelled by the client.', title: 'cancel_job_cancelled'.tr);
+    _subs.addAll([
+      socket.onJobUpdated.listen((_) => _scheduleRefresh()),
+      socket.onJobCompleted.listen((_) => _scheduleRefresh()),
+      socket.onJobCancelled.listen((data) {
+        final jid = (data['id'] ?? data['_id'] ?? data['jobId'])?.toString();
+        if (jid != null && jid.isNotEmpty) {
+          final title = (data['title'] ?? '').toString();
+          final wasActive = activeJobs.any((item) {
+            if (item is! Map) return false;
+            return (item['id'] ?? item['_id'] ?? '').toString() == jid;
+          });
+          if (wasActive) {
+            AppFeedback.info(
+              title.isEmpty
+                  ? 'job_cancelled_by_client_generic'.tr
+                  : 'job_cancelled_by_client'.trParams({'title': title}),
+              title: 'cancel_job_cancelled'.tr,
+            );
+          }
         }
-        _invalidatePipeline().catchError((_) {});
-      }
-    });
-
-    _jobCompletedSub = socket.onJobCompleted.listen((_) {
-      _invalidatePipeline().catchError((_) {});
-    });
+        _scheduleRefresh();
+      }),
+      // A job I was offered was taken by someone else: refresh the open list.
+      socket.onJobUnavailable.listen((_) {
+        try {
+          Get.find<RefetchService>().invalidate(RefetchKeys.nearbyJobs);
+        } catch (_) {}
+      }),
+    ]);
   }
 
-  void _moveJobToCancelledLocally(String id, {String reason = 'Cancelled', dynamic rawJob}) {
+  Future<void> _invalidatePipeline() async {
+    try {
+      await Get.find<RefetchService>().invalidateJobPipeline();
+    } catch (_) {
+      await fetchJobs();
+    }
+  }
+
+  // ─── Actions on an accepted job ───────────────────────
+
+  Future<bool> _step(Future<dynamic> Function() call, String successKey, {Map<String, dynamic>? patch, required String id}) async {
+    try {
+      await call();
+      if (patch != null) patchJobLocally(id, patch);
+      AppFeedback.success(successKey.tr);
+      _invalidatePipeline().catchError((_) {});
+      return true;
+    } catch (e) {
+      AppFeedback.error(AppSnackbar.extractErrorMessage(e));
+      // The job may have moved on (cancelled by the client…): show the real state.
+      unawaited(fetchJobs());
+      return false;
+    }
+  }
+
+  /// "I'm on my way" — starts sharing the position with the client.
+  Future<bool> startTravelling(String id) async {
+    final ok = await _step(
+      () => Get.find<JobService>().markOnTheWay(id),
+      'job_step_on_the_way_done',
+      id: id,
+      patch: {'status': 'on_the_way', 'onTheWayAt': DateTime.now().toIso8601String()},
+    );
+    if (ok && Get.isRegistered<LocationService>()) {
+      Get.find<LocationService>().startJobTracking(id);
+    }
+    return ok;
+  }
+
+  /// "I've arrived" — stops the live tracking.
+  Future<bool> markArrived(String id) async {
+    final ok = await _step(
+      () => Get.find<JobService>().markArrived(id),
+      'job_step_arrived_done',
+      id: id,
+      patch: {'status': 'arrived', 'arrivedAt': DateTime.now().toIso8601String()},
+    );
+    if (ok && Get.isRegistered<LocationService>()) {
+      Get.find<LocationService>().stopJobTracking();
+    }
+    return ok;
+  }
+
+  /// "Work finished" — the client now confirms (or it completes by itself).
+  Future<bool> markFinished(String id) async {
+    final ok = await _step(
+      () => Get.find<JobService>().markFinished(id),
+      'job_step_finished_done',
+      id: id,
+      patch: {'helperFinishedAt': DateTime.now().toIso8601String()},
+    );
+    if (ok && Get.isRegistered<LocationService>()) {
+      Get.find<LocationService>().stopJobTracking();
+    }
+    return ok;
+  }
+
+  Future<bool> reportProblem(String id, String message) async {
+    try {
+      await Get.find<JobService>().reportProblem(id, message);
+      patchJobLocally(id, {'disputeOpen': true});
+      AppFeedback.success('job_problem_reported'.tr);
+      _invalidatePipeline().catchError((_) {});
+      return true;
+    } catch (e) {
+      AppFeedback.error(AppSnackbar.extractErrorMessage(e));
+      return false;
+    }
+  }
+
+  void _moveJobToCancelledLocally(String id, {String reason = 'Cancelled'}) {
     if (id.isEmpty) return;
     Map<String, dynamic>? targetJob;
 
@@ -226,10 +359,6 @@ class HelperJobsController extends GetxController {
       }
     }
 
-    if (targetJob == null && rawJob is Map) {
-      targetJob = Map<String, dynamic>.from(rawJob);
-    }
-
     if (targetJob != null) {
       targetJob['status'] = 'cancelled';
       targetJob['cancellationReason'] = reason;
@@ -242,33 +371,12 @@ class HelperJobsController extends GetxController {
       });
       cancelledJobs.insert(0, targetJob);
     }
-
-    if (Get.isRegistered<LocationService>()) {
-      final loc = Get.find<LocationService>();
-      if (loc.activeJobId == id) {
-        if (activeJobs.isNotEmpty) {
-          final first = activeJobs.first;
-          final nextId = (first is Map ? (first['id'] ?? first['_id']) : null)?.toString();
-          loc.setActiveJobId(nextId);
-        } else {
-          loc.setActiveJobId(null);
-        }
-      }
-    }
+    _syncTracking();
   }
 
-  Future<void> _invalidatePipeline() async {
+  Future<bool> cancelJob(String id, {required String reason, String? code}) async {
     try {
-      await Get.find<RefetchService>().invalidateJobPipeline();
-    } catch (_) {
-      await fetchJobs();
-    }
-  }
-
-  Future<bool> cancelJob(String id, {String reason = 'Helper cancelled'}) async {
-    try {
-      final jobService = Get.find<JobService>();
-      await jobService.cancelJob(id, reason);
+      await Get.find<JobService>().cancelJob(id, reason, code: code);
       // Immediately reflect cancellation in memory (0ms UI latency)
       _moveJobToCancelledLocally(id, reason: reason);
       AppFeedback.success('job_cancelled_success'.tr, title: 'status_cancelled'.tr);
@@ -276,15 +384,14 @@ class HelperJobsController extends GetxController {
       _invalidatePipeline().catchError((_) {});
       return true;
     } catch (e) {
-      AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
+      AppFeedback.error(AppSnackbar.extractErrorMessage(e));
       return false;
     }
   }
 
   Future<bool> confirmCashReceived(String id) async {
     try {
-      final jobService = Get.find<JobService>();
-      await jobService.cashReceived(id);
+      await Get.find<JobService>().cashReceived(id);
       // Update local lists immediately so open detail pages re-render.
       patchJobLocally(id, {
         'paymentStatus': 'paid',
@@ -295,7 +402,7 @@ class HelperJobsController extends GetxController {
       _invalidatePipeline().catchError((_) {});
       return true;
     } catch (e) {
-      AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
+      AppFeedback.error(AppSnackbar.extractErrorMessage(e));
       return false;
     }
   }

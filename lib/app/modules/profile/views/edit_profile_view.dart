@@ -1,3 +1,4 @@
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'dart:io';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
@@ -190,7 +191,7 @@ class _EditProfileViewState extends State<EditProfileView> {
               border: Border.all(color: context.cardColor, width: 4),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -203,19 +204,13 @@ class _EditProfileViewState extends State<EditProfileView> {
                       fit: BoxFit.cover,
                     )
                   : avatar != null && avatar.isNotEmpty
-                      ? Image.network(
-                          avatar,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return _buildAvatarPlaceholder(context);
-                          },
-                        )
+                      ? AppNetworkImage(url: avatar, fit: BoxFit.cover)
                       : _buildAvatarPlaceholder(context),
             ),
           ),
-          Positioned(
+          PositionedDirectional(
             bottom: 5,
-            right: 5,
+            end: 5,
             child: GestureDetector(
               onTap: controller.isUploadingAvatar.value
                   ? null

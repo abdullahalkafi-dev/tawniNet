@@ -10,7 +10,6 @@ class LoginController extends GetxController {
   final phoneController = TextEditingController();
   final passwordController = TextEditingController();
   final isPasswordVisible = false.obs;
-  final rememberMe = false.obs;
   final isLoading = false.obs;
 
   String get _role => Get.arguments?['role'] ?? Get.find<RoleService>().role;
@@ -25,45 +24,8 @@ class LoginController extends GetxController {
     await authService.getMe();
     if (isClosed) return;
 
-    final user = authService.currentUser.value;
-    final hasLocation = user?.hasLocation ?? false;
-
-    if (hasLocation) {
-      _navigateToDestination(user);
-    } else {
-      Get.offAllNamed(Routes.locationAllow);
-    }
-  }
-
-  void _navigateToDestination(dynamic user) {
-    if (isClosed) return;
-    if (user.role == 'helper') {
-      if (user.isHelperFormSubmitted != true) {
-        Get.offAllNamed(Routes.applyAsHelper);
-        return;
-      }
-
-      switch (user.helperApplicationStatus) {
-        case 'approved':
-          Get.offAllNamed(Routes.helperHome);
-          return;
-        case 'pending_appeal':
-          Get.offAllNamed(Routes.applicationPending);
-          return;
-        case 'rejected':
-          Get.offAllNamed(Routes.applicationRejected);
-          return;
-        case 'pending':
-        default:
-          if (user.diditStatus == 'In Review') {
-            Get.offAllNamed(Routes.applicationPending);
-          } else {
-            Get.offAllNamed(Routes.helperKycVerification);
-          }
-          return;
-      }
-    }
-    Get.offAllNamed(Routes.home);
+    // A saved location is no longer required to enter the app.
+    authService.goToDestination();
   }
 
   Future<void> login() async {
@@ -78,10 +40,6 @@ class LoginController extends GetxController {
 
     if (password.isEmpty) {
       _showError('ui_please_enter_your_password'.tr);
-      return;
-    }
-    if (password.length < 6) {
-      _showError('ui_password_must_be_at_least_6_characters'.tr);
       return;
     }
 

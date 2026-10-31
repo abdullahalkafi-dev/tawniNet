@@ -20,7 +20,7 @@ class OtpView extends GetView<OtpController> {
         ),
         actions: const [
           Padding(
-            padding: EdgeInsets.only(right: 16),
+            padding: EdgeInsetsDirectional.only(end: 16),
             child: ThemeToggleIconButton(),
           ),
         ],
@@ -36,7 +36,7 @@ class OtpView extends GetView<OtpController> {
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF25D366).withOpacity(0.12),
+                  color: const Color(0xFF25D366).withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
                 child: const Center(

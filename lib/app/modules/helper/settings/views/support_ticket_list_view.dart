@@ -1,4 +1,7 @@
+import 'package:awnneaapp/app/core/utils/app_feedback.dart';
+import 'package:awnneaapp/app/core/utils/datetime_format.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/modules/helper/settings/controllers/customer_service_controller.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
@@ -44,19 +47,8 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
   }
 
   String _formatTime(dynamic updatedAt) {
-    if (updatedAt == null) return '';
-    try {
-      final date = DateTime.parse(updatedAt.toString());
-      final now = DateTime.now();
-      final diff = now.difference(date);
-      if (diff.inMinutes < 1) return 'Now';
-      if (diff.inMinutes < 60) return '${diff.inMinutes}m';
-      if (diff.inHours < 24) return '${diff.inHours}h';
-      if (diff.inDays < 7) return '${diff.inDays}d';
-      return '${date.month}/${date.day}';
-    } catch (_) {
-      return '';
-    }
+    final date = DateTime.tryParse(updatedAt?.toString() ?? '')?.toLocal();
+    return date == null ? '' : AppDateTime.shortAgo(date);
   }
 
   Color _statusColor(String status) {
@@ -81,7 +73,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
       case 'resolved':
         return 'ui_resolved'.tr;
       case 'all':
-        return 'All';
+        return 'label_all'.tr;
       default:
         return status;
     }
@@ -153,6 +145,9 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
   void _showNewTicketDialog() {
     final subjectController = TextEditingController();
     final messageController = TextEditingController();
+    final category = 'other'.obs;
+    final busy = false.obs;
+    const categories = ['payment', 'safety', 'kyc', 'job', 'account', 'app', 'other'];
 
     showDialog(
       context: context,
@@ -162,11 +157,30 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
           'ui_new_support_ticket'.tr,
           style: AppStyles.h2Of(dialogCtx).copyWith(fontSize: 18),
         ),
-        content: Column(
+        content: SingleChildScrollView(
+         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Obx(() => DropdownButtonFormField<String>(
+                  initialValue: category.value,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: 'support_category_label'.tr,
+                    filled: true,
+                    fillColor: dialogCtx.inputFillColor,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  dropdownColor: dialogCtx.cardColor,
+                  items: [
+                    for (final c in categories)
+                      DropdownMenuItem(value: c, child: Text('support_cat_$c'.tr)),
+                  ],
+                  onChanged: (v) => category.value = v ?? 'other',
+                )),
+            const SizedBox(height: 12),
             TextField(
               controller: subjectController,
+              maxLength: 120,
               style: TextStyle(color: dialogCtx.textPrimaryColor),
               decoration: InputDecoration(
                 hintText: 'ui_subject_e_g_payment_issue_job_12'.tr,
@@ -191,6 +205,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
             TextField(
               controller: messageController,
               maxLines: 3,
+              maxLength: 4000,
               style: TextStyle(color: dialogCtx.textPrimaryColor),
               decoration: InputDecoration(
                 hintText: 'ui_describe_your_issue'.tr,
@@ -212,6 +227,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
               ),
             ),
           ],
+         ),
         ),
         actions: [
           TextButton(
@@ -221,20 +237,32 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
               style: TextStyle(color: dialogCtx.textSecondaryColor),
             ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              final subject = subjectController.text.trim();
-              final message = messageController.text.trim();
-              if (subject.isNotEmpty && message.isNotEmpty) {
-                Navigator.pop(dialogCtx);
-                _controller.createTicketAndSend(subject, message).then((_) {
-                  if (mounted) _openChat();
-                });
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-            child: Text('btn_submit'.tr, style: TextStyle(color: Colors.white)),
-          ),
+          Obx(() => ElevatedButton(
+                onPressed: busy.value
+                    ? null
+                    : () async {
+                        final subject = subjectController.text.trim();
+                        final message = messageController.text.trim();
+                        if (subject.length < 3) {
+                          AppFeedback.error('support_subject_short'.tr);
+                          return;
+                        }
+                        if (message.isEmpty) {
+                          AppFeedback.error('ui_describe_your_issue'.tr);
+                          return;
+                        }
+                        busy.value = true;
+                        final ok = await _controller.createTicketAndSend(subject, message, category: category.value);
+                        busy.value = false;
+                        if (!ok) return; // the reason was shown; keep what was typed
+                        if (dialogCtx.mounted) Navigator.pop(dialogCtx);
+                        if (mounted) _openChat();
+                      },
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                child: busy.value
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : Text('btn_submit'.tr, style: const TextStyle(color: Colors.white)),
+              )),
         ],
       ),
     );
@@ -279,7 +307,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
       ),
       body: Obx(() {
         if (_controller.isLoading.value && _controller.tickets.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
+          return SkeletonList(count: 6, itemBuilder: (_, _) => const ChatTileSkeleton());
         }
 
         final tickets = _controller.filteredTickets;
@@ -290,7 +318,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.support_agent,
-                    size: 64, color: AppColors.primary.withOpacity(0.3)),
+                    size: 64, color: AppColors.primary.withValues(alpha: 0.3)),
                 const SizedBox(height: 16),
                 Text(
                   _controller.statusFilter.value == 'all'
@@ -321,12 +349,12 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 88),
             itemCount: tickets.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
+            separatorBuilder: (_, _) => const SizedBox(height: 8),
             itemBuilder: (context, index) {
               final ticket = tickets[index];
               final id = (ticket['id'] ?? ticket['_id']).toString();
               final subject =
-                  (ticket['subject'] ?? 'Support Inquiry').toString();
+                  (ticket['subject'] ?? 'support_inquiry_default'.tr).toString();
               final lastMessage = (ticket['lastMessage'] ?? '').toString();
               final status = (ticket['status'] ?? 'open').toString();
               final updatedAt = ticket['updatedAt'];
@@ -371,7 +399,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
                                   Container(
                                     width: 8,
                                     height: 8,
-                                    margin: const EdgeInsets.only(left: 8),
+                                    margin: const EdgeInsetsDirectional.only(start: 8),
                                     decoration: const BoxDecoration(
                                       color: Colors.red,
                                       shape: BoxShape.circle,
@@ -420,7 +448,7 @@ class _SupportTicketListViewState extends State<SupportTicketListView> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: _statusColor(status).withOpacity(0.15),
+                              color: _statusColor(status).withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(

@@ -1,3 +1,4 @@
+import 'package:awnneaapp/app/core/constants/map_config.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -182,11 +183,7 @@ class _LocationMapPickerState extends State<LocationMapPicker> {
               onPositionChanged: _onPositionChanged,
             ),
             children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.awnneaapp',
-                tileBuilder: isDark ? darkModeTileBuilder : null,
-              ),
+              MapConfig.tileLayer(dark: isDark),
             ],
           ),
 
@@ -271,8 +268,8 @@ class _LocationMapPickerState extends State<LocationMapPicker> {
           ),
 
           // Right Floating Control Buttons
-          Positioned(
-            right: 16,
+          PositionedDirectional(
+            end: 16,
             top: 76,
             child: Column(
               children: [

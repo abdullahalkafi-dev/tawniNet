@@ -15,12 +15,7 @@ class HelpCenterView extends StatefulWidget {
 class _HelpCenterViewState extends State<HelpCenterView> {
   int selectedTab = 0;
   final List<Map<String, dynamic>> faqs = [
-    {'question': 'How do I place an order?', 'answer': 'Simply browse the products, select the variant (size, color, etc.), tap "Add to Cart", and proceed to checkout. You\'ll be guided step-by-step to complete your purchase.', 'expanded': true},
-    {'question': 'What payment methods are accepted?', 'answer': 'We accept all major credit cards, debit cards, and digital wallets.', 'expanded': false},
-    {'question': 'How do I track my order?', 'answer': 'You can track your order from the Orders section in your profile.', 'expanded': false},
-    {'question': 'How do I track my order?', 'answer': 'You can track your order from the Orders section in your profile.', 'expanded': false},
-    {'question': 'Can I cancel or change my order?', 'answer': 'You can cancel or change your order within 24 hours of placing it.', 'expanded': false},
-    {'question': 'How long does shipping take?', 'answer': 'Standard shipping takes 3-5 business days. Express shipping takes 1-2 business days.', 'expanded': false},
+    for (var i = 1; i <= 6; i++) {'question': 'faq_q$i', 'answer': 'faq_a$i', 'expanded': i == 1},
   ];
 
   @override
@@ -118,10 +113,10 @@ class _HelpCenterViewState extends State<HelpCenterView> {
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: isExpanded ? AppColors.primary.withOpacity(0.08) : context.cardColor,
+                color: isExpanded ? AppColors.primary.withValues(alpha: 0.08) : context.cardColor,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isExpanded ? AppColors.primary.withOpacity(0.3) : context.borderSubtle,
+                  color: isExpanded ? AppColors.primary.withValues(alpha: 0.3) : context.borderSubtle,
                 ),
               ),
               child: ExpansionTile(
@@ -129,7 +124,7 @@ class _HelpCenterViewState extends State<HelpCenterView> {
                 childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 initiallyExpanded: isExpanded,
                 title: Text(
-                  faq['question'] as String,
+                  (faq['question'] as String).tr,
                   style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.w600, fontSize: 14),
                 ),
                 trailing: Icon(
@@ -141,7 +136,7 @@ class _HelpCenterViewState extends State<HelpCenterView> {
                 },
                 children: [
                   Text(
-                    faq['answer'] as String,
+                    (faq['answer'] as String).tr,
                     style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 14, height: 1.5, color: context.textSecondaryColor),
                   ),
                 ],
@@ -204,7 +199,7 @@ class _HelpCenterViewState extends State<HelpCenterView> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 28),

@@ -1,10 +1,13 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/widgets/app_pull_to_refresh.dart';
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'package:awnneaapp/app/core/widgets/helper_trust_widgets.dart';
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
 import 'package:awnneaapp/app/data/models/home_models.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:awnneaapp/app/routes/app_routes.dart';
 import '../controllers/find_helper_controller.dart';
 
 class FindHelperView extends GetView<FindHelperController> {
@@ -78,7 +81,7 @@ class FindHelperView extends GetView<FindHelperController> {
         child: Row(
           children: [
             // "All" chip
-            _buildChip(context, 'All', 0),
+            _buildChip(context, 'label_all'.tr, 0),
             ...cats.asMap().entries.map((entry) {
               return _buildChip(context, entry.value.name, entry.key + 1);
             }),
@@ -94,7 +97,7 @@ class FindHelperView extends GetView<FindHelperController> {
       return GestureDetector(
         onTap: () => controller.selectCategory(index),
         child: Container(
-          margin: const EdgeInsets.only(right: 8),
+          margin: const EdgeInsetsDirectional.only(end: 8),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: isSelected ? AppColors.primary : context.cardColor,
@@ -181,26 +184,72 @@ class FindHelperView extends GetView<FindHelperController> {
   Widget _buildResultsList(BuildContext context) {
     return Obx(() {
       if (controller.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
+        return SkeletonList(
+          count: 5,
+          itemBuilder: (_, __) => const HelperCardSkeleton(),
+        );
       }
 
-      if (controller.helpers.isEmpty) {
+      if (controller.loadFailed.value) {
         return Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.search_off, size: 64, color: context.textHintColor),
+              Icon(Icons.cloud_off_outlined, size: 64, color: context.textHintColor),
               const SizedBox(height: 16),
               Text(
-                'find_no_helpers'.tr,
+                'ui_could_not_load_helpers'.tr,
                 style: AppStyles.bodyLargeOf(context).copyWith(color: context.textSecondaryColor),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'find_try_adjusting'.tr,
-                style: AppStyles.bodyMediumOf(context).copyWith(color: context.textHintColor),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: controller.refreshData,
+                icon: const Icon(Icons.refresh),
+                label: Text('booking_retry'.tr),
               ),
             ],
+          ),
+        );
+      }
+
+      if (controller.helpers.isEmpty) {
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.search_off, size: 64, color: context.textHintColor),
+                const SizedBox(height: 16),
+                Text(
+                  'find_no_helpers'.tr,
+                  style: AppStyles.bodyLargeOf(context).copyWith(color: context.textSecondaryColor),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'find_try_adjusting'.tr,
+                  textAlign: TextAlign.center,
+                  style: AppStyles.bodyMediumOf(context).copyWith(color: context.textHintColor),
+                ),
+                if (controller.expandSuggested.value) ...[
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: controller.widenSearch,
+                    icon: const Icon(Icons.zoom_out_map),
+                    label: Text('find_widen_search'.tr),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => Get.toNamed(Routes.postJob),
+                  child: Text('find_post_a_job_instead'.tr),
+                ),
+              ],
+            ),
           ),
         );
       }
@@ -252,21 +301,7 @@ class FindHelperView extends GetView<FindHelperController> {
           children: [
             Row(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    helper.helperImage,
-                    height: 50,
-                    width: 50,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      width: 50,
-                      height: 50,
-                      color: context.inputFillLight,
-                      child: Icon(Icons.person, color: context.textHintColor),
-                    ),
-                  ),
-                ),
+                AppAvatar(url: helper.helperImage, name: helper.helperName, size: 50),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -303,7 +338,7 @@ class FindHelperView extends GetView<FindHelperController> {
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
                               color: context.isDarkMode
-                                  ? AppColors.primary.withOpacity(0.15)
+                                  ? AppColors.primary.withValues(alpha: 0.15)
                                   : const Color(0xFFE5F7F5),
                               borderRadius: BorderRadius.circular(6),
                             ),

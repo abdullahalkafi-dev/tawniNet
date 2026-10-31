@@ -1,0 +1,16 @@
+{
+ "success": true,
+ "message": "Config fetched",
+ "data": {
+  "appName": "Tarik",
+  "supportEmail": "support@tarik.ma",
+  "supportPhone": "",
+  "supportWhatsapp": "",
+  "platformFeePercentage": 20,
+  "minimumServiceAmount": 30,
+  "minAppVersion": "",
+  "legalVersion": 1,
+  "termsOfService": "",
+  "privacyPolicy": ""
+ }
+}

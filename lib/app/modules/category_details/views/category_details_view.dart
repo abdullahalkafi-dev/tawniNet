@@ -1,3 +1,5 @@
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/data/models/home_models.dart';
@@ -7,7 +9,6 @@ import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:awnneaapp/app/core/widgets/helper_trust_widgets.dart';
 
@@ -93,7 +94,7 @@ class _CategoryDetailsViewState extends State<CategoryDetailsView> {
             Expanded(
               child: Obx(() {
                 if (isLoading.value) {
-                  return const Center(child: CircularProgressIndicator());
+                  return SkeletonList(count: 5, padding: EdgeInsets.zero, itemBuilder: (_, _) => const HelperCardSkeleton());
                 }
 
                 if (helpers.isEmpty) {
@@ -170,27 +171,7 @@ class _CategoryDetailsViewState extends State<CategoryDetailsView> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  service.helperImage,
-                  height: 60,
-                  width: 60,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 60,
-                      height: 60,
-                      color: context.inputFillLight,
-                      padding: const EdgeInsets.all(12),
-                      child: SvgPicture.asset(
-                        'assets/svgs/profile_icon.svg',
-                        colorFilter: ColorFilter.mode(
-                          context.textHintColor,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                child: AppNetworkImage(url: service.helperImage, width: 60, height: 60, fit: BoxFit.cover),
               ),
               const SizedBox(width: 12),
               Expanded(

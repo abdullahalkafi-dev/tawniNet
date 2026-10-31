@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint, kDebugMode;
 import 'package:awnneaapp/app/data/models/home_models.dart';
 import 'package:awnneaapp/app/modules/messages/controllers/messages_controller.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
@@ -22,8 +23,15 @@ class HomeController extends GetxController {
   final nearbyJobs = <HelperJob>[].obs;
   final popularServices = <PopularService>[].obs;
 
-  final isLoadingCategories = false.obs;
-  final isLoadingHelpers = false.obs;
+  // True until the first answer arrives: the Home tab shows skeletons, not empty states.
+  final isLoadingCategories = true.obs;
+  final isLoadingHelpers = true.obs;
+  final helpersFailed = false.obs;
+
+  /// "Popular" list filter (a category name, '' = all). Kept here so it survives rebuilds.
+  final popularFilter = ''.obs;
+
+  Worker? _locationWorker;
 
   @override
   void onInit() {
@@ -36,7 +44,7 @@ class HomeController extends GetxController {
     );
     Get.find<RefetchService>().register(
       RefetchKeys.popularHelpers,
-      fetchPopularServices,
+      fetchNearbyHelpers,
     );
     Get.find<RefetchService>().register(
       RefetchKeys.nearbyJobs,
@@ -44,11 +52,27 @@ class HomeController extends GetxController {
     );
     fetchCategories();
     fetchNearbyHelpers();
-    fetchPopularServices();
+    // Terms changed since the user accepted them? Ask once, after the screen settled.
+    Future.delayed(const Duration(seconds: 2), () {
+      if (Get.isRegistered<AuthService>()) Get.find<AuthService>().promptLegalIfNeeded();
+    });
+
+    // When the user's saved position changes (new address), show helpers around the new place.
+    _locationWorker = ever(Get.find<AuthService>().currentUser, (_) {
+      final u = Get.find<AuthService>().currentUser.value;
+      final key = '${u?.latitude}|${u?.longitude}';
+      if (key != _lastLocationKey) {
+        _lastLocationKey = key;
+        fetchNearbyHelpers();
+      }
+    });
   }
+
+  String? _lastLocationKey;
 
   @override
   void onClose() {
+    _locationWorker?.dispose();
     Get.find<RefetchService>().unregister(RefetchKeys.categories);
     Get.find<RefetchService>().unregister(RefetchKeys.popularHelpers);
     Get.find<RefetchService>().unregister(RefetchKeys.nearbyJobs);
@@ -87,25 +111,34 @@ class HomeController extends GetxController {
   // ─── Data Fetching ──────────────────────────────────────
 
   Future<void> fetchCategories() async {
-    isLoadingCategories.value = true;
+    if (categories.isEmpty) isLoadingCategories.value = true;
     try {
       final categoryService = Get.find<CategoryService>();
       final result = await categoryService.getActiveCategories();
       categories.assignAll(result);
-    } catch (_) {} finally {
+    } catch (e) {
+      // The categories already on screen stay; with none, the Home tab shows a retry card.
+      if (kDebugMode) debugPrint('[Home] categories failed: $e');
+    } finally {
       if (!isClosed) isLoadingCategories.value = false;
     }
   }
 
+  bool _fetchingHelpers = false;
+
   Future<void> fetchNearbyHelpers() async {
-    isLoadingHelpers.value = true;
+    // Several refresh keys point here: run once, not three times.
+    if (_fetchingHelpers) return;
+    _fetchingHelpers = true;
+    if (nearbyJobs.isEmpty) isLoadingHelpers.value = true;
     try {
       final api = Get.find<ApiClient>();
       final authService = Get.find<AuthService>();
       final user = authService.currentUser.value;
 
+      // One request feeds both lists on the Home tab ("nearby" = the first 10, "popular" = all).
       final queryParams = <String, dynamic>{
-        'limit': 10,
+        'limit': 20,
       };
 
       if (user?.latitude != null && user?.longitude != null) {
@@ -122,15 +155,21 @@ class HomeController extends GetxController {
         final data = response.data as Map<String, dynamic>;
         final helpersList = data['helpers'] as List? ?? [];
 
-        final helpers = helpersList
-            .map((h) => HelperJob.fromHelperJson(
-                  h is Map ? Map<String, dynamic>.from(h) : <String, dynamic>{},
-                ))
+        final maps = helpersList
+            .map((h) => h is Map ? Map<String, dynamic>.from(h) : <String, dynamic>{})
             .toList();
+        final helpers = maps.map(HelperJob.fromHelperJson).toList();
 
-        nearbyJobs.assignAll(helpers);
+        nearbyJobs.assignAll(helpers.take(10).toList());
+        popularServices.assignAll(maps.map(_toPopular).toList());
+        helpersFailed.value = false;
       }
-    } catch (_) {} finally {
+    } catch (e) {
+      // Keep what is on screen; show the retry state only when there is nothing.
+      if (nearbyJobs.isEmpty) helpersFailed.value = true;
+      if (kDebugMode) debugPrint('[Home] helpers failed: $e');
+    } finally {
+      _fetchingHelpers = false;
       if (!isClosed) isLoadingHelpers.value = false;
     }
   }
@@ -139,76 +178,33 @@ class HomeController extends GetxController {
     await Future.wait([
       fetchCategories(),
       fetchNearbyHelpers(),
-      fetchPopularServices(),
     ]);
   }
 
-  // ─── Popular Services ──────────────────────────────────
-
-  Future<void> fetchPopularServices() async {
-    try {
-      final api = Get.find<ApiClient>();
-      final authService = Get.find<AuthService>();
-      final user = authService.currentUser.value;
-
-      final queryParams = <String, dynamic>{
-        'limit': 20,
-      };
-      if (user?.latitude != null && user?.longitude != null) {
-        queryParams['lat'] = user!.latitude;
-        queryParams['lon'] = user.longitude;
-      }
-
-      final response = await api.get(
-        ApiConstants.helpersSearch,
-        queryParameters: queryParams,
-      );
-
-      if (!isClosed && response.success && response.data != null) {
-        final data = response.data as Map<String, dynamic>;
-        final helpersList = data['helpers'] as List? ?? [];
-
-        final services = helpersList.map((h) {
-          final map = h is Map ? Map<String, dynamic>.from(h) : <String, dynamic>{};
-          final serviceType = map['serviceType'];
-          String category = 'ui_general'.tr;
-          if (serviceType is Map) {
-            category = serviceType['name']?.toString() ?? 'General';
-          } else if (serviceType is String) {
-            category = serviceType;
-          }
-
-          String avatar = '';
-          final rawAvatar = map['avatar'];
-          if (rawAvatar is String && rawAvatar.isNotEmpty) {
-            avatar = rawAvatar;
-          }
-
-          final ratingRaw = map['rating'];
-          final rating = ratingRaw is num
-              ? ratingRaw.toDouble()
-              : (double.tryParse(ratingRaw?.toString() ?? '') ?? 0);
-          final reviewRaw = map['reviewCount'];
-          final reviews = reviewRaw is num
-              ? reviewRaw.toInt()
-              : (int.tryParse(reviewRaw?.toString() ?? '') ?? 0);
-
-          return PopularService(
-            id: map['_id']?.toString() ?? '',
-            name: map['name']?.toString() ?? 'Helper',
-            category: category,
-            rating: rating,
-            reviews: reviews,
-            pricePerHour: (map['pricePerHour'] as num?)?.toDouble() ?? 0.0,
-            distance: map['address']?.toString() ?? 'Nearby',
-            image: avatar,
-            isVerified: map['isVerified'] == true,
-          );
-        }).toList();
-
-        popularServices.assignAll(services);
-      }
-    } catch (_) {}
+  PopularService _toPopular(Map<String, dynamic> map) {
+    final serviceType = map['serviceType'];
+    String category = 'ui_general'.tr;
+    if (serviceType is Map) {
+      final n = localizedCategoryName(serviceType);
+      if (n.isNotEmpty) category = n;
+    } else if (serviceType is String && serviceType.isNotEmpty) {
+      category = serviceType;
+    }
+    final distKm = map['distanceKm'];
+    final area = (map['area'] ?? map['city'] ?? map['address'])?.toString();
+    return PopularService(
+      id: map['_id']?.toString() ?? '',
+      name: map['name']?.toString() ?? 'ui_helper'.tr,
+      category: category,
+      rating: (map['rating'] as num?)?.toDouble() ?? 0,
+      reviews: (map['reviewCount'] as num?)?.toInt() ?? 0,
+      pricePerHour: (map['pricePerHour'] as num?)?.toDouble() ?? 0.0,
+      distance: distKm is num
+          ? '${distKm.toStringAsFixed(1)} km'
+          : ((area != null && area.isNotEmpty) ? area : 'ui_nearby'.tr),
+      image: map['avatar']?.toString() ?? '',
+      isVerified: map['isVerified'] == true,
+    );
   }
 
   // ─── Navigation ─────────────────────────────────────────

@@ -1,3 +1,4 @@
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -55,36 +56,16 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
                 minScale: 0.5,
                 maxScale: 4.0,
                 child: Center(
-                  child: Image.network(
-                    resolved,
-                    fit: BoxFit.contain,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return Center(
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                              : null,
-                        ),
-                      );
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Center(
-                        child: Icon(Icons.error_outline, color: Colors.white54, size: 48),
-                      );
-                    },
-                  ),
+                  child: AppNetworkImage(url: resolved, fit: BoxFit.contain),
                 ),
               );
             },
           ),
 
           // Back button
-          Positioned(
+          PositionedDirectional(
             top: MediaQuery.of(context).padding.top + 8,
-            left: 8,
+            start: 8,
             child: Container(
               decoration: const BoxDecoration(
                 color: Colors.black54,
@@ -98,9 +79,9 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
           ),
 
           // Download button
-          Positioned(
+          PositionedDirectional(
             top: MediaQuery.of(context).padding.top + 8,
-            right: 8,
+            end: 8,
             child: Container(
               decoration: const BoxDecoration(
                 color: Colors.black54,

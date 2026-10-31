@@ -16,6 +16,7 @@ import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/local_notification_helper.dart';
 import 'package:awnneaapp/app/services/role_service.dart';
 import 'package:awnneaapp/app/modules/booking/controllers/booking_controller.dart';
+import 'package:awnneaapp/app/modules/messages/controllers/chat_detail_controller.dart';
 
 /// Background handler — must be a top-level function.
 @pragma('vm:entry-point')
@@ -95,19 +96,9 @@ class NotificationService extends GetxService {
       debugPrint('[FCM] LocalNotificationHelper init failed: $e');
     }
 
-    try {
-      final settings = await _messaging
-          .requestPermission(
-            alert: true,
-            badge: true,
-            sound: true,
-            provisional: false,
-          )
-          .timeout(const Duration(seconds: 2));
-      debugPrint('[FCM] permission: ${settings.authorizationStatus}');
-    } catch (e) {
-      debugPrint('[FCM] requestPermission failed: $e');
-    }
+    // The permission prompt is NOT shown here any more: the user is asked
+    // right after signing in (see [requestPermissionIfNeeded]), when the
+    // reason is clear.
 
     try {
       // Foreground: do NOT show OS/FCM banner — app draws its own snackbar only.
@@ -244,12 +235,36 @@ class NotificationService extends GetxService {
       final api = Get.find<ApiClient>();
       await api.post(
         ApiConstants.deviceToken,
-        data: {'token': token, 'platform': _platform},
+        data: {
+          'token': token,
+          'platform': _platform,
+          'locale': Get.locale?.languageCode ?? 'fr',
+        },
       );
       _lastRegisteredToken = token;
       debugPrint('[FCM] device token registered with backend');
     } catch (e) {
       debugPrint('[FCM] failed to register device token: $e');
+    }
+  }
+
+  /// Ask for the notification permission (once the user is signed in).
+  /// Returns true when notifications are allowed.
+  Future<bool> requestPermissionIfNeeded() async {
+    try {
+      if (!await ensureFirebase()) return false;
+      final settings = await _messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: false,
+      );
+      debugPrint('[FCM] permission: ${settings.authorizationStatus}');
+      return settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional;
+    } catch (e) {
+      debugPrint('[FCM] requestPermission failed: $e');
+      return false;
     }
   }
 
@@ -261,6 +276,7 @@ class NotificationService extends GetxService {
         debugPrint('[FCM] Firebase not ready — cannot register token');
         return;
       }
+      await requestPermissionIfNeeded();
       if (_fcmToken == null || _fcmToken!.isEmpty) {
         try {
           _fcmToken = await _messaging.getToken();
@@ -296,7 +312,10 @@ class NotificationService extends GetxService {
     try {
       final api = Get.find<ApiClient>();
       await api
-          .delete(ApiConstants.deviceToken)
+          .delete(
+            ApiConstants.deviceToken,
+            data: {if (_lastRegisteredToken != null) 'token': _lastRegisteredToken},
+          )
           .timeout(const Duration(seconds: 5));
       _lastRegisteredToken = null;
     } catch (e) {
@@ -332,9 +351,24 @@ class NotificationService extends GetxService {
     final body = notification?.body ?? data['body'] as String?;
     if (title == null && body == null) return;
 
+    // The user switched push notifications off in the app settings.
+    if (Get.isRegistered<AuthService>() &&
+        Get.find<AuthService>().currentUser.value?.notificationPrefs['push'] == false) {
+      return;
+    }
+
+    // Already reading that conversation: the message is on screen, no banner.
+    final convId = data['conversationId']?.toString();
+    if (convId != null &&
+        convId.isNotEmpty &&
+        Get.isRegistered<ChatDetailController>() &&
+        Get.find<ChatDetailController>().conversationId == convId) {
+      return;
+    }
+
     try {
       Get.snackbar(
-        title ?? 'Notification',
+        title ?? 'ui_notice'.tr,
         body ?? '',
         snackPosition: SnackPosition.TOP,
         duration: const Duration(seconds: 4),
@@ -605,6 +639,11 @@ class NotificationService extends GetxService {
         case 'job_accepted':
         case 'job_completed':
         case 'job_cancelled':
+        case 'job_on_the_way':
+        case 'job_arrived':
+        case 'job_finished':
+        case 'job_expired':
+        case 'job_dispute':
         case 'new_job':
           final id = (jobId != null && jobId.isNotEmpty) ? jobId : orderId;
           if (isHelper) {
@@ -612,6 +651,24 @@ class NotificationService extends GetxService {
           } else {
             _openClientJob(id);
           }
+          break;
+
+        case 'payout_failed':
+        case 'payment_received':
+          if (isHelper) {
+            Get.toNamed(Routes.helperEarning);
+          } else {
+            Get.toNamed(Routes.wallet);
+          }
+          break;
+
+        case 'offer_expired':
+          _openChat(conversationId);
+          break;
+
+        case 'helper_strike':
+        case 'account_unblocked':
+          _goHome();
           break;
 
         case 'review_received':

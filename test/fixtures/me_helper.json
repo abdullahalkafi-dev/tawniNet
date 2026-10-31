@@ -1,0 +1,82 @@
+{
+ "success": true,
+ "message": "User fetched successfully",
+ "data": {
+  "_id": "6ae5fb9981c513a58eb79789",
+  "name": "Karim Bennani",
+  "email": "karim.cleaning@tarik.test",
+  "phone": "+212612345671",
+  "avatar": null,
+  "coverPhoto": null,
+  "bio": "Professional home and office cleaning specialist with 6+ years of experience. Providing deep sanitization, eco-friendly cleaning, and move-in/out services across Casablanca.",
+  "role": "helper",
+  "status": "active",
+  "location": {
+   "type": "Point",
+   "coordinates": [
+    -7.633,
+    33.5822
+   ]
+  },
+  "address": "Maârif, Casablanca, Morocco",
+  "locale": "fr",
+  "isAvailable": true,
+  "notificationPrefs": {
+   "push": true,
+   "sound": true,
+   "vibrate": true,
+   "payments": true,
+   "appUpdates": true,
+   "newService": true
+  },
+  "acceptedLegalVersion": null,
+  "isHelperFormSubmitted": true,
+  "helperApplicationStatus": "approved",
+  "applicationHistory": [
+   {
+    "appliedAt": "2026-10-31T14:30:49.535Z",
+    "status": "approved",
+    "reviewedAt": "2026-10-31T14:30:49.535Z",
+    "_id": "6ae5fb9981c513a58eb7978a"
+   }
+  ],
+  "age": 29,
+  "city": "Casablanca",
+  "language": "Arabic, French",
+  "serviceType": {
+   "names": {
+    "en": "Home Cleaning",
+    "fr": "Ménage à domicile",
+    "ar": "تنظيف المنازل",
+    "es": "Limpieza del hogar"
+   },
+   "_id": "6ae5fb9981c513a58eb79780",
+   "name": "Home Cleaning",
+   "icon": "cleaning_icon.svg",
+   "isActive": true,
+   "slug": "home_cleaning",
+   "sortOrder": 1,
+   "isPopular": true,
+   "minHourlyRate": 50,
+   "suggestedPriceMin": 150,
+   "suggestedPriceMax": 400,
+   "createdAt": "2026-10-31T14:30:49.494Z",
+   "updatedAt": "2026-10-31T14:30:49.494Z",
+   "__v": 0
+  },
+  "pricePerHour": 120,
+  "experience": 6,
+  "serviceRadius": 40,
+  "profilePhotos": [],
+  "documentUrl": null,
+  "selfieUrl": null,
+  "diditStatus": "Approved",
+  "diditDecisionReason": "Automated KYC Verification Passed",
+  "diditDiagnostics": {
+   "warnings": []
+  },
+  "appealStatus": "none",
+  "appealCount": 0,
+  "cancelStrikes": 0
+ }
+}

@@ -4,6 +4,7 @@ import 'package:awnneaapp/app/services/support_service.dart';
 import 'package:awnneaapp/app/services/socket_service.dart';
 import 'package:awnneaapp/app/services/role_service.dart';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
+import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
 import 'package:get/get.dart';
 
 class CustomerServiceController extends GetxController {
@@ -56,7 +57,7 @@ class CustomerServiceController extends GetxController {
       if (msg is! Map) return;
       final msgId = (msg['_id'] ?? msg['id'])?.toString();
       final content = (msg['content'] ?? '').toString();
-      final preview = content.isNotEmpty ? content : '📎 Attachment';
+      final preview = content.isNotEmpty ? content : 'support_attachment'.tr;
 
       // Update list for ANY ticket (selected or not)
       if (ticketId.isNotEmpty) {
@@ -180,20 +181,33 @@ class CustomerServiceController extends GetxController {
     messages.clear();
   }
 
-  Future<void> createTicketAndSend(String subject, String text) async {
+  /// Creates the ticket and opens it. Returns false (and shows why) when it failed.
+  Future<bool> createTicketAndSend(String subject, String text, {String? category}) async {
     try {
       final supportService = Get.find<SupportService>();
-      final res = await supportService.createTicket(subject, text);
+      final res = await supportService.createTicket(subject, text, category: category);
       final id =
           (res['id'] ?? res['_id'] ?? res['ticket']?['_id'])?.toString() ?? '';
-      if (id.isNotEmpty) {
-        await fetchTickets();
-        await selectTicket(id);
-      }
+      if (id.isEmpty) return false;
+      await fetchTickets();
+      await selectTicket(id);
+      return true;
     } catch (e) {
-      if (!isClosed) {
-        AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
-      }
+      if (!isClosed) AppFeedback.error(AppSnackbar.extractErrorMessage(e));
+      return false;
+    }
+  }
+
+  /// Reopen the selected resolved ticket.
+  Future<void> reopenSelected() async {
+    final id = selectedTicketId.value;
+    if (id.isEmpty || !isResolved) return;
+    try {
+      await Get.find<SupportService>().reopenTicket(id);
+      selectedTicketStatus.value = 'open';
+      await fetchTickets();
+    } catch (e) {
+      if (!isClosed) AppFeedback.error(AppSnackbar.extractErrorMessage(e));
     }
   }
 
@@ -227,7 +241,7 @@ class CustomerServiceController extends GetxController {
       _touchListPreview(msg);
     } catch (e) {
       if (!isClosed) {
-        AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
+        AppFeedback.error(AppSnackbar.extractErrorMessage(e));
       }
     } finally {
       if (!isClosed) isSending.value = false;
@@ -248,7 +262,7 @@ class CustomerServiceController extends GetxController {
       _touchListPreview(msg);
     } catch (e) {
       if (!isClosed) {
-        AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
+        AppFeedback.error(AppSnackbar.extractErrorMessage(e));
       }
     } finally {
       if (!isClosed) isSending.value = false;
@@ -264,7 +278,7 @@ class CustomerServiceController extends GetxController {
     final content = (msg['content'] ?? '').toString();
     tickets[idx] = {
       ...Map<String, dynamic>.from(tickets[idx] as Map),
-      'lastMessage': content.isNotEmpty ? content : '📎 Attachment',
+      'lastMessage': content.isNotEmpty ? content : 'support_attachment'.tr,
       'updatedAt': DateTime.now().toIso8601String(),
     };
   }

@@ -1,4 +1,5 @@
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -113,15 +114,12 @@ class WorkPhotoStrip extends StatelessWidget {
           for (final url in urls.take(3))
             Padding(
               padding: const EdgeInsetsDirectional.only(end: 8),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.network(
-                  url,
-                  width: size,
-                  height: size,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                ),
+              child: AppNetworkImage(
+                url: url,
+                width: size,
+                height: size,
+                radius: 10,
+                errorWidget: const SizedBox.shrink(),
               ),
             ),
         ],

@@ -1,5 +1,6 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/widgets/nav_helpers.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/home_controller.dart';
@@ -11,11 +12,12 @@ import 'tabs/home_tab_view.dart';
 class HomeView extends GetView<HomeController> {
   HomeView({super.key});
 
-  final List<Widget> _pages = [
-    const HomeTabView(),
-    const BookingView(),
-    const MessagesView(),
-    const ProfileView(),
+  // Each tab is built when it is first opened, then kept (no reload on every switch).
+  final List<Widget Function()> _pages = [
+    () => const HomeTabView(),
+    () => const BookingView(),
+    () => const MessagesView(),
+    () => const ProfileView(),
   ];
 
   @override
@@ -24,7 +26,11 @@ class HomeView extends GetView<HomeController> {
       // appBar: AppBar(
       //   title: Obx(() => Text(_getTitle(controller.currentIndex.value))),
       // ),
-      body: SafeArea(child: Obx(() => _pages[controller.currentIndex.value])),
+      body: SafeArea(
+        child: Obx(
+          () => LazyIndexedStack(index: controller.currentIndex.value, builders: _pages),
+        ),
+      ),
       bottomNavigationBar: Obx(
         () => SafeArea(
           top: false,
@@ -48,8 +54,8 @@ class HomeView extends GetView<HomeController> {
                 label: 'nav_booking'.tr,
               ),
               BottomNavigationBarItem(
-                icon: Icon(Icons.message_outlined),
-                activeIcon: Icon(Icons.message),
+                icon: const MessagesNavIcon(icon: Icons.message_outlined),
+                activeIcon: const MessagesNavIcon(icon: Icons.message),
                 label: 'nav_messages'.tr,
               ),
               BottomNavigationBarItem(

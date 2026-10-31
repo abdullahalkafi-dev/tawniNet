@@ -1,3 +1,5 @@
+import 'package:awnneaapp/app/core/widgets/error_retry.dart';
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/services/wallet_service.dart';
@@ -16,6 +18,7 @@ class _EarningViewState extends State<EarningView> {
   double balance = 0.0;
   List<Map<String, dynamic>> transactions = [];
   bool isLoading = true;
+  bool failed = false;
 
   @override
   void initState() {
@@ -24,6 +27,7 @@ class _EarningViewState extends State<EarningView> {
   }
 
   Future<void> _fetchWallet() async {
+    setState(() => failed = false);
     try {
       final walletService = Get.find<WalletService>();
       final res = await walletService.getWalletBalance();
@@ -38,7 +42,12 @@ class _EarningViewState extends State<EarningView> {
         });
       }
     } catch (_) {
-      if (mounted) setState(() => isLoading = false);
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          failed = transactions.isEmpty;
+        });
+      }
     }
   }
 
@@ -49,8 +58,8 @@ class _EarningViewState extends State<EarningView> {
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
       final dateOnly = DateTime(date.year, date.month, date.day);
-      if (dateOnly == today) return 'Today';
-      if (dateOnly == today.subtract(const Duration(days: 1))) return 'Yesterday';
+      if (dateOnly == today) return 'label_today'.tr;
+      if (dateOnly == today.subtract(const Duration(days: 1))) return 'label_yesterday'.tr;
       return DateFormat('MMM d').format(date);
     } catch (_) {
       return '';
@@ -102,8 +111,10 @@ class _EarningViewState extends State<EarningView> {
         centerTitle: true,
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : DefaultTabController(
+          ? const SummaryListSkeleton()
+          : failed
+              ? ErrorRetry(onRetry: _fetchWallet)
+              : DefaultTabController(
               length: 2,
               child: Column(
                 children: [

@@ -11,7 +11,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:awnneaapp/app/core/utils/image_picker_errors.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
-import 'package:awnneaapp/app/core/utils/morocco_postal_helper.dart';
+import 'package:awnneaapp/app/core/widgets/helper_form_fields.dart';
 import 'package:awnneaapp/app/services/role_service.dart';
 
 class ApplyHelperController extends GetxController with WidgetsBindingObserver {
@@ -21,7 +21,6 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
   // Text controllers
   final fullNameController = TextEditingController();
   final ageController = TextEditingController();
-  final cityController = TextEditingController();
   final phoneController = TextEditingController();
   final emailController = TextEditingController();
   final priceController = TextEditingController();
@@ -30,7 +29,8 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
   final bioController = TextEditingController();
 
   // Dropdown state
-  final selectedLanguage = 'English'.obs;
+  final selectedLanguages = <String>[].obs;
+  final selectedCity = RxnString();
   final selectedServiceType = Rxn<Category>();
 
   // Upload state
@@ -50,8 +50,8 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
   final isUploadingPhoto = false.obs;
 
   // Options
-  final languages = ['English', 'Moroccan Arabic'].obs;
   final categories = <Category>[].obs;
+  final categoriesFailed = false.obs;
 
   @override
   void onInit() {
@@ -118,15 +118,8 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
         if (user.profilePhotos != null && user.profilePhotos!.isNotEmpty) {
           uploadedPhotoKeys.assignAll(user.profilePhotos!);
         }
-        if (user.city != null && user.city!.isNotEmpty) {
-          final match = RegExp(r'\b\d{5}\b').firstMatch(user.city!);
-          cityController.text = match != null ? match.group(0)! : user.city!;
-        } else if (user.address != null && user.address!.isNotEmpty) {
-          final match = RegExp(r'\b\d{5}\b').firstMatch(user.address!);
-          if (match != null) {
-            cityController.text = match.group(0)!;
-          }
-        }
+        selectedCity.value = matchMoroccanCity(user.city, user.address);
+        selectedLanguages.assignAll(parseHelperLanguages(user.language));
         if (user.bio != null) bioController.text = user.bio!;
         if (user.age != null) ageController.text = user.age.toString();
         if (user.pricePerHour != null) priceController.text = user.pricePerHour.toString();
@@ -140,6 +133,7 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
 
   Future<void> fetchCategories() async {
     isLoadingCategories.value = true;
+    categoriesFailed.value = false;
     try {
       final categoryService = Get.find<CategoryService>();
       final result = await categoryService.getActiveCategories();
@@ -149,19 +143,8 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
         selectedServiceType.value = categories.firstWhereOrNull((c) => c.id == user!.serviceType || c.name == user.serviceType);
       }
     } catch (e) {
-      // Fallback categories with mock IDs
-      categories.assignAll([
-        Category(id: 'mock_1', name: 'Cleaning Service', icon: Icons.home_repair_service_outlined, color: Colors.yellow),
-        Category(id: 'mock_2', name: 'Shifting Service', icon: Icons.local_shipping_outlined, color: Colors.amber),
-        Category(id: 'mock_3', name: 'Electrician Service', icon: Icons.bolt, color: Colors.purple),
-        Category(id: 'mock_4', name: 'Plumber Service', icon: Icons.plumbing, color: Colors.blue),
-        Category(id: 'mock_5', name: 'Painting Service', icon: Icons.format_paint, color: Colors.deepOrange),
-        Category(id: 'mock_6', name: 'Moving', icon: Icons.directions_bus_outlined, color: Colors.blue),
-        Category(id: 'mock_7', name: 'Garden', icon: Icons.opacity_outlined, color: Colors.orangeAccent),
-        Category(id: 'mock_8', name: 'Mechanic Service', icon: Icons.build, color: Colors.brown),
-        Category(id: 'mock_9', name: 'Laundry', icon: Icons.local_laundry_service, color: Colors.cyan),
-        Category(id: 'mock_10', name: 'Others', icon: Icons.help_outline, color: Colors.grey),
-      ]);
+      // No invented categories: the form shows an error with a retry button.
+      if (categories.isEmpty) categoriesFailed.value = true;
     } finally {
       if (!isClosed) {
         isLoadingCategories.value = false;
@@ -188,9 +171,10 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
         profilePhotoKey.value = key;
         // Also save to user profile
         try {
-          final authService = Get.find<AuthService>();
-          await authService.updateProfile({'avatar': key});
-        } catch (_) {}
+          await Get.find<AuthService>().updateProfile({'avatar': key});
+        } catch (e) {
+          _showError(e);
+        }
       }
     } catch (e) {
       _showError(imagePickerErrorMessage(e));
@@ -232,9 +216,10 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
     if (key != null) {
       uploadedPhotoKeys.add(key);
       try {
-        final authService = Get.find<AuthService>();
-        await authService.updateProfile({'profilePhotos': uploadedPhotoKeys.toList()});
-      } catch (_) {}
+        await Get.find<AuthService>().updateProfile({'profilePhotos': uploadedPhotoKeys.toList()});
+      } catch (e) {
+        _showError(e);
+      }
     } else {
       _showError('ui_failed_to_upload_an_image'.tr);
     }
@@ -244,62 +229,16 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
     if (index < uploadedPhotoKeys.length) {
       uploadedPhotoKeys.removeAt(index);
       try {
-        final authService = Get.find<AuthService>();
-        await authService.updateProfile({'profilePhotos': uploadedPhotoKeys.toList()});
-      } catch (_) {}
+        await Get.find<AuthService>().updateProfile({'profilePhotos': uploadedPhotoKeys.toList()});
+      } catch (e) {
+        _showError(e);
+      }
     } else {
       final pendingIndex = index - uploadedPhotoKeys.length;
       if (pendingIndex >= 0 && pendingIndex < selectedPhotoPaths.length) {
         selectedPhotoPaths.removeAt(pendingIndex);
       }
     }
-  }
-
-  // ─── Save Form Fields Helper ────────────────────────────
-
-  Future<void> saveFormFieldsToBackend() async {
-    try {
-      final updateData = <String, dynamic>{};
-      if (emailController.text.trim().isNotEmpty) {
-        updateData['email'] = emailController.text.trim();
-      }
-      if (bioController.text.trim().isNotEmpty) {
-        updateData['bio'] = bioController.text.trim();
-      }
-      if (ageController.text.trim().isNotEmpty) {
-        final age = int.tryParse(ageController.text.trim());
-        if (age != null) updateData['age'] = age;
-      }
-      if (cityController.text.trim().isNotEmpty) {
-        updateData['city'] = cityController.text.trim();
-      }
-      if (priceController.text.trim().isNotEmpty) {
-        final price = double.tryParse(priceController.text.trim());
-        if (price != null) updateData['pricePerHour'] = price;
-      }
-      if (experienceController.text.trim().isNotEmpty) {
-        final exp = int.tryParse(experienceController.text.trim());
-        if (exp != null) updateData['experience'] = exp;
-      }
-      if (serviceRadiusController.text.trim().isNotEmpty) {
-        final rad = double.tryParse(serviceRadiusController.text.trim());
-        if (rad != null) updateData['serviceRadius'] = rad;
-      }
-      if (selectedServiceType.value != null) {
-        updateData['serviceType'] = selectedServiceType.value!.id;
-      }
-      if (profilePhotoKey.value != null && profilePhotoKey.value!.isNotEmpty) {
-        updateData['avatar'] = profilePhotoKey.value;
-      }
-      if (uploadedPhotoKeys.isNotEmpty) {
-        updateData['profilePhotos'] = uploadedPhotoKeys.toList();
-      }
-
-      if (updateData.isNotEmpty) {
-        final authService = Get.find<AuthService>();
-        await authService.updateProfile(updateData);
-      }
-    } catch (_) {}
   }
 
   // ─── Upload Helper ──────────────────────────────────────
@@ -338,9 +277,6 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
   Future<void> launchDiditKyc() async {
     isStartingKyc.value = true;
     try {
-      // First save any filled form fields so they are preserved
-      await saveFormFieldsToBackend();
-
       final authService = Get.find<AuthService>();
       final sessionData = await authService.createDiditSession();
       final sessionUrl = sessionData['url'] as String?;
@@ -432,17 +368,17 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
       return;
     }
     final age = int.tryParse(ageController.text.trim());
-    if (age == null || age < 13) {
+    if (age == null || age < 18) {
       _showError('ui_must_be_13_years_or_older_to'.tr);
       return;
     }
-    final zipCode = cityController.text.trim();
-    if (zipCode.isEmpty) {
-      _showError('ui_please_enter_your_5_digit_moroccan_zip'.tr);
+    final city = selectedCity.value;
+    if (city == null || city.isEmpty) {
+      _showError('apply_city_required'.tr);
       return;
     }
-    if (!MoroccoPostalHelper.isValidPostalCode(zipCode)) {
-      _showError('ui_please_enter_a_valid_5_digit_moroccan'.tr);
+    if (selectedLanguages.isEmpty) {
+      _showError('apply_languages_required'.tr);
       return;
     }
     if (emailController.text.trim().isNotEmpty && !GetUtils.isEmail(emailController.text.trim())) {
@@ -506,8 +442,8 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
         ApiConstants.helperApply,
         data: {
           'age': age,
-          'city': zipCode,
-          'language': selectedLanguage.value,
+          'city': city,
+          'language': selectedLanguages.join(', '),
           'serviceType': selectedServiceType.value!.id,
           'pricePerHour': price,
           'experience': experience,
@@ -567,7 +503,6 @@ class ApplyHelperController extends GetxController with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     fullNameController.dispose();
     ageController.dispose();
-    cityController.dispose();
     phoneController.dispose();
     emailController.dispose();
     priceController.dispose();

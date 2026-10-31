@@ -45,7 +45,7 @@ class MoroccoPhoneField extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                 decoration: BoxDecoration(
-                  color: context.cardColor.withOpacity(0.4),
+                  color: context.cardColor.withValues(alpha: 0.4),
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(13),
                     bottomLeft: Radius.circular(13),
@@ -68,7 +68,7 @@ class MoroccoPhoneField extends StatelessWidget {
                     Container(
                       width: 1,
                       height: 22,
-                      color: context.borderSecondary.withOpacity(0.8),
+                      color: context.borderSecondary.withValues(alpha: 0.8),
                     ),
                   ],
                 ),

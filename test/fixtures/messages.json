@@ -1,0 +1,64 @@
+{
+ "success": true,
+ "message": "Messages fetched successfully",
+ "data": {
+  "docs": [
+   {
+    "_id": "6ae5fc848a0aef46cd1f4ef6",
+    "conversation": "6ae5fc848a0aef46cd1f4ef5",
+    "sender": {
+     "_id": "6ae5fb9981c513a58eb79792",
+     "name": "Omar Tazi"
+    },
+    "type": "text",
+    "content": "Hello, call me on 0612345678",
+    "images": [],
+    "masked": false,
+    "readBy": [
+     {
+      "userId": "6ae5fb9981c513a58eb79792",
+      "readAt": "2026-10-31T14:34:44.884Z"
+     },
+     {
+      "userId": "6ae5fb9981c513a58eb79789",
+      "readAt": "2026-10-31T14:34:44.905Z"
+     }
+    ],
+    "createdAt": "2026-10-31T14:34:44.885Z",
+    "updatedAt": "2026-10-31T14:34:44.905Z",
+    "__v": 0
+   },
+   {
+    "_id": "6ae5fc918a0aef46cd1f4f19",
+    "conversation": "6ae5fc848a0aef46cd1f4ef5",
+    "sender": {
+     "_id": "6ae5fb9981c513a58eb79792",
+     "name": "Omar Tazi"
+    },
+    "type": "text",
+    "content": "call me 0612345678 or a@b.com",
+    "images": [],
+    "masked": false,
+    "readBy": [
+     {
+      "userId": "6ae5fb9981c513a58eb79792",
+      "readAt": "2026-10-31T14:34:57.126Z"
+     },
+     {
+      "userId": "6ae5fb9981c513a58eb79789",
+      "readAt": "2026-10-31T14:34:57.144Z"
+     }
+    ],
+    "createdAt": "2026-10-31T14:34:57.127Z",
+    "updatedAt": "2026-10-31T14:34:57.144Z",
+    "__v": 0
+   }
+  ],
+  "hasMore": false,
+  "nextBefore": null,
+  "total": 2,
+  "totalPages": 1,
+  "page": 1,
+  "limit": 20
+ }
+}

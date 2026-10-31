@@ -101,7 +101,7 @@ class CheckoutView extends GetView<CheckoutController> {
         border: Border.all(color: context.borderSubtle),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -129,7 +129,7 @@ class CheckoutView extends GetView<CheckoutController> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -194,7 +194,7 @@ class CheckoutView extends GetView<CheckoutController> {
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isSelected ? color.withOpacity(0.04) : context.cardColor,
+            color: isSelected ? color.withValues(alpha: 0.04) : context.cardColor,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isSelected ? color : context.borderSubtle,
@@ -207,7 +207,7 @@ class CheckoutView extends GetView<CheckoutController> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
+                  color: color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(method['icon'] as IconData, color: color, size: 24),
@@ -252,12 +252,12 @@ class CheckoutView extends GetView<CheckoutController> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: context.isDarkMode
-            ? Colors.green.withOpacity(0.12)
+            ? Colors.green.withValues(alpha: 0.12)
             : const Color(0xFFF0FDF4),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: context.isDarkMode
-              ? Colors.green.withOpacity(0.3)
+              ? Colors.green.withValues(alpha: 0.3)
               : const Color(0xFFBBF7D0),
         ),
       ),
@@ -326,7 +326,7 @@ class CheckoutView extends GetView<CheckoutController> {
             style: OutlinedButton.styleFrom(
               side: BorderSide(
                 color: context.isDarkMode
-                    ? const Color(0xFFEF4444).withOpacity(0.6)
+                    ? const Color(0xFFEF4444).withValues(alpha: 0.6)
                     : Colors.red.shade300,
               ),
               shape: RoundedRectangleBorder(

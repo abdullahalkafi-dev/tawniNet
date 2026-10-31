@@ -1,0 +1,161 @@
+{
+ "success": true,
+ "message": "Nearby jobs fetched successfully",
+ "data": {
+  "docs": [
+   {
+    "_id": "6ae5fbcf81c513a58eb797ab",
+    "title": "Smoke test cleaning",
+    "description": "x",
+    "date": "2026-11-01T00:00:00.000Z",
+    "startTime": "9:00 AM",
+    "endTime": "12:00 PM",
+    "startAt": "2026-11-01T09:00:00.000Z",
+    "endAt": "2026-11-01T12:00:00.000Z",
+    "budget": 180,
+    "budgetType": "hourly",
+    "hourlyRate": 60,
+    "hours": 3,
+    "paymentMethod": "cash",
+    "paymentStatus": "none",
+    "status": "open",
+    "isCustomOffer": false,
+    "createdAt": "2026-10-31T14:31:43.103Z",
+    "updatedAt": "2026-10-31T14:31:43.104Z",
+    "images": [],
+    "category": {
+     "_id": "6ae5fb9981c513a58eb79780",
+     "name": "Home Cleaning",
+     "slug": "home_cleaning",
+     "names": {
+      "en": "Home Cleaning",
+      "fr": "Ménage à domicile",
+      "ar": "تنظيف المنازل",
+      "es": "Limpieza del hogar"
+     },
+     "icon": "http://192.168.0.200:5000/api/v1/upload/files/cleaning_icon.svg"
+    },
+    "postedBy": {
+     "_id": "6ae5fb9981c513a58eb79792",
+     "name": "Omar Tazi",
+     "avatar": null,
+     "rating": 0,
+     "reviewCount": 0
+    },
+    "address": "Rabat",
+    "location": {
+     "type": "Point",
+     "coordinates": [
+      -6.85309,
+      33.99303
+     ]
+    },
+    "locationApproximate": true,
+    "distanceKm": 0
+   },
+   {
+    "_id": "6ae5fcb08a0aef46cd1f4f47",
+    "title": "Fixture open job",
+    "date": "2026-11-01T00:00:00.000Z",
+    "startTime": "9:00 AM",
+    "endTime": "11:00 AM",
+    "startAt": "2026-11-01T09:00:00.000Z",
+    "endAt": "2026-11-01T11:00:00.000Z",
+    "budget": 160,
+    "budgetType": "hourly",
+    "hourlyRate": 80,
+    "hours": 2,
+    "paymentMethod": "cash",
+    "paymentStatus": "none",
+    "status": "open",
+    "isCustomOffer": false,
+    "createdAt": "2026-10-31T14:35:28.751Z",
+    "updatedAt": "2026-10-31T14:35:28.752Z",
+    "images": [],
+    "category": {
+     "_id": "6ae5fb9981c513a58eb79780",
+     "name": "Home Cleaning",
+     "slug": "home_cleaning",
+     "names": {
+      "en": "Home Cleaning",
+      "fr": "Ménage à domicile",
+      "ar": "تنظيف المنازل",
+      "es": "Limpieza del hogar"
+     },
+     "icon": "http://192.168.0.200:5000/api/v1/upload/files/cleaning_icon.svg"
+    },
+    "postedBy": {
+     "_id": "6ae5fb9981c513a58eb79792",
+     "name": "Omar Tazi",
+     "avatar": null,
+     "rating": 0,
+     "reviewCount": 0
+    },
+    "address": "Rabat",
+    "location": {
+     "type": "Point",
+     "coordinates": [
+      -6.84816,
+      33.98716
+     ]
+    },
+    "locationApproximate": true,
+    "distanceKm": 0
+   },
+   {
+    "_id": "6ae5fc05b4c68f351f2c82e8",
+    "title": "Smoke test cleaning",
+    "description": "x",
+    "date": "2026-11-01T00:00:00.000Z",
+    "startTime": "9:00 AM",
+    "endTime": "12:00 PM",
+    "startAt": "2026-11-01T09:00:00.000Z",
+    "endAt": "2026-11-01T12:00:00.000Z",
+    "budget": 180,
+    "budgetType": "hourly",
+    "hourlyRate": 60,
+    "hours": 3,
+    "paymentMethod": "cash",
+    "paymentStatus": "none",
+    "status": "open",
+    "isCustomOffer": false,
+    "createdAt": "2026-10-31T14:32:37.281Z",
+    "updatedAt": "2026-10-31T14:32:37.283Z",
+    "images": [],
+    "category": {
+     "_id": "6ae5fb9981c513a58eb79780",
+     "name": "Home Cleaning",
+     "slug": "home_cleaning",
+     "names": {
+      "en": "Home Cleaning",
+      "fr": "Ménage à domicile",
+      "ar": "تنظيف المنازل",
+      "es": "Limpieza del hogar"
+     },
+     "icon": "http://192.168.0.200:5000/api/v1/upload/files/cleaning_icon.svg"
+    },
+    "postedBy": {
+     "_id": "6ae5fb9981c513a58eb79792",
+     "name": "Omar Tazi",
+     "avatar": null,
+     "rating": 0,
+     "reviewCount": 0
+    },
+    "address": "Rabat",
+    "location": {
+     "type": "Point",
+     "coordinates": [
+      -6.84607,
+      33.99086
+     ]
+    },
+    "locationApproximate": true,
+    "distanceKm": 0
+   }
+  ],
+  "total": 3,
+  "page": 1,
+  "limit": 20,
+  "totalPages": 1
+ }
+}

@@ -103,9 +103,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           ),
 
           // Back button
-          Positioned(
+          PositionedDirectional(
             top: MediaQuery.of(context).padding.top + 8,
-            left: 8,
+            start: 8,
             child: Container(
               decoration: const BoxDecoration(
                 color: Colors.black54,
@@ -119,9 +119,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           ),
 
           // Download button
-          Positioned(
+          PositionedDirectional(
             top: MediaQuery.of(context).padding.top + 8,
-            right: 8,
+            end: 8,
             child: Container(
               decoration: const BoxDecoration(
                 color: Colors.black54,

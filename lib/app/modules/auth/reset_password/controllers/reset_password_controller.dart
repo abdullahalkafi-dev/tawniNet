@@ -28,8 +28,8 @@ class ResetPasswordController extends GetxController {
       _showError('ui_please_enter_a_new_password'.tr);
       return;
     }
-    if (password.length < 6) {
-      _showError('ui_password_must_be_at_least_6_characters'.tr);
+    if (password.length < kMinPasswordLength) {
+      _showError('err_password_too_short'.trParams({'min': '$kMinPasswordLength'}));
       return;
     }
     if (password != confirmPassword) {

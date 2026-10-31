@@ -1,11 +1,12 @@
-import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_currency.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'package:awnneaapp/app/core/widgets/app_pull_to_refresh.dart';
+import 'package:awnneaapp/app/core/widgets/job_status_badge.dart';
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import '../controllers/booking_controller.dart';
 import '../../../data/models/booking_model.dart';
@@ -21,9 +22,7 @@ class BookingView extends GetView<BookingController> {
         appBar: AppBar(
           title: Text(
             'booking_my_bookings'.tr,
-            style: AppStyles.h1Of(context).copyWith(
-              fontSize: 24,
-            ),
+            style: AppStyles.h1Of(context).copyWith(fontSize: 24),
           ),
           bottom: TabBar(
             isScrollable: true,
@@ -48,29 +47,59 @@ class BookingView extends GetView<BookingController> {
           children: [
             _buildBookingList(context, controller.awaitingBookings),
             _buildBookingList(context, controller.activeBookings),
-            _buildBookingList(context, controller.completedBookings),
-            _buildBookingList(context, controller.cancelledBookings),
+            _buildBookingList(context, controller.completedBookings,
+                loadMoreTab: BookingStatus.completed),
+            _buildBookingList(context, controller.cancelledBookings,
+                loadMoreTab: BookingStatus.cancelled),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBookingList(BuildContext context, RxList<Booking> bookings) {
+  Widget _buildBookingList(
+    BuildContext context,
+    RxList<Booking> bookings, {
+    BookingStatus? loadMoreTab,
+  }) {
     // RefreshIndicator must stay OUTSIDE Obx — otherwise isLoading flips
     // rebuild the indicator and cancel the pull gesture.
     return AppPullToRefresh(
       onRefresh: () => controller.fetchBookings(userInitiated: true),
       child: Obx(() {
-        final isLoading = controller.isLoading.value && bookings.isEmpty;
+        // First load: cards that look like the real ones.
+        if (!controller.hasLoadedOnce.value && !controller.loadFailed.value && bookings.isEmpty) {
+          return SkeletonList(
+            count: 4,
+            spacing: 16,
+            padding: const EdgeInsets.all(20),
+            itemBuilder: (_, __) => const JobCardSkeleton(),
+          );
+        }
 
-        if (isLoading) {
+        if (controller.loadFailed.value && bookings.isEmpty) {
           return ListView(
             primary: false,
             physics: AppAlwaysScrollPhysics,
-            children: const [
-              SizedBox(height: 160),
-              Center(child: CircularProgressIndicator()),
+            children: [
+              SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+              Icon(Icons.cloud_off_outlined, size: 56, color: context.textHintColor),
+              const SizedBox(height: 12),
+              Center(
+                child: Text(
+                  'ui_could_not_load_bookings_pull_down_to'.tr,
+                  textAlign: TextAlign.center,
+                  style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: OutlinedButton.icon(
+                  onPressed: () => controller.fetchBookings(userInitiated: true),
+                  icon: const Icon(Icons.refresh),
+                  label: Text('booking_retry'.tr),
+                ),
+              ),
             ],
           );
         }
@@ -81,49 +110,77 @@ class BookingView extends GetView<BookingController> {
             physics: AppAlwaysScrollPhysics,
             children: [
               SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+              Icon(Icons.event_note_outlined, size: 56, color: context.textHintColor),
+              const SizedBox(height: 12),
               Center(child: Text('booking_no_bookings'.tr)),
               const SizedBox(height: 8),
               Center(
                 child: Text(
                   'ui_pull_down_to_refresh'.tr,
-                  style: TextStyle(
-                    color: context.textHintColor,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: context.textHintColor, fontSize: 12),
                 ),
               ),
             ],
           );
         }
 
-        return ListView.separated(
-          primary: false,
-          physics: AppAlwaysScrollPhysics,
-          padding: const EdgeInsets.all(20),
-          itemCount: bookings.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 16),
-          itemBuilder: (context, index) {
-            return _buildBookingCard(context, bookings[index]);
+        final hasMore = loadMoreTab == BookingStatus.completed
+            ? controller.completedHasMore.value
+            : loadMoreTab == BookingStatus.cancelled
+                ? controller.cancelledHasMore.value
+                : false;
+
+        return NotificationListener<ScrollNotification>(
+          onNotification: (n) {
+            if (loadMoreTab != null &&
+                hasMore &&
+                n.metrics.pixels > n.metrics.maxScrollExtent - 300) {
+              controller.loadMore(loadMoreTab);
+            }
+            return false;
           },
+          child: ListView.separated(
+            primary: false,
+            physics: AppAlwaysScrollPhysics,
+            padding: const EdgeInsets.all(20),
+            itemCount: bookings.length + (hasMore ? 1 : 0),
+            separatorBuilder: (context, index) => const SizedBox(height: 16),
+            itemBuilder: (context, index) {
+              if (index >= bookings.length) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Center(
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                );
+              }
+              return _buildBookingCard(context, bookings[index]);
+            },
+          ),
         );
       }),
     );
   }
 
+  void _open(Booking booking) {
+    if (booking.status == BookingStatus.cancelled) {
+      Get.toNamed(Routes.cancelDetails, arguments: booking);
+    } else {
+      Get.toNamed(Routes.bookingDetails, arguments: booking);
+    }
+  }
+
   Widget _buildBookingCard(BuildContext context, Booking booking) {
-    final canChat = booking.workerUserId.isNotEmpty &&
-        booking.status == BookingStatus.inProgress;
+    final canChat = booking.workerUserId.isNotEmpty && booking.isUnderway;
     final isUnpaid = booking.status == BookingStatus.pendingPayment;
     final isOpen = booking.status == BookingStatus.open;
 
     return GestureDetector(
-      onTap: () {
-        if (booking.status == BookingStatus.cancelled) {
-          Get.toNamed(Routes.cancelDetails, arguments: booking);
-        } else {
-          Get.toNamed(Routes.bookingDetails, arguments: booking);
-        }
-      },
+      onTap: () => _open(booking),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -132,7 +189,7 @@ class BookingView extends GetView<BookingController> {
           border: Border.all(color: context.borderSubtle),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.02),
+              color: Colors.black.withValues(alpha: 0.02),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -143,31 +200,7 @@ class BookingView extends GetView<BookingController> {
           children: [
             Row(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: Image.network(
-                    ApiConstants.resolveImageUrl(booking.workerImage) ??
-                        booking.workerImage,
-                    width: 48,
-                    height: 48,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 48,
-                        height: 48,
-                        color: context.inputFillLight,
-                        padding: const EdgeInsets.all(12),
-                        child: SvgPicture.asset(
-                          'assets/svgs/profile_icon.svg',
-                          colorFilter: ColorFilter.mode(
-                            context.textHintColor,
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                AppAvatar(url: booking.workerImage, name: booking.workerName, size: 48),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -193,7 +226,10 @@ class BookingView extends GetView<BookingController> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                _buildStatusBadge(booking.status),
+                JobStatusBadge(
+                  status: booking.status,
+                  waitingConfirmation: booking.helperSaysFinished,
+                ),
               ],
             ),
             const SizedBox(height: 12),
@@ -214,7 +250,7 @@ class BookingView extends GetView<BookingController> {
                 const SizedBox(width: 6),
                 Flexible(
                   child: Text(
-                    booking.time.isEmpty ? 'Flexible' : booking.time,
+                    booking.time.isEmpty ? 'ui_flexible'.tr : booking.time,
                     style: AppStyles.bodyMedium.copyWith(
                       fontSize: 12,
                       color: context.textSecondaryColor,
@@ -231,7 +267,7 @@ class BookingView extends GetView<BookingController> {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    booking.location.isEmpty ? 'Not provided' : booking.location,
+                    booking.location.isEmpty ? 'ui_not_provided'.tr : booking.location,
                     style: AppStyles.bodyMedium.copyWith(
                       fontSize: 12,
                       color: context.textSecondaryColor,
@@ -255,16 +291,10 @@ class BookingView extends GetView<BookingController> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () {
-                      if (booking.status == BookingStatus.cancelled) {
-                        Get.toNamed(Routes.cancelDetails, arguments: booking);
-                      } else {
-                        Get.toNamed(Routes.bookingDetails, arguments: booking);
-                      }
-                    },
+                    onPressed: () => _open(booking),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 10),
-                      side: BorderSide(color: AppColors.primary.withOpacity(0.5)),
+                      side: BorderSide(color: AppColors.primary.withValues(alpha: 0.5)),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -283,11 +313,11 @@ class BookingView extends GetView<BookingController> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: isUnpaid || isOpen
-                          ? () {
-                              Get.toNamed(Routes.bookingDetails, arguments: booking);
-                            }
-                          : () => controller.onChatWithWorker(booking),
+                      onPressed: isUnpaid
+                          ? () => controller.payBooking(booking)
+                          : isOpen
+                              ? () => Get.toNamed(Routes.bookingDetails, arguments: booking)
+                              : () => controller.onChatWithWorker(booking),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isUnpaid
                             ? Colors.orange.shade700
@@ -318,51 +348,6 @@ class BookingView extends GetView<BookingController> {
               ],
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusBadge(BookingStatus status) {
-    String text;
-    Color color;
-
-    switch (status) {
-      case BookingStatus.pendingPayment:
-        text = 'booking_unpaid'.tr;
-        color = Colors.orange.shade700;
-        break;
-      case BookingStatus.open:
-        text = 'ui_looking_for_helper_2'.tr;
-        color = Colors.blueGrey;
-        break;
-      case BookingStatus.inProgress:
-        text = 'booking_inprogress'.tr;
-        color = AppColors.primary;
-        break;
-      case BookingStatus.completed:
-        text = 'booking_completed'.tr;
-        color = const Color(0xFF0F766E);
-        break;
-      case BookingStatus.cancelled:
-        text = 'booking_cancelled'.tr;
-        color = Colors.orange;
-        break;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.35)),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: color,
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
         ),
       ),
     );

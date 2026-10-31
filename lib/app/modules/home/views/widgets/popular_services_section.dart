@@ -2,7 +2,8 @@ import 'package:awnneaapp/app/modules/home/controllers/home_controller.dart';
 import 'package:awnneaapp/app/modules/home/views/popular_services_view.dart';
 import 'package:awnneaapp/app/core/values/app_currency.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
 import 'package:get/get.dart';
 import '../../../../data/models/home_models.dart';
 import '../../../../core/values/app_colors.dart';
@@ -14,7 +15,9 @@ class PopularServicesSection extends GetView<HomeController> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedFilter = 'label_all'.tr.obs;
+    // The chosen category lives in the controller: it survives rebuilds and tab switches.
+    final selectedFilter = controller.popularFilter;
+    final allLabel = 'label_all'.tr;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,16 +51,25 @@ class PopularServicesSection extends GetView<HomeController> {
           child: Obx(() {
             // Build filter chips from categories
             final chips = <Widget>[
-              _buildFilterChip(context, 'label_all'.tr, selectedFilter),
+              _buildFilterChip(context, allLabel, selectedFilter, value: ''),
             ];
             for (final cat in controller.categories) {
-              chips.add(_buildFilterChip(context, cat.name, selectedFilter));
+              chips.add(_buildFilterChip(context, cat.name, selectedFilter, value: cat.name));
             }
             return Row(children: chips);
           }),
         ),
         const SizedBox(height: 16),
         Obx(() {
+          if (controller.popularServices.isEmpty && controller.isLoadingHelpers.value) {
+            return SkeletonList(
+              count: 2,
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              itemBuilder: (_, __) => const HelperCardSkeleton(),
+            );
+          }
+
           if (controller.popularServices.isEmpty) {
             return Center(
               child: Padding(
@@ -71,7 +83,7 @@ class PopularServicesSection extends GetView<HomeController> {
           }
 
           final filteredServices = controller.popularServices.where((service) {
-            if (selectedFilter.value == 'label_all'.tr) return true;
+            if (selectedFilter.value.isEmpty) return true;
             return service.category.toLowerCase() == selectedFilter.value.toLowerCase();
           }).toList();
 
@@ -101,12 +113,13 @@ class PopularServicesSection extends GetView<HomeController> {
     );
   }
 
-  Widget _buildFilterChip(BuildContext context, String label, RxString selectedFilter) {
-    bool isSelected = selectedFilter.value == label;
+  Widget _buildFilterChip(BuildContext context, String label, RxString selectedFilter,
+      {required String value}) {
+    bool isSelected = selectedFilter.value == value;
     return GestureDetector(
-      onTap: () => selectedFilter.value = label,
+      onTap: () => selectedFilter.value = value,
       child: Container(
-        margin: const EdgeInsets.only(right: 12),
+        margin: const EdgeInsetsDirectional.only(end: 12),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : context.cardColor,
@@ -114,7 +127,7 @@ class PopularServicesSection extends GetView<HomeController> {
           border: Border.all(
             color: isSelected
                 ? AppColors.primary
-                : (context.isDarkMode ? AppColors.darkBorder : const Color(0xFF5AB9A7).withOpacity(0.5)),
+                : (context.isDarkMode ? AppColors.darkBorder : const Color(0xFF5AB9A7).withValues(alpha: 0.5)),
             width: 1.2,
           ),
         ),
@@ -141,7 +154,7 @@ class PopularServicesSection extends GetView<HomeController> {
         border: Border.all(color: context.borderSubtle),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.01),
+            color: Colors.black.withValues(alpha: 0.01),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -151,27 +164,7 @@ class PopularServicesSection extends GetView<HomeController> {
         children: [
           Row(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  service.image,
-                  height: 60,
-                  width: 60,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 60,
-                        height: 60,
-                        color: context.inputFillLight,
-                        padding: const EdgeInsets.all(12),
-                        child: SvgPicture.asset(
-                          'assets/svgs/profile_icon.svg',
-                          colorFilter: ColorFilter.mode(context.textHintColor, BlendMode.srcIn),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+              AppAvatar(url: service.image, name: service.name, size: 60),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -204,7 +197,7 @@ class PopularServicesSection extends GetView<HomeController> {
                             ),
                             decoration: BoxDecoration(
                               color: context.isDarkMode
-                                  ? const Color(0xFF1E3A8A).withOpacity(0.3)
+                                  ? const Color(0xFF1E3A8A).withValues(alpha: 0.3)
                                   : const Color(0xFFEFF6FF),
                               borderRadius: BorderRadius.circular(6),
                             ),
@@ -235,7 +228,7 @@ class PopularServicesSection extends GetView<HomeController> {
                           Icon(
                             Icons.circle,
                             size: 6,
-                            color: AppColors.primary.withOpacity(0.8),
+                            color: AppColors.primary.withValues(alpha: 0.8),
                           ),
                           const SizedBox(width: 6),
                           Text(
@@ -290,7 +283,7 @@ class PopularServicesSection extends GetView<HomeController> {
                         ),
                         side: BorderSide.none,
                         backgroundColor: context.isDarkMode
-                            ? AppColors.primary.withOpacity(0.12)
+                            ? AppColors.primary.withValues(alpha: 0.12)
                             : const Color(0xFFF2FAF8),
                       ),
                       child: Text(

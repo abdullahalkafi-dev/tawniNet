@@ -63,21 +63,9 @@ class LoginView extends GetView<LoginController> {
               ),
               const SizedBox(height: 16),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                // Sessions are kept until logout, so there is nothing to "remember".
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Row(
-                    children: [
-                      Obx(
-                        () => Checkbox(
-                          value: controller.rememberMe.value,
-                          onChanged: (val) =>
-                              controller.rememberMe.value = val ?? false,
-                          activeColor: AppColors.primary,
-                        ),
-                      ),
-                      Text('auth_remember_me'.tr, style: AppStyles.bodyMediumOf(context)),
-                    ],
-                  ),
                   TextButton(
                     onPressed: controller.goToForgotPassword,
                     child: Text(

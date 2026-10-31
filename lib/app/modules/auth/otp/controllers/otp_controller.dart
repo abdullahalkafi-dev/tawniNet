@@ -60,7 +60,7 @@ class OtpController extends GetxController {
         await authService.verifyPhoneOtp(phone: phone, otp: otp);
 
         if (isClosed) return;
-        Get.offAllNamed(Routes.locationAllow);
+        Get.find<AuthService>().goToDestination();
       }
     } catch (e) {
       if (isClosed) return;

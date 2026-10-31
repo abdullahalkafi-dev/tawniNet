@@ -9,11 +9,11 @@ class AppSnackbar {
 
   /// Parse any error (ApiException, DioException, Exception, String) into a clean, human-readable message.
   static String extractErrorMessage(dynamic error) {
-    if (error == null) return 'An unexpected error occurred';
+    if (error == null) return 'err_http_unknown'.tr;
 
     // 1. ApiException from ApiClient
     if (error is ApiException) {
-      return error.message;
+      return error.displayMessage;
     }
 
     // 2. DioException directly
@@ -65,9 +65,9 @@ class AppSnackbar {
 
     // 3. Fallback: If it's a serialized DioException string
     if (str.contains('DioException') || str.contains('validateStatus')) {
-      if (str.contains('401')) return 'Invalid phone number or password';
-      if (str.contains('403')) return 'Access denied';
-      if (str.contains('404')) return 'Resource not found';
+      if (str.contains('401')) return 'err_http_401'.tr;
+      if (str.contains('403')) return 'err_http_403'.tr;
+      if (str.contains('404')) return 'err_http_404'.tr;
       if (str.contains('500') || str.contains('502') || str.contains('503')) {
         return 'ui_server_error_please_try_again_later'.tr;
       }
@@ -119,7 +119,7 @@ class AppSnackbar {
       animationDuration: const Duration(milliseconds: 300),
       boxShadows: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.15),
+          color: Colors.black.withValues(alpha: 0.15),
           blurRadius: 12,
           offset: const Offset(0, 4),
         ),
@@ -163,7 +163,7 @@ class AppSnackbar {
       animationDuration: const Duration(milliseconds: 300),
       boxShadows: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.15),
+          color: Colors.black.withValues(alpha: 0.15),
           blurRadius: 12,
           offset: const Offset(0, 4),
         ),

@@ -1,3 +1,5 @@
+import 'package:awnneaapp/app/core/widgets/error_retry.dart';
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
@@ -19,6 +21,7 @@ class _ConnectsHistoryViewState extends State<ConnectsHistoryView> {
   double balance = 0.0;
   List<Map<String, dynamic>> topups = [];
   bool isLoading = true;
+  bool failed = false;
   bool isLoadingMore = false;
   int page = 1;
   bool hasMore = true;
@@ -41,15 +44,18 @@ class _ConnectsHistoryViewState extends State<ConnectsHistoryView> {
   }
 
   Future<void> _fetch() async {
-    setState(() => isLoading = true);
+    // Skeleton only on the first load; a refresh keeps the list on screen.
+    setState(() {
+      isLoading = topups.isEmpty;
+      failed = false;
+    });
     try {
       final walletService = Get.find<WalletService>();
       final balRes = await walletService.getWalletBalance();
-      final histRes = await walletService.getTransactions(page: 1, limit: 20);
+      final histRes = await walletService.getTransactions(page: 1, limit: 20, type: 'topup');
 
       final docs = (histRes['docs'] as List<dynamic>? ?? [])
           .map((e) => Map<String, dynamic>.from(e as Map))
-          .where((t) => (t['type'] ?? '').toString() == 'topup')
           .toList();
       final total = (histRes['total'] as num?)?.toInt() ?? 0;
 
@@ -58,12 +64,17 @@ class _ConnectsHistoryViewState extends State<ConnectsHistoryView> {
           balance = (balRes['balance'] as num?)?.toDouble() ?? 0.0;
           topups = docs;
           page = 1;
-          hasMore = total > 20;
+          hasMore = docs.length < total;
           isLoading = false;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => isLoading = false);
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          failed = topups.isEmpty;
+        });
+      }
     }
   }
 
@@ -73,10 +84,9 @@ class _ConnectsHistoryViewState extends State<ConnectsHistoryView> {
     try {
       final walletService = Get.find<WalletService>();
       final next = page + 1;
-      final histRes = await walletService.getTransactions(page: next, limit: 20);
+      final histRes = await walletService.getTransactions(page: next, limit: 20, type: 'topup');
       final docs = (histRes['docs'] as List<dynamic>? ?? [])
           .map((e) => Map<String, dynamic>.from(e as Map))
-          .where((t) => (t['type'] ?? '').toString() == 'topup')
           .toList();
       final total = (histRes['total'] as num?)?.toInt() ?? 0;
 
@@ -100,8 +110,8 @@ class _ConnectsHistoryViewState extends State<ConnectsHistoryView> {
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
       final dateOnly = DateTime(date.year, date.month, date.day);
-      if (dateOnly == today) return 'Today';
-      if (dateOnly == today.subtract(const Duration(days: 1))) return 'Yesterday';
+      if (dateOnly == today) return 'label_today'.tr;
+      if (dateOnly == today.subtract(const Duration(days: 1))) return 'label_yesterday'.tr;
       return DateFormat('MMM d, yyyy').format(date);
     } catch (_) {
       return '';
@@ -123,8 +133,10 @@ class _ConnectsHistoryViewState extends State<ConnectsHistoryView> {
         centerTitle: true,
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
+          ? const SummaryListSkeleton()
+          : failed
+              ? ErrorRetry(onRetry: _fetch)
+              : RefreshIndicator(
               onRefresh: _fetch,
               child: ListView(
                 controller: _scroll,
@@ -134,7 +146,7 @@ class _ConnectsHistoryViewState extends State<ConnectsHistoryView> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.1),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(

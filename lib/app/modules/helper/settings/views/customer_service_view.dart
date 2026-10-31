@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
+import 'package:awnneaapp/app/core/utils/datetime_format.dart';
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/widgets/support_media.dart';
@@ -257,14 +259,14 @@ class _CustomerServiceViewState extends State<CustomerServiceView> {
               }
 
               if (controller.isLoading.value) {
-                return const Center(child: CircularProgressIndicator());
+                return SkeletonList(count: 5, itemBuilder: (_, _) => const ChatTileSkeleton());
               }
 
               final msgs = controller.messages;
               if (msgs.isEmpty) {
                 return Center(
                   child: Text(
-                    'No messages yet. Send a message to contact support.'.tr,
+                    'support_no_messages'.tr,
                     style: AppStyles.bodyMediumOf(context)
                         .copyWith(color: context.textSecondaryColor),
                   ),
@@ -285,9 +287,7 @@ class _CustomerServiceViewState extends State<CustomerServiceView> {
                     context: context,
                     text: msg['content'] ?? msg['text'] ?? '',
                     isSent: isSent,
-                    time: msg['createdAt'] != null
-                        ? msg['createdAt'].toString().substring(11, 16)
-                        : 'Now',
+                    time: AppDateTime.clockTime(msg['createdAt']),
                     attachments: attachments.cast<String>(),
                   );
                 },
@@ -326,6 +326,19 @@ class _CustomerServiceViewState extends State<CustomerServiceView> {
                     const SizedBox(height: 10),
                     SizedBox(
                       width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: controller.reopenSelected,
+                        child: Text('support_reopen'.tr),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'support_reopen_hint'.tr,
+                      style: TextStyle(color: context.textHintColor, fontSize: 12),
+                    ),
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      width: double.infinity,
                       child: OutlinedButton(
                         onPressed: () {
                           Get.back();
@@ -352,7 +365,7 @@ class _CustomerServiceViewState extends State<CustomerServiceView> {
     List<String> attachments = const [],
   }) {
     return Align(
-      alignment: isSent ? Alignment.centerRight : Alignment.centerLeft,
+      alignment: isSent ? AlignmentDirectional.centerEnd : AlignmentDirectional.centerStart,
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         child: Column(
@@ -426,7 +439,7 @@ class _CustomerServiceViewState extends State<CustomerServiceView> {
                     return Stack(
                       children: [
                         Container(
-                          margin: const EdgeInsets.only(right: 8),
+                          margin: const EdgeInsetsDirectional.only(end: 8),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: Image.file(
@@ -437,9 +450,9 @@ class _CustomerServiceViewState extends State<CustomerServiceView> {
                             ),
                           ),
                         ),
-                        Positioned(
+                        PositionedDirectional(
                           top: 2,
-                          right: 10,
+                          end: 10,
                           child: GestureDetector(
                             onTap: () => _removeMedia(index),
                             child: Container(

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
 import 'package:awnneaapp/app/core/utils/datetime_format.dart';
@@ -80,7 +81,7 @@ class CancelDetailsView extends GetView<BookingController> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: context.isDarkMode
-            ? Colors.red.withOpacity(0.15)
+            ? Colors.red.withValues(alpha: 0.15)
             : Colors.red[50],
         borderRadius: BorderRadius.circular(12),
         border: const Border(left: BorderSide(color: Colors.red, width: 4)),
@@ -218,7 +219,7 @@ class CancelDetailsView extends GetView<BookingController> {
               return CircleAvatar(
                 radius: 30,
                 backgroundColor: Colors.red[100],
-                backgroundImage: hasPhoto ? NetworkImage(resolved) : null,
+                backgroundImage: hasPhoto ? CachedNetworkImageProvider(resolved) : null,
                 child: hasPhoto
                     ? null
                     : const Icon(Icons.person, color: Colors.red),
@@ -244,7 +245,7 @@ class CancelDetailsView extends GetView<BookingController> {
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(
-                        booking.location.isEmpty ? 'Not provided' : booking.location,
+                        booking.location.isEmpty ? 'job_not_provided'.tr : booking.location,
                         style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -365,7 +366,7 @@ class CancelDetailsView extends GetView<BookingController> {
         Text('cancel_service_description'.tr, style: AppStyles.h2Of(context).copyWith(fontSize: 18)),
         const SizedBox(height: 12),
         Text(
-          desc.isEmpty ? 'No description provided.' : desc,
+          desc.isEmpty ? 'job_no_description'.tr : desc,
           style: AppStyles.bodyMediumOf(context).copyWith(
             color: context.textSecondaryColor,
             height: 1.5,

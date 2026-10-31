@@ -1,12 +1,11 @@
 import 'package:awnneaapp/app/modules/home/controllers/home_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-import '../../../../data/models/home_models.dart';
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
 import '../../../../core/values/app_colors.dart';
 import '../../../../core/values/app_styles.dart';
-import 'package:awnneaapp/app/core/widgets/helper_trust_widgets.dart';
 import '../nearby_helpers_view.dart';
+import 'package:awnneaapp/app/core/widgets/helper_list_card.dart';
 
 class NearbyHelpers extends GetView<HomeController> {
   const NearbyHelpers({super.key});
@@ -39,217 +38,68 @@ class NearbyHelpers extends GetView<HomeController> {
           ],
         ),
         const SizedBox(height: 8),
-        Obx(
-          () => ListView.separated(
+        Obx(() {
+          final helpers = controller.nearbyJobs;
+
+          // First load: cards that look like the real ones.
+          if (helpers.isEmpty && controller.isLoadingHelpers.value) {
+            return SkeletonList(
+              count: 3,
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              itemBuilder: (_, __) => const HelperCardSkeleton(),
+            );
+          }
+
+          if (helpers.isEmpty) {
+            return Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: context.cardColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: context.borderSubtle),
+              ),
+              child: Column(
+                children: [
+                  Icon(
+                    controller.helpersFailed.value ? Icons.cloud_off_outlined : Icons.search_off,
+                    color: context.textHintColor,
+                    size: 36,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    controller.helpersFailed.value
+                        ? 'ui_could_not_load_helpers'.tr
+                        : 'ui_no_helpers_nearby'.tr,
+                    textAlign: TextAlign.center,
+                    style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+                  ),
+                  if (controller.helpersFailed.value)
+                    TextButton(
+                      onPressed: controller.fetchNearbyHelpers,
+                      child: Text('booking_retry'.tr),
+                    ),
+                ],
+              ),
+            );
+          }
+
+          return ListView.separated(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: controller.nearbyJobs.length,
+            itemCount: helpers.length,
             separatorBuilder: (context, index) => const SizedBox(height: 16),
             itemBuilder: (context, index) {
-              return _buildHelperCard(context, controller.nearbyJobs[index]);
+              return HelperListCard(
+                job: helpers[index],
+                onTap: () => controller.onJobSelected(helpers[index]),
+                onChat: () => controller.onChatWithHelper(helpers[index].id),
+              );
             },
-          ),
-        ),
+          );
+        }),
       ],
-    );
-  }
-
-  Widget _buildHelperCard(BuildContext context, HelperJob job) {
-    final bool isDuplicate = job.title.trim().toLowerCase() ==
-        job.description.trim().toLowerCase();
-    final bool showTitle = job.title.trim().isNotEmpty && !isDuplicate;
-
-    return GestureDetector(
-      onTap: () => controller.onJobSelected(job),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: context.cardColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: context.borderSubtle),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.01),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    job.helperImage,
-                    height: 40,
-                    width: 40,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 40,
-                        height: 40,
-                        color: context.inputFillLight,
-                        padding: const EdgeInsets.all(8),
-                        child: SvgPicture.asset(
-                          'assets/svgs/profile_icon.svg',
-                          colorFilter: ColorFilter.mode(context.textHintColor, BlendMode.srcIn),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              job.helperName,
-                              style: AppStyles.bodyLargeOf(context).copyWith(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (job.isVerified) ...[
-                            const SizedBox(width: 4),
-                            const VerifiedBadge(compact: true),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 2),
-                      RatingSummary(
-                        rating: job.rating,
-                        reviewCount: job.reviewCount,
-                        fontSize: 11,
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: context.isDarkMode
-                        ? AppColors.primary.withOpacity(0.15)
-                        : const Color(0xFFE5F7F5),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    job.category,
-                    style: AppStyles.bodyMedium.copyWith(
-                      color: context.isDarkMode ? AppColors.primary : const Color(0xFF5AB9A7),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            if (showTitle) ...[
-              const SizedBox(height: 12),
-              Text(
-                job.title,
-                style: AppStyles.bodyLargeOf(context).copyWith(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 15,
-                ),
-              ),
-              const SizedBox(height: 6),
-            ] else ...[
-              const SizedBox(height: 12),
-            ],
-            if (job.description.trim().isNotEmpty)
-              RichText(
-                text: TextSpan(
-                  style: AppStyles.bodyMediumOf(context).copyWith(
-                    fontSize: 13,
-                    height: 1.4,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: job.description.replaceAll(' Read More', ''),
-                    ),
-                    if (job.description.contains('Read More'))
-                      TextSpan(
-                        text: 'ui_read_more'.tr,
-                        style: TextStyle(
-                          color: Color(0xFF5AB9A7),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                  ],
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            if (job.workPhotos.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              WorkPhotoStrip(urls: job.workPhotos),
-            ],
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on_outlined,
-                        color: Colors.orange,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          job.distance,
-                          style: AppStyles.bodyMedium.copyWith(
-                            fontSize: 12,
-                            color: const Color(0xFF6B7280),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(
-                  height: 32,
-                  child: ElevatedButton(
-                    onPressed: () => controller.onChatWithHelper(job.id),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                    ),
-                    child: Text(
-                      'btn_chat'.tr,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

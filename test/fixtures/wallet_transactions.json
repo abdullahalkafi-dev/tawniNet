@@ -1,0 +1,51 @@
+{
+ "success": true,
+ "message": "Wallet transactions fetched successfully",
+ "data": {
+  "docs": [
+   {
+    "_id": "6ae5fc848a0aef46cd1f4e9b",
+    "user": "6ae5fb9981c513a58eb79789",
+    "wallet": "6ae5fc05b4c68f351f2c82f3",
+    "amount": -36,
+    "type": "commission_deduction",
+    "description": "Platform commission for Job #6ae5fc848a0aef46cd1f4e8d",
+    "referenceId": "6ae5fc848a0aef46cd1f4e8d",
+    "applied": true,
+    "createdAt": "2026-10-31T14:34:44.734Z",
+    "__v": 0,
+    "balanceAfter": 428
+   },
+   {
+    "_id": "6ae5fc42b4c68f351f2c8322",
+    "user": "6ae5fb9981c513a58eb79789",
+    "wallet": "6ae5fc05b4c68f351f2c82f3",
+    "amount": -36,
+    "type": "commission_deduction",
+    "description": "Platform commission for Job #6ae5fc42b4c68f351f2c8315",
+    "referenceId": "6ae5fc42b4c68f351f2c8315",
+    "applied": true,
+    "createdAt": "2026-10-31T14:33:38.221Z",
+    "__v": 0,
+    "balanceAfter": 464
+   },
+   {
+    "_id": "6ae5fc389f9b91ce852bb1b9",
+    "user": "6ae5fb9981c513a58eb79789",
+    "wallet": "6ae5fc05b4c68f351f2c82f3",
+    "amount": 500,
+    "type": "topup",
+    "description": "Recharge wallet top-up (+500 MAD)",
+    "referenceId": "dev_topup_1793457208761",
+    "applied": true,
+    "createdAt": "2026-10-31T14:33:28.768Z",
+    "__v": 0,
+    "balanceAfter": 500
+   }
+  ],
+  "total": 3,
+  "page": 1,
+  "limit": 5,
+  "totalPages": 1
+ }
+}

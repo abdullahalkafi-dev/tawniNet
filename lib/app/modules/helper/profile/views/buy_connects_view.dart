@@ -1,3 +1,6 @@
+import 'package:awnneaapp/app/core/widgets/error_retry.dart';
+import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
@@ -23,6 +26,7 @@ class BuyConnectsView extends StatefulWidget {
 class _BuyConnectsViewState extends State<BuyConnectsView> {
   double currentBalance = 0.0;
   bool isLoading = true;
+  bool failed = false;
   bool isPurchasing = false;
 
   static const List<_ConnectPackage> _packages = [
@@ -47,7 +51,12 @@ class _BuyConnectsViewState extends State<BuyConnectsView> {
   }
 
   Future<void> _fetchBalance({bool silent = false}) async {
-    if (!silent && mounted) setState(() => isLoading = true);
+    if (!silent && mounted) {
+      setState(() {
+        isLoading = true;
+        failed = false;
+      });
+    }
     try {
       final walletService = Get.find<WalletService>();
       final res = await walletService.getWalletBalance();
@@ -58,7 +67,12 @@ class _BuyConnectsViewState extends State<BuyConnectsView> {
         });
       }
     } catch (_) {
-      if (mounted) setState(() => isLoading = false);
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          failed = !silent;
+        });
+      }
     }
   }
 
@@ -88,7 +102,7 @@ class _BuyConnectsViewState extends State<BuyConnectsView> {
           'orderType': 'wallet_topup',
           'amount': amount,
           'currency': 'MAD',
-          'title': 'Recharge Wallet Top-Up',
+          'title': 'ui_top_up_wallet'.tr,
           'sessionId': sessId,
         },
       );
@@ -97,7 +111,7 @@ class _BuyConnectsViewState extends State<BuyConnectsView> {
         await _fetchBalance(silent: true);
       }
     } catch (e) {
-      AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
+      AppFeedback.error(AppSnackbar.extractErrorMessage(e));
     } finally {
       if (mounted) setState(() => isPurchasing = false);
     }
@@ -120,8 +134,10 @@ class _BuyConnectsViewState extends State<BuyConnectsView> {
         centerTitle: true,
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
+          ? const SummaryListSkeleton()
+          : failed
+              ? ErrorRetry(onRetry: _fetchBalance)
+              : Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,7 +220,7 @@ class _BuyConnectsViewState extends State<BuyConnectsView> {
                           onPressed: isPurchasing ? null : _startPurchase,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
-                            disabledBackgroundColor: AppColors.primary.withOpacity(0.7),
+                            disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.7),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),

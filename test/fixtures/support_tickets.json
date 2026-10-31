@@ -1,0 +1,30 @@
+{
+ "success": true,
+ "message": "Support tickets fetched successfully",
+ "data": [
+  {
+   "_id": "6ae5fc848a0aef46cd1f4efa",
+   "ticketId": "TKT-mvwi5tmi-1712",
+   "user": {
+    "_id": "6ae5fb9981c513a58eb79792",
+    "auth": "6ae5fb9981c513a58eb79791",
+    "name": "Omar Tazi",
+    "isHelperFormSubmitted": false,
+    "helperApplicationStatus": null,
+    "role": "user",
+    "avatar": null
+   },
+   "userRole": "user",
+   "subject": "Smoke test ticket",
+   "status": "open",
+   "category": "job",
+   "job": "6ae5fc848a0aef46cd1f4e8d",
+   "lastMessage": "Hello support",
+   "unreadByAdmin": true,
+   "unreadByUser": false,
+   "createdAt": "2026-10-31T14:34:44.922Z",
+   "updatedAt": "2026-10-31T14:34:44.922Z",
+   "__v": 0
+  }
+ ]
+}

@@ -2,9 +2,31 @@ import 'package:flutter/material.dart';
 import '../../core/constants/api_constants.dart';
 import 'package:get/get.dart';
 
+/// Name of a category/service in the app language (falls back to English, then
+/// to the raw name). Works for the `{name, names}` object the API sends.
+String localizedCategoryName(dynamic category) {
+  if (category is! Map) return category?.toString() ?? '';
+  final raw = category['displayName']?.toString();
+  final names = category['names'];
+  final lang = Get.locale?.languageCode ?? 'en';
+  if (names is Map) {
+    final local = names[lang]?.toString();
+    if (local != null && local.trim().isNotEmpty) return local;
+    final en = names['en']?.toString();
+    if (en != null && en.trim().isNotEmpty) return en;
+  }
+  if (raw != null && raw.trim().isNotEmpty) return raw;
+  return category['name']?.toString() ?? '';
+}
+
 class Category {
   final String id;
+
+  /// Name in the app language.
   final String name;
+
+  /// Stable identifier (e.g. `home_cleaning`) — icons/colors are chosen by it.
+  final String? slug;
   final String? iconUrl;
   final IconData icon;
   final Color color;
@@ -17,6 +39,7 @@ class Category {
   Category({
     required this.id,
     required this.name,
+    this.slug,
     this.iconUrl,
     required this.icon,
     required this.color,
@@ -34,35 +57,77 @@ class Category {
     return iconUrl;
   }
 
+  /// Icon bundled with the app. Used when the category still has its standard
+  /// icon (same file name); an icon an admin replaced is loaded from the server.
+  String? get bundledIconAsset {
+    final asset = _bundledIcons[slug];
+    if (asset == null) return null;
+    final url = iconUrl;
+    if (url == null || url.isEmpty) return asset;
+    final fileName = asset.split('/').last;
+    return url.endsWith('/$fileName') ? asset : null;
+  }
+
   factory Category.fromJson(Map<String, dynamic> json) {
-    final name = json['name'] ?? '';
-    final mapping = _categoryMapping[name];
+    final slug = json['slug']?.toString();
+    final style = _style[slug] ?? _legacyStyleByName(json['name']?.toString());
     return Category(
-      id: json['_id'] ?? '',
-      name: name,
+      id: json['_id']?.toString() ?? '',
+      name: localizedCategoryName(json),
+      slug: slug,
       iconUrl: ApiConstants.resolveImageUrl(json['icon'] as String?),
-      icon: mapping?['icon'] ?? Icons.help_outline,
-      color: mapping?['color'] ?? Colors.grey,
+      icon: style?.icon ?? Icons.handyman_outlined,
+      color: style?.color ?? Colors.grey,
       minHourlyRate: (json['minHourlyRate'] as num?)?.toDouble(),
       suggestedPriceMin: (json['suggestedPriceMin'] as num?)?.toDouble(),
       suggestedPriceMax: (json['suggestedPriceMax'] as num?)?.toDouble(),
     );
   }
 
-  static final Map<String, Map<String, dynamic>> _categoryMapping = {
-    'Carrying': {'icon': Icons.inventory_2_outlined, 'color': Colors.orange},
-    'Cleaning': {'icon': Icons.home_repair_service_outlined, 'color': Colors.yellow},
-    'Electrician': {'icon': Icons.bolt, 'color': Colors.purple},
-    'Barber': {'icon': Icons.content_cut, 'color': Colors.red},
-    'Floor': {'icon': Icons.format_paint_outlined, 'color': Colors.teal},
-    'Shifting': {'icon': Icons.local_shipping_outlined, 'color': Colors.amber},
-    'Garden': {'icon': Icons.opacity_outlined, 'color': Colors.orangeAccent},
-    'Plumbing': {'icon': Icons.plumbing, 'color': Colors.blue},
-    'Moving': {'icon': Icons.directions_bus_outlined, 'color': Colors.blue},
-    'Painting': {'icon': Icons.format_paint, 'color': Colors.deepOrange},
-    'Mechanic': {'icon': Icons.build, 'color': Colors.brown},
-    'Laundry': {'icon': Icons.local_laundry_service, 'color': Colors.cyan},
+  static const _bundledIcons = <String, String>{
+    'home_cleaning': 'assets/category_icons/cleaning_icon.svg',
+    'furniture_assembly': 'assets/category_icons/furniture_assembly_icon.svg',
+    'gardening': 'assets/category_icons/garden_icon.svg',
+    'tech_support': 'assets/category_icons/tech_support_icon.svg',
+    'tutoring': 'assets/category_icons/tutoring_icon.svg',
+    'pet_care': 'assets/category_icons/pet_care_icon.svg',
+    'tailoring': 'assets/category_icons/tailoring_icon.svg',
+    'events': 'assets/category_icons/event_helper_icon.svg',
+    'car_wash': 'assets/category_icons/car_wash_icon.svg',
   };
+
+  static const _style = <String, _CategoryStyle>{
+    'home_cleaning': _CategoryStyle(Icons.cleaning_services_outlined, Colors.teal),
+    'furniture_assembly': _CategoryStyle(Icons.chair_alt_outlined, Colors.deepOrange),
+    'gardening': _CategoryStyle(Icons.yard_outlined, Colors.green),
+    'tech_support': _CategoryStyle(Icons.devices_other_outlined, Colors.indigo),
+    'tutoring': _CategoryStyle(Icons.school_outlined, Colors.purple),
+    'pet_care': _CategoryStyle(Icons.pets_outlined, Colors.brown),
+    'tailoring': _CategoryStyle(Icons.content_cut, Colors.pink),
+    'events': _CategoryStyle(Icons.celebration_outlined, Colors.amber),
+    'car_wash': _CategoryStyle(Icons.local_car_wash_outlined, Colors.blue),
+  };
+
+  /// Categories created before slugs existed were recognised by their English name.
+  static _CategoryStyle? _legacyStyleByName(String? name) {
+    final n = (name ?? '').toLowerCase();
+    if (n.contains('clean')) return _style['home_cleaning'];
+    if (n.contains('garden')) return _style['gardening'];
+    if (n.contains('tech') || n.contains('electric')) return _style['tech_support'];
+    if (n.contains('tutor')) return _style['tutoring'];
+    if (n.contains('pet')) return _style['pet_care'];
+    if (n.contains('tailor')) return _style['tailoring'];
+    if (n.contains('event')) return _style['events'];
+    if (n.contains('furniture') || n.contains('assembly')) return _style['furniture_assembly'];
+    if (n.contains('car')) return _style['car_wash'];
+    return null;
+  }
+}
+
+class _CategoryStyle {
+  final IconData icon;
+  final Color color;
+  const _CategoryStyle(this.icon, this.color);
 }
 
 class HelperJob {
@@ -100,6 +165,11 @@ class HelperJob {
   final List<String> workPhotos;
   final double? pricePerHour;
 
+  /// Hourly jobs: rate × hours = [budget] (computed by the server).
+  final double? hourlyRate;
+  final double? hours;
+  bool get hasHours => hours != null && hours! > 0;
+
   String get price => budget != null ? 'MAD ${budget!.toStringAsFixed(0)}' : '';
 
   HelperJob({
@@ -130,6 +200,8 @@ class HelperJob {
     this.isVerified = false,
     this.workPhotos = const [],
     this.pricePerHour,
+    this.hourlyRate,
+    this.hours,
   }) : name = name ?? helperName;
 
   /// Parses a helper from `/user/helpers/search`. Single source of truth for
@@ -138,8 +210,9 @@ class HelperJob {
     final serviceType = map['serviceType'];
     String category = 'ui_general'.tr;
     if (serviceType is Map) {
-      category = serviceType['name']?.toString() ?? 'General';
-    } else if (serviceType is String) {
+      final n = localizedCategoryName(serviceType);
+      if (n.isNotEmpty) category = n;
+    } else if (serviceType is String && serviceType.isNotEmpty) {
       category = serviceType;
     }
     final rawAvatar = map['avatar'];
@@ -147,8 +220,10 @@ class HelperJob {
         ? (ApiConstants.resolveImageUrl(rawAvatar) ?? rawAvatar)
         : '';
     final id = map['_id']?.toString() ?? '';
-    final name = map['name']?.toString() ?? 'Helper';
+    final name = map['name']?.toString() ?? 'ui_helper'.tr;
     final bio = map['bio']?.toString();
+    final area = (map['area'] ?? map['city'] ?? map['address'])?.toString();
+    final distKm = map['distanceKm'];
     return HelperJob(
       id: id,
       helperName: name,
@@ -158,11 +233,14 @@ class HelperJob {
       category: category,
       title: bio ?? 'ui_available_for_hire'.tr,
       description: bio ?? 'ui_professional_helper_in_your_area'.tr,
-      distance: map['address']?.toString() ?? 'Nearby',
+      distance: distKm is num
+          ? '${distKm.toStringAsFixed(1)} km'
+          : ((area != null && area.isNotEmpty) ? area : 'ui_nearby'.tr),
+      distanceKm: distKm is num ? distKm.toDouble() : null,
       name: name,
       avatar: avatar,
       bio: bio,
-      address: map['address']?.toString(),
+      address: area,
       rating: _toDouble(map['rating']),
       reviewCount: _toDouble(map['reviewCount']).toInt(),
       isVerified: map['isVerified'] == true,
@@ -175,9 +253,11 @@ class HelperJob {
     // Category from nested object or serviceType
     String category = 'ui_general'.tr;
     if (json['category'] is Map) {
-      category = json['category']['name'] as String? ?? 'General';
+      final n = localizedCategoryName(json['category']);
+      if (n.isNotEmpty) category = n;
     } else if (json['serviceType'] is Map) {
-      category = json['serviceType']['name'] as String? ?? 'General';
+      final n = localizedCategoryName(json['serviceType']);
+      if (n.isNotEmpty) category = n;
     } else if (json['serviceType'] is String) {
       category = json['serviceType'];
     }
@@ -188,7 +268,7 @@ class HelperJob {
     String postedByUserId = '';
     if (json['postedBy'] is Map) {
       postedByUserId = json['postedBy']['_id']?.toString() ?? '';
-      helperName = json['postedBy']['name']?.toString() ?? 'Client';
+      helperName = json['postedBy']['name']?.toString() ?? 'ui_client'.tr;
       if (json['postedBy']['avatar'] != null && (json['postedBy']['avatar'] as String).isNotEmpty) {
         avatarUrl = ApiConstants.resolveImageUrl(json['postedBy']['avatar']) ?? json['postedBy']['avatar'];
       }
@@ -247,7 +327,7 @@ class HelperJob {
       postedByUserId: postedByUserId,
       timeAgo: _formatDate(json['createdAt']),
       category: category,
-      title: json['title'] ?? 'Available for hire',
+      title: json['title'] ?? 'ui_available_for_hire'.tr,
       description: bio ?? 'ui_professional_helper_in_your_area'.tr,
       distance: distanceText,
       distanceKm: distanceKm,
@@ -265,6 +345,8 @@ class HelperJob {
       images: images,
       rating: _toDouble(json['rating']),
       reviewCount: _toDouble(json['reviewCount']).toInt(),
+      hourlyRate: (json['hourlyRate'] as num?)?.toDouble(),
+      hours: (json['hours'] as num?)?.toDouble(),
     );
   }
 
@@ -281,13 +363,16 @@ class HelperJob {
   }
 
   static String _formatDate(String? dateStr) {
-    if (dateStr == null) return 'Recently';
+    if (dateStr == null) return 'ui_recently'.tr;
     try {
-      final date = DateTime.parse(dateStr);
+      final date = DateTime.parse(dateStr).toLocal();
       final diff = DateTime.now().difference(date);
-      if (diff.inDays > 30) return '${(diff.inDays / 30).floor()}mo ago';
-      if (diff.inDays > 0) return '${diff.inDays}d ago';
-      if (diff.inHours > 0) return '${diff.inHours}h ago';
+      if (diff.inDays > 30) {
+        return 'time_months_ago'.trParams({'n': '${(diff.inDays / 30).floor()}'});
+      }
+      if (diff.inDays > 0) return 'time_days_ago'.trParams({'n': '${diff.inDays}'});
+      if (diff.inHours > 0) return 'time_hours_ago'.trParams({'n': '${diff.inHours}'});
+      if (diff.inMinutes > 0) return 'time_minutes_ago'.trParams({'n': '${diff.inMinutes}'});
       return 'ui_just_now'.tr;
     } catch (_) {
       return 'ui_recently'.tr;
@@ -328,7 +413,7 @@ class HelperProfileData {
   final String? categoryId;
   final double? pricePerHour;
   final int? experience;
-  final int? serviceRadius;
+  final double? serviceRadius;
   final String? address;
   final String? city;
   final String? language;
@@ -337,6 +422,8 @@ class HelperProfileData {
   final double rating;
   final int reviewCount;
   final bool isVerified;
+  final bool isAvailable;
+  final double? distanceKm;
 
   HelperProfileData({
     required this.id,
@@ -356,29 +443,32 @@ class HelperProfileData {
     this.rating = 0,
     this.reviewCount = 0,
     this.isVerified = false,
+    this.isAvailable = true,
+    this.distanceKm,
   });
 
   factory HelperProfileData.fromJson(Map<String, dynamic> json) {
     String categoryName = 'ui_general'.tr;
     String? categoryId;
     if (json['serviceType'] is Map) {
-      categoryName = json['serviceType']['name'] as String? ?? 'General';
-      categoryId = json['serviceType']['_id'] as String?;
+      final n = localizedCategoryName(json['serviceType']);
+      if (n.isNotEmpty) categoryName = n;
+      categoryId = json['serviceType']['_id']?.toString();
     } else if (json['serviceType'] is String) {
       categoryName = json['serviceType'];
     }
 
     return HelperProfileData(
-      id: json['_id'] ?? '',
-      name: json['name'] ?? 'Helper',
+      id: json['_id']?.toString() ?? '',
+      name: json['name']?.toString() ?? 'ui_helper'.tr,
       avatar: ApiConstants.resolveImageUrl(json['avatar'] as String?),
       bio: json['bio'] as String?,
       categoryName: categoryName,
       categoryId: categoryId,
       pricePerHour: (json['pricePerHour'] as num?)?.toDouble(),
-      experience: json['experience'] as int?,
-      serviceRadius: json['serviceRadius'] as int?,
-      address: json['address'] as String?,
+      experience: (json['experience'] as num?)?.toInt(),
+      serviceRadius: (json['serviceRadius'] as num?)?.toDouble(),
+      address: (json['area'] ?? json['address']) as String?,
       city: json['city'] as String?,
       language: json['language'] as String?,
       profilePhotos: (json['profilePhotos'] as List<dynamic>?)
@@ -391,6 +481,8 @@ class HelperProfileData {
       rating: (json['rating'] as num?)?.toDouble() ?? 0,
       reviewCount: (json['reviewCount'] as num?)?.toInt() ?? 0,
       isVerified: json['isVerified'] == true,
+      isAvailable: json['isAvailable'] != false,
+      distanceKm: (json['distanceKm'] as num?)?.toDouble(),
     );
   }
 }

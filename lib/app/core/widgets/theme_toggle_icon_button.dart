@@ -25,7 +25,7 @@ class ThemeToggleIconButton extends StatelessWidget {
           border: Border.all(color: context.borderSubtle),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -35,7 +35,7 @@ class ThemeToggleIconButton extends StatelessWidget {
           iconSize: size,
           padding: const EdgeInsets.all(8),
           constraints: const BoxConstraints(),
-          tooltip: isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+          tooltip: isDark ? 'theme_switch_light'.tr : 'theme_switch_dark'.tr,
           onPressed: themeService.toggleTheme,
           icon: AnimatedSwitcher(
             duration: const Duration(milliseconds: 250),

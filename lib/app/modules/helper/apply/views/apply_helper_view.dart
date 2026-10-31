@@ -1,8 +1,12 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'dart:io';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/widgets/custom_button.dart';
+import 'package:awnneaapp/app/core/widgets/error_retry.dart';
+import 'package:awnneaapp/app/core/widgets/helper_form_fields.dart';
 import 'package:awnneaapp/app/core/widgets/custom_text_field.dart';
 import 'package:awnneaapp/app/data/models/home_models.dart';
 import 'package:flutter/material.dart';
@@ -38,7 +42,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
+                  color: AppColors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -77,7 +81,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
             const SizedBox(height: 16),
             _buildRequiredField(
               context,
-              'Age',
+              'apply_age_label'.tr,
               'ui_enter_your_age_13'.tr,
               controller.ageController,
               keyboardType: TextInputType.number,
@@ -92,17 +96,10 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
               style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: context.textHintColor),
             ),
             const SizedBox(height: 16),
-            _buildRequiredField(
-              context,
-              'ui_moroccan_postal_code'.tr,
-              '5-digit Postal Code (e.g. 20000)',
-              controller.cityController,
-              keyboardType: TextInputType.number,
-              inputFormatters: [
-                FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(5),
-              ],
-            ),
+            Obx(() => CityDropdown(
+                  value: controller.selectedCity.value,
+                  onChanged: (c) => controller.selectedCity.value = c,
+                )),
             const SizedBox(height: 16),
             _buildRequiredField(context, 'ui_phone_number'.tr, '+212600000000', controller.phoneController, readOnly: true),
             const SizedBox(height: 16),
@@ -114,19 +111,28 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
               keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 16),
-            _buildDropdownField(
-              context: context,
-              label: 'profile_language'.tr,
-              value: controller.selectedLanguage,
-              items: controller.languages,
-            ),
+            Obx(() => LanguageChips(
+                  selected: controller.selectedLanguages.toList(),
+                  onToggle: (lang, on) {
+                    if (on) {
+                      controller.selectedLanguages.add(lang);
+                    } else {
+                      controller.selectedLanguages.remove(lang);
+                    }
+                  },
+                )),
             const SizedBox(height: 16),
-            _buildCategoryDropdownField(
-              context: context,
-              label: 'ui_service_category'.tr,
-              selected: controller.selectedServiceType,
-              categories: controller.categories,
-            ),
+            Obx(() {
+              if (controller.categoriesFailed.value) {
+                return ErrorRetry(minHeight: 120, onRetry: controller.fetchCategories);
+              }
+              return _buildCategoryDropdownField(
+                context: context,
+                label: 'ui_service_category'.tr,
+                selected: controller.selectedServiceType,
+                categories: controller.categories,
+              );
+            }),
             const SizedBox(height: 16),
             CustomTextField(
               label: 'ui_hourly_rate_mad'.tr,
@@ -264,7 +270,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.redAccent.withOpacity(0.1),
+                color: Colors.redAccent.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.power_settings_new, color: Colors.redAccent, size: 30),
@@ -439,7 +445,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
                   } else if (photoKey != null && photoKey.isNotEmpty) {
                     final resolved = ApiConstants.resolveImageUrl(photoKey);
                     if (resolved != null && resolved.isNotEmpty) {
-                      imageProvider = NetworkImage(resolved);
+                      imageProvider = CachedNetworkImageProvider(resolved);
                     }
                   }
 
@@ -451,7 +457,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
                       border: Border.all(color: context.cardColor, width: 4),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.12),
+                          color: Colors.black.withValues(alpha: 0.12),
                           blurRadius: 16,
                           spreadRadius: 2,
                         ),
@@ -472,9 +478,9 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
                     ),
                   );
                 }),
-                Positioned(
+                PositionedDirectional(
                   bottom: 2,
-                  right: 2,
+                  end: 2,
                   child: Container(
                     padding: const EdgeInsets.all(7),
                     decoration: const BoxDecoration(
@@ -505,56 +511,6 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildDropdownField({
-    required BuildContext context,
-    required String label,
-    required RxString value,
-    required List<String> items,
-    String? hint,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: AppStyles.bodyMediumOf(context).copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Obx(() => Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: context.inputFillColor,
-            border: Border.all(color: context.borderSubtle),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: value.value.isEmpty ? null : value.value,
-              dropdownColor: context.cardColor,
-              hint: Text(
-                hint ?? 'ui_select'.tr,
-                style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
-              ),
-              isExpanded: true,
-              items: items.map((String item) {
-                return DropdownMenuItem<String>(
-                  value: item,
-                  child: Text(item, style: TextStyle(color: context.textPrimaryColor)),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
-                if (newValue != null) value.value = newValue;
-              },
-            ),
-          ),
-        )),
-      ],
     );
   }
 
@@ -664,12 +620,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
           placeholderBuilder: (context) => Icon(category.icon, size: size, color: category.color),
         );
       }
-      return Image.network(
-        category.iconUrl!,
-        width: size,
-        height: size,
-        errorBuilder: (context, error, stackTrace) => Icon(category.icon, size: size, color: category.color),
-      );
+      return AppNetworkImage(url: category.iconUrl!, width: size, height: size);
     }
     return Icon(category.icon, size: size, color: category.color);
   }
@@ -735,18 +686,7 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
                           ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: isUploaded
-                                ? Image.network(
-                                    ApiConstants.resolveImageUrl(controller.uploadedPhotoKeys[index]) ?? '',
-                                    width: 90,
-                                    height: 90,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Container(
-                                      width: 90,
-                                      height: 90,
-                                      color: context.inputFillLight,
-                                      child: const Icon(Icons.broken_image),
-                                    ),
-                                  )
+                                ? AppNetworkImage(url: ApiConstants.resolveImageUrl(controller.uploadedPhotoKeys[index]) ?? '', width: 90, height: 90, fit: BoxFit.cover)
                                 : Stack(
                                     children: [
                                       Image.file(
@@ -773,9 +713,9 @@ class ApplyHelperView extends GetView<ApplyHelperController> {
                                     ],
                                   ),
                           ),
-                          Positioned(
+                          PositionedDirectional(
                             top: 4,
-                            right: 4,
+                            end: 4,
                             child: GestureDetector(
                               onTap: () => controller.removePhoto(index),
                               child: Container(

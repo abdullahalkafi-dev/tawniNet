@@ -1,6 +1,12 @@
+import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
+import 'dart:async';
 import 'package:awnneaapp/app/services/job_service.dart';
-import 'package:awnneaapp/app/core/constants/api_constants.dart';
+import 'package:awnneaapp/app/services/socket_service.dart';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
+import 'package:awnneaapp/app/core/widgets/app_dialogs.dart';
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
+import 'package:awnneaapp/app/core/widgets/job_status_badge.dart';
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
 import 'package:awnneaapp/app/core/utils/datetime_format.dart';
 import 'package:awnneaapp/app/core/utils/job_display.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart' show AppColors;
@@ -27,17 +33,41 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
   Booking? _booking;
   bool _isLoading = false;
   String? _errorMessage;
+  StreamSubscription? _jobEventsSub;
 
   @override
   void initState() {
     super.initState();
     _resolveBooking();
+    // The helper moves the job along (on the way, arrived, finished…): follow it live.
+    try {
+      _jobEventsSub = Get.find<SocketService>().onJobUpdated.listen((event) {
+        final id = _booking?.id;
+        if (id != null && event['jobId']?.toString() == id) _refresh(id);
+      });
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    _jobEventsSub?.cancel();
+    super.dispose();
+  }
+
+  /// Reload this job quietly (the screen keeps what it shows meanwhile).
+  Future<void> _refresh(String id) async {
+    try {
+      final data = await Get.find<JobService>().getJobById(id);
+      if (mounted) setState(() => _booking = Booking.fromJson(data));
+    } catch (_) {}
   }
 
   void _resolveBooking() {
     final args = Get.arguments;
     if (args is Booking) {
       _booking = args;
+      // The list may be a few seconds old: fetch the latest state in the background.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _refresh(args.id));
       return;
     }
     String? jobId;
@@ -51,6 +81,9 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
       jobId = args['jobId']?.toString() ?? args['id']?.toString();
     }
     jobId ??= Get.parameters['id'];
+    if (jobId != null && jobId.isNotEmpty && args is Map && args['booking'] is Booking) {
+      return;
+    }
 
     if (jobId != null && jobId.isNotEmpty) {
       _fetchBooking(jobId);
@@ -75,7 +108,7 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          _errorMessage = e.toString();
+          _errorMessage = AppSnackbar.extractErrorMessage(e);
         });
       }
     }
@@ -96,9 +129,7 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
           ),
           centerTitle: true,
         ),
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: const SingleChildScrollView(child: DetailSkeleton()),
       );
     }
 
@@ -163,30 +194,47 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildWorkerCard(context, booking),
-            if (booking.status == BookingStatus.inProgress)
+            if (booking.helperSaysFinished) _buildConfirmBanner(context, booking),
+            if (booking.disputeOpen) _buildDisputeBanner(context),
+            if (booking.status == BookingStatus.onTheWay && booking.canTrack)
               _buildLiveTrackingHeroBanner(context, booking),
             const SizedBox(height: 24),
             _buildJobDetailRow(
               context,
               'label_job_type'.tr,
-              booking.jobType.isEmpty ? 'Not provided' : booking.jobType,
+              booking.jobType.isEmpty ? 'ui_not_provided'.tr : booking.jobType,
             ),
             _buildJobDetailRow(
               context,
               'label_booking_date'.tr,
-              booking.date.isEmpty ? 'Not provided' : booking.date,
+              booking.date.isEmpty ? 'ui_not_provided'.tr : booking.date,
             ),
             _buildJobDetailRow(
               context,
               'label_preferred_time'.tr,
-              booking.time.isEmpty ? 'Not provided' : booking.time,
+              booking.time.isEmpty ? 'ui_not_provided'.tr : booking.time,
             ),
             _buildJobDetailRow(
               context,
               'label_location'.tr,
-              booking.location.isEmpty ? 'Not provided' : booking.location,
+              booking.location.isEmpty ? 'ui_not_provided'.tr : booking.location,
             ),
-            _buildJobDetailRow(context, 'label_budget'.tr, formatMoney(booking.budget)),
+            _buildJobDetailRow(
+              context,
+              'label_budget'.tr,
+              booking.isHourly && booking.hours != null && booking.hourlyRate != null
+                  ? '${formatMoney(booking.budget)}\n${'post_total_preview'.trParams({
+                      'hours': _n(booking.hours!),
+                      'rate': _n(booking.hourlyRate!),
+                      'total': _n(booking.budget),
+                    })}'
+                  : formatMoney(booking.budget),
+            ),
+            _buildJobDetailRow(
+              context,
+              'ui_payment_method'.tr,
+              booking.paymentMethod == 'cash' ? 'offer_pay_cash'.tr : 'offer_pay_online'.tr,
+            ),
             const SizedBox(height: 24),
             _buildJobDescription(context, booking),
             const SizedBox(height: 24),
@@ -211,7 +259,7 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: context.isDarkMode
-                      ? Colors.blueGrey.withOpacity(0.15)
+                      ? Colors.blueGrey.withValues(alpha: 0.15)
                       : const Color(0xFFEFF6FF),
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -228,45 +276,50 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
                 () => _showCancelDialog(context, booking),
                 isOutlined: true,
               ),
-            ] else if (booking.status == BookingStatus.inProgress) ...[
-              _buildActionButton(
-                'booking_track_helper'.tr,
-                AppColors.primary,
-                () {
-                  Get.to(
-                    () => const LiveTrackingView(),
-                    arguments: {
-                      'jobId': booking.id,
-                      'jobTitle': booking.title,
-                      'address': booking.location,
-                      'latitude': booking.latitude,
-                      'longitude': booking.longitude,
-                      'workerUserId': booking.workerUserId,
-                      'workerName': booking.workerName,
-                      'workerImage': booking.workerImage,
-                      'category': booking.category,
-                    },
-                  );
-                },
-                icon: const Icon(Icons.near_me_rounded, color: Colors.white, size: 20),
-              ),
-              const SizedBox(height: 16),
-              _buildActionButton(
-                'booking_complete_service'.tr,
-                const Color(0xFF0D9488),
-                () {
-                  controller.completeBooking(booking.id);
-                  Get.back();
-                },
-                icon: const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
-              ),
-              const SizedBox(height: 16),
-              _buildActionButton(
-                'booking_cancel_booking'.tr,
-                Colors.white,
-                () => _showCancelDialog(context, booking),
-                isOutlined: true,
-              ),
+            ] else if (booking.isUnderway) ...[
+              if (booking.canTrack) ...[
+                _buildActionButton(
+                  'booking_track_helper'.tr,
+                  AppColors.primary,
+                  () => _openTracking(booking),
+                  icon: const Icon(Icons.near_me_rounded, color: Colors.white, size: 20),
+                ),
+                const SizedBox(height: 16),
+              ],
+              // Confirming completes the job and releases the payment: only once the
+              // helper is on site or says it is finished.
+              if (booking.status == BookingStatus.arrived || booking.helperSaysFinished) ...[
+                _buildActionButton(
+                  'booking_complete_service'.tr,
+                  const Color(0xFF0D9488),
+                  () => _confirmComplete(booking),
+                  icon: const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (!booking.needsSupportToCancel)
+                _buildActionButton(
+                  'booking_cancel_booking'.tr,
+                  Colors.white,
+                  () => _showCancelDialog(context, booking),
+                  isOutlined: true,
+                )
+              else if (!booking.disputeOpen)
+                _buildActionButton(
+                  'job_report_problem'.tr,
+                  Colors.white,
+                  () => _reportProblem(booking),
+                  isOutlined: true,
+                ),
+              if (!booking.needsSupportToCancel && !booking.disputeOpen) ...[
+                const SizedBox(height: 12),
+                Center(
+                  child: TextButton(
+                    onPressed: () => _reportProblem(booking),
+                    child: Text('job_report_problem'.tr),
+                  ),
+                ),
+              ],
             ] else if (booking.status == BookingStatus.completed) ...[
               if (booking.hasReviewFromOther && booking.reviewFromOther != null)
                 _buildReviewCard(
@@ -317,7 +370,7 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
         border: Border.all(color: context.borderSubtle),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -325,22 +378,7 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
       ),
       child: Row(
         children: [
-          Builder(
-            builder: (context) {
-              final resolved =
-                  ApiConstants.resolveImageUrl(booking.workerImage);
-              final hasPhoto = resolved != null && resolved.isNotEmpty;
-              return CircleAvatar(
-                radius: 35,
-                backgroundColor: context.inputFillLight,
-                backgroundImage: hasPhoto ? NetworkImage(resolved) : null,
-                onBackgroundImageError: hasPhoto ? (_, __) {} : null,
-                child: hasPhoto
-                    ? null
-                    : const Icon(Icons.person, size: 32, color: Colors.grey),
-              );
-            },
-          ),
+          AppAvatar(url: booking.workerImage, name: booking.workerName, size: 70),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -362,7 +400,10 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
                   runSpacing: 8,
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
-                    _buildStatusBadge(booking.status),
+                    JobStatusBadge(
+                      status: booking.status,
+                      waitingConfirmation: booking.helperSaysFinished,
+                    ),
                     _buildChatButton(booking),
                   ],
                 ),
@@ -374,39 +415,104 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
     );
   }
 
-  Widget _buildStatusBadge(BookingStatus status) {
-    String text;
-    switch (status) {
-      case BookingStatus.pendingPayment:
-        text = 'booking_unpaid'.tr;
-        break;
-      case BookingStatus.open:
-        text = 'ui_looking_for_helper_2'.tr;
-        break;
-      case BookingStatus.inProgress:
-        text = 'booking_inprogress'.tr;
-        break;
-      case BookingStatus.completed:
-        text = 'booking_completed'.tr;
-        break;
-      case BookingStatus.cancelled:
-        text = 'booking_cancelled'.tr;
-        break;
-    }
+  static String _n(num v) => v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(1);
+
+  void _openTracking(Booking booking) {
+    Get.to(
+      () => const LiveTrackingView(),
+      arguments: {
+        'jobId': booking.id,
+        'jobTitle': booking.title,
+        'address': booking.location,
+        'latitude': booking.latitude,
+        'longitude': booking.longitude,
+        'workerUserId': booking.workerUserId,
+        'workerName': booking.workerName,
+        'workerImage': booking.workerImage,
+        'category': booking.category,
+      },
+    );
+  }
+
+  /// Completing releases the payment: always ask first.
+  Future<void> _confirmComplete(Booking booking) async {
+    final ok = await AppDialogs.confirm(
+      title: 'job_confirm_complete_title'.tr,
+      message: booking.paymentMethod == 'cash'
+          ? 'job_confirm_complete_body_cash'.tr
+          : 'job_confirm_complete_body_online'.tr,
+      confirmLabel: 'booking_complete_service'.tr,
+    );
+    if (!ok) return;
+    final done = await controller.completeBooking(booking.id);
+    if (done && mounted) await _refresh(booking.id);
+  }
+
+  Future<void> _reportProblem(Booking booking) async {
+    final text = await AppDialogs.askReason(
+      title: 'job_report_problem'.tr,
+      hint: 'job_report_problem_hint'.tr,
+      minLength: 10,
+    );
+    if (text == null) return;
+    final done = await controller.reportProblem(booking.id, text);
+    if (done && mounted) await _refresh(booking.id);
+  }
+
+  /// "The helper says the work is finished — please confirm."
+  Widget _buildConfirmBanner(BuildContext context, Booking booking) {
+    final deadline = booking.autoCompleteAt;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.primary.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+        color: Colors.deepPurple.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.deepPurple.withValues(alpha: 0.3)),
       ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: AppColors.primary,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.task_alt, color: Colors.deepPurple, size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              deadline == null
+                  ? 'job_helper_finished_msg'.tr
+                  : 'job_helper_finished_deadline'.trParams({
+                      'when': AppDateTime.formatDateTimeRange(
+                        date: deadline.toIso8601String(),
+                        startTime: '${deadline.hour}:${deadline.minute.toString().padLeft(2, '0')}',
+                      ),
+                    }),
+              style: AppStyles.bodyMedium.copyWith(fontSize: 13, height: 1.4),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDisputeBanner(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.orange.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.support_agent, color: Colors.orange, size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'job_dispute_open_msg'.tr,
+              style: AppStyles.bodyMedium.copyWith(fontSize: 13, height: 1.4),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -429,7 +535,7 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
               const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 14),
               const SizedBox(width: 6),
               Text(
-                canChat ? 'btn_chat'.tr : 'No helper yet',
+                canChat ? 'btn_chat'.tr : 'job_no_helper_yet'.tr,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,
@@ -534,7 +640,7 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
 
   Widget _buildPhotoThumb(String url) {
     return Container(
-      margin: const EdgeInsets.only(right: 12),
+      margin: const EdgeInsetsDirectional.only(end: 12),
       width: 70,
       height: 70,
       clipBehavior: Clip.antiAlias,
@@ -542,11 +648,7 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
         borderRadius: BorderRadius.circular(8),
         color: AppColors.background,
       ),
-      child: Image.network(
-        ApiConstants.resolveImageUrl(url) ?? url,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image_outlined),
-      ),
+      child: AppNetworkImage(url: url, width: 70, height: 70),
     );
   }
 
@@ -554,6 +656,7 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
     final steps = JobTimeline.fromStatus(
       status: booking.statusApiValue,
       submittedAt: booking.createdAt,
+      helperFinishedAt: booking.helperFinishedAt?.toIso8601String(),
       completedAt: booking.completedAt,
       isAssigned: booking.workerUserId.isNotEmpty,
       escrowCredited: booking.escrowCredited,
@@ -647,22 +750,7 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
             width: double.infinity,
             height: 48,
             child: ElevatedButton.icon(
-              onPressed: () {
-                Get.to(
-                  () => const LiveTrackingView(),
-                  arguments: {
-                    'jobId': booking.id,
-                    'jobTitle': booking.title,
-                    'address': booking.location,
-                    'latitude': booking.latitude,
-                    'longitude': booking.longitude,
-                    'workerUserId': booking.workerUserId,
-                    'workerName': booking.workerName,
-                    'workerImage': booking.workerImage,
-                    'category': booking.category,
-                  },
-                );
-              },
+              onPressed: () => _openTracking(booking),
               icon: const Icon(Icons.near_me_rounded, color: Colors.white, size: 18),
               label: Text(
                 'ui_track_helper_live_on_map'.tr,
@@ -773,7 +861,7 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.12),
+                        color: Colors.red.withValues(alpha: 0.12),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -797,7 +885,19 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 10),
+                    if (booking.paymentMethod == 'online')
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Text(
+                          'job_cancel_refund_note'.tr,
+                          style: AppStyles.bodyMedium.copyWith(
+                            color: dialogContext.textHintColor,
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
                     TextField(
                       controller: reasonController,
                       minLines: 3,
@@ -1009,7 +1109,7 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: dialogContext.isDarkMode
-                          ? Colors.white.withOpacity(0.05)
+                          ? Colors.white.withValues(alpha: 0.05)
                           : const Color(0xFFF9FAFB),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: dialogContext.borderSubtle),
@@ -1019,18 +1119,13 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
                         CircleAvatar(
                           radius: 24,
                           backgroundColor: dialogContext.inputFillLight,
-                          backgroundImage: (() {
-                            final resolved = ApiConstants.resolveImageUrl(
-                              booking.workerImage,
-                            );
-                            if (resolved == null || resolved.isEmpty) {
-                              return null;
-                            }
-                            return NetworkImage(resolved) as ImageProvider;
-                          })(),
-                          child: booking.workerImage.isEmpty
-                              ? const Icon(Icons.person, color: AppColors.primary)
-                              : null,
+                          child: ClipOval(
+                            child: AppAvatar(
+                              url: booking.workerImage,
+                              name: booking.workerName,
+                              size: 48,
+                            ),
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -1125,10 +1220,8 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
                               ? null
                               : () async {
                                   if (booking.workerUserId.isEmpty) {
-                                    Get.snackbar(
-                                      'ui_notice'.tr,
+                                    AppFeedback.info(
                                       'ui_no_assigned_helper_found_for_this_booking'.tr,
-                                      snackPosition: SnackPosition.BOTTOM,
                                     );
                                     return;
                                   }
@@ -1174,7 +1267,7 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
                                   child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                                 )
                               : Text(
-                                  'rate_submit'.tr.isNotEmpty ? 'rate_submit'.tr : 'Submit Review',
+                                  'rate_submit'.tr,
                                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                 ),
                         ),

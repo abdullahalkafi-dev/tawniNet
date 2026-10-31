@@ -1,5 +1,5 @@
 name: awnneaapp
-description: "A new Flutter project."
+description: "3awniNet - find trusted local helpers in Morocco."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.0.1+2002
 
 environment:
   sdk: ^3.11.3
@@ -37,6 +37,8 @@ dependencies:
   get: ^4.6.6
   google_fonts: ^6.2.1
   flutter_svg: ^2.3.0
+  cached_network_image: ^3.4.1
+  package_info_plus: ^8.1.2
   image_picker: ^1.2.2
   intl: any
 
@@ -65,7 +67,6 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
-  pretty_dio_logger: ^1.4.0
   flutter_launcher_icons: ^0.14.3
 
 # For information on the generic Dart part of this file, see the
@@ -83,6 +84,7 @@ flutter:
   assets:
     - assets/images/
     - assets/svgs/
+    - assets/category_icons/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

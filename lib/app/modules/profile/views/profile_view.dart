@@ -1,10 +1,10 @@
-import 'package:awnneaapp/app/core/constants/api_constants.dart';
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
+import 'package:awnneaapp/app/modules/common/views/legal_view.dart';
 import 'package:awnneaapp/app/core/constants/app_info.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/localization/locale_service.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
-import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/theme_service.dart';
 import 'package:flutter/material.dart';
@@ -70,9 +70,27 @@ class ProfileView extends GetView<ProfileController> {
               ),
               _buildProfileOption(
                 context,
+                Icons.tune,
+                'profile_notification_settings'.tr,
+                onTap: () => Get.toNamed(Routes.notificationSettings),
+              ),
+              _buildProfileOption(
+                context,
+                Icons.key_outlined,
+                'profile_change_password'.tr,
+                onTap: () => Get.toNamed(Routes.changePassword),
+              ),
+              _buildProfileOption(
+                context,
                 Icons.lock_outline,
                 'profile_privacy'.tr,
-                onTap: () => _showPrivacyPolicyBottomSheet(context),
+                onTap: () => Get.to(() => const LegalView(kind: 'privacy')),
+              ),
+              _buildProfileOption(
+                context,
+                Icons.description_outlined,
+                'profile_terms'.tr,
+                onTap: () => Get.to(() => const LegalView(kind: 'terms')),
               ),
               _buildProfileOption(
                 context,
@@ -85,6 +103,13 @@ class ProfileView extends GetView<ProfileController> {
                 Icons.headset_mic_outlined,
                 'profile_help'.tr,
                 onTap: () => _showHelpSupportBottomSheet(context),
+              ),
+              _buildProfileOption(
+                context,
+                Icons.delete_forever_outlined,
+                'profile_delete_account'.tr,
+                isLogout: true,
+                onTap: () => Get.toNamed(Routes.deleteAccount),
               ),
               _buildProfileOption(
                 context,
@@ -123,7 +148,7 @@ class ProfileView extends GetView<ProfileController> {
                       border: Border.all(color: context.cardColor, width: 4),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -131,19 +156,13 @@ class ProfileView extends GetView<ProfileController> {
                     ),
                     child: ClipOval(
                       child: avatar != null && avatar.isNotEmpty
-                          ? Image.network(
-                              avatar,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return _buildFallbackAvatar(context);
-                              },
-                            )
+                          ? AppNetworkImage(url: avatar, fit: BoxFit.cover)
                           : _buildFallbackAvatar(context),
                     ),
                   ),
-                  Positioned(
+                  PositionedDirectional(
                     bottom: 5,
-                    right: 5,
+                    end: 5,
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: const BoxDecoration(
@@ -629,7 +648,7 @@ class ProfileView extends GetView<ProfileController> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
-                color: context.isDarkMode ? AppColors.primary.withOpacity(0.15) : const Color(0xFFE5F7F5),
+                color: context.isDarkMode ? AppColors.primary.withValues(alpha: 0.15) : const Color(0xFFE5F7F5),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -643,104 +662,6 @@ class ProfileView extends GetView<ProfileController> {
             ),
         ],
       ),
-    );
-  }
-
-  void _showPrivacyPolicyBottomSheet(BuildContext context) {
-    String content = '';
-    bool isLoading = true;
-
-    Future<void> load() async {
-      try {
-        final api = Get.find<ApiClient>();
-        final res = await api.get(ApiConstants.legal);
-        if (res.success && res.data is Map) {
-          final data = Map<String, dynamic>.from(res.data as Map);
-          content = (data['privacyPolicy'] ?? '').toString();
-        }
-      } catch (_) {
-        content = '';
-      }
-      isLoading = false;
-    }
-
-    Get.bottomSheet(
-      StatefulBuilder(
-        builder: (sheetContext, setSheetState) {
-          if (isLoading) {
-            load().then((_) {
-              if (sheetContext.mounted) {
-                setSheetState(() {});
-              }
-            });
-          }
-          return Container(
-            height: context.height * 0.7,
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: context.cardColor,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: context.borderSecondary,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'profile_privacy'.tr,
-                  style: AppStyles.h2Of(context).copyWith(fontSize: 20),
-                ),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : SingleChildScrollView(
-                          child: Text(
-                            content.isEmpty
-                                ? 'legal_privacy_fallback'.trParams({'email': AppInfo.supportEmail})
-                                : content,
-                            style: AppStyles.bodyMediumOf(context).copyWith(
-                              color: context.textSecondaryColor,
-                              height: 1.5,
-                            ),
-                          ),
-                        ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () => Get.back(),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF5AB9A7),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      'profile_accept_close'.tr,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-      isScrollControlled: true,
     );
   }
 

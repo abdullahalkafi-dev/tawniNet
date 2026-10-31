@@ -1,5 +1,6 @@
-import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/utils/datetime_format.dart';
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
+import 'package:awnneaapp/app/services/app_config_service.dart';
 import 'package:awnneaapp/app/core/utils/job_display.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
@@ -46,7 +47,7 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
             const SizedBox(height: 16),
             CustomButton(
               text: 'job_accept'.tr,
-              onPressed: () => controller.acceptJob(job.id),
+              onPressed: () => controller.confirmAndAccept(job),
             ),
             const SizedBox(height: 16),
             _buildJobStatusTimeline(context, job),
@@ -93,7 +94,7 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.15),
+                    color: AppColors.primary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: AppColors.primary),
                   ),
@@ -174,23 +175,7 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
           const SizedBox(height: 12),
           Row(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(30),
-                child: Image.network(
-                  job.helperImage,
-                  width: 44,
-                  height: 44,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 44,
-                      height: 44,
-                      color: context.inputFillLight,
-                      child: Icon(Icons.person, color: context.textHintColor),
-                    );
-                  },
-                ),
-              ),
+              AppAvatar(url: job.helperImage, name: job.helperName, size: 44),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -283,8 +268,7 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
                           ));
                     },
                     onLongPress: () {
-                      final url = ApiConstants.resolveImageUrl(job.images[index]) ??
-                          job.images[index];
+                      final url = job.images[index];
                       final ext = url.split('.').last.split('?').first;
                       MediaDownloader.download(
                         url: url,
@@ -292,23 +276,11 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
                             'job_image_${DateTime.now().millisecondsSinceEpoch}.$ext',
                       );
                     },
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        ApiConstants.resolveImageUrl(job.images[index]) ??
-                            job.images[index],
-                        width: 100,
-                        height: 100,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 100,
-                            height: 100,
-                            color: context.inputFillLight,
-                            child: Icon(Icons.image, color: context.textHintColor),
-                          );
-                        },
-                      ),
+                    child: AppNetworkImage(
+                      url: job.images[index],
+                      width: 100,
+                      height: 100,
+                      radius: 12,
                     ),
                   );
                 },
@@ -337,8 +309,13 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
 
   Widget _buildPaymentBreakdown(BuildContext context, HelperJob job) {
     final budget = job.budget ?? 0;
-    final platformFee = budget * 0.20;
-    final earnings = budget * 0.80;
+    // The commission is the platform's current percentage (it is fixed for this job when you accept).
+    final feePct = Get.isRegistered<AppConfigService>()
+        ? Get.find<AppConfigService>().feePercentage.value
+        : 20.0;
+    final platformFee = budget * feePct / 100;
+    final earnings = budget - platformFee;
+    final isCash = (job.paymentMethod ?? 'cash') == 'cash';
 
     return Container(
       width: double.infinity,
@@ -358,6 +335,18 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
             'job_payment'.tr,
             'MAD ${budget.toStringAsFixed(2)}',
           ),
+          if (job.budgetType == 'hourly' && job.hasHours)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'post_total_preview'.trParams({
+                  'hours': job.hours!.toStringAsFixed(job.hours! == job.hours!.roundToDouble() ? 0 : 1),
+                  'rate': (job.hourlyRate ?? 0).toStringAsFixed(0),
+                  'total': budget.toStringAsFixed(0),
+                }),
+                style: AppStyles.bodyMedium.copyWith(fontSize: 12, color: context.textHintColor),
+              ),
+            ),
           const SizedBox(height: 8),
           _buildPaymentRow(
             context,
@@ -376,14 +365,14 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
           _buildPaymentRow(
             context,
             'ui_payment_method'.tr,
-            job.paymentMethod?.toUpperCase() ?? 'CASH',
+            isCash ? 'offer_pay_cash'.tr : 'offer_pay_online'.tr,
           ),
           const SizedBox(height: 12),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: context.isDarkMode ? Colors.green.withOpacity(0.15) : const Color(0xFFF0FDF4),
+              color: context.isDarkMode ? Colors.green.withValues(alpha: 0.15) : const Color(0xFFF0FDF4),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
@@ -392,7 +381,7 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'job_payment_note'.tr,
+                    isCash ? 'job_payment_note_cash'.tr : 'job_payment_note_online'.tr,
                     style: AppStyles.bodyMediumOf(context).copyWith(fontSize: 12),
                   ),
                 ),
@@ -437,11 +426,8 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
     return JobStatusTimeline(
       steps: JobTimeline.fromStatus(
         status: status,
-        submittedAt: null,
-        completedAt: null,
         isAssigned: isAssigned,
-        escrowCredited: status == 'completed',
-        paymentMethod: '',
+        paymentMethod: job.paymentMethod ?? '',
       ),
     );
   }

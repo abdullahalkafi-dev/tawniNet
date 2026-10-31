@@ -1,3 +1,7 @@
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
+import 'package:awnneaapp/app/core/utils/app_feedback.dart';
+import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
+import 'package:awnneaapp/app/modules/common/views/legal_view.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/localization/locale_service.dart';
@@ -20,9 +24,12 @@ class HelperProfileTabView extends GetView {
           children: [
             const SizedBox(height: 24),
             _buildProfileHeader(context),
-            const SizedBox(height: 30),
+            const SizedBox(height: 16),
+            _buildAvailabilityTile(context),
+            const SizedBox(height: 20),
             _buildProfileOption(context, Icons.person_outline, 'profile_edit'.tr, onTap: () => Get.toNamed(Routes.helperPublicProfile)),
             _buildProfileOption(context, Icons.account_balance_wallet_outlined, 'helper_earning'.tr, onTap: () => Get.toNamed(Routes.helperEarning)),
+            _buildProfileOption(context, Icons.star_outline, 'my_reviews_title'.tr, onTap: () => Get.toNamed(Routes.myReviews)),
             _buildProfileOption(context, Icons.shopping_bag_outlined, 'helper_buy_connects'.tr, onTap: () => Get.toNamed(Routes.helperConnects)),
             _buildProfileOption(
               context,
@@ -41,9 +48,13 @@ class HelperProfileTabView extends GetView {
               ),
             ),
             _buildProfileOption(context, Icons.notifications_none, 'profile_notification'.tr, onTap: () => Get.toNamed(Routes.helperNotifications)),
+            _buildProfileOption(context, Icons.tune, 'profile_notification_settings'.tr, onTap: () => Get.toNamed(Routes.notificationSettings)),
+            _buildProfileOption(context, Icons.key_outlined, 'profile_change_password'.tr, onTap: () => Get.toNamed(Routes.changePassword)),
             _buildProfileOption(context, Icons.lock_outline, 'profile_privacy'.tr, onTap: () => _showPrivacyPolicy(context)),
+            _buildProfileOption(context, Icons.description_outlined, 'profile_terms'.tr, onTap: () => Get.to(() => const LegalView(kind: 'terms'))),
             _buildProfileOption(context, Icons.help_outline, 'profile_about'.tr, onTap: () => _showAboutUs(context)),
             _buildProfileOption(context, Icons.headset_mic_outlined, 'profile_help'.tr, onTap: () => Get.toNamed(Routes.helpCenter)),
+            _buildProfileOption(context, Icons.delete_forever_outlined, 'profile_delete_account'.tr, isLogout: true, onTap: () => Get.toNamed(Routes.deleteAccount)),
             _buildProfileOption(context, Icons.logout, 'profile_logout'.tr, isLogout: true, onTap: () => _showLogoutDialog(context)),
             const SizedBox(height: 40),
           ],
@@ -74,7 +85,7 @@ class HelperProfileTabView extends GetView {
                       border: Border.all(color: context.cardColor, width: 4),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -82,17 +93,13 @@ class HelperProfileTabView extends GetView {
                     ),
                     child: ClipOval(
                       child: avatar != null && avatar.isNotEmpty
-                          ? Image.network(
-                              avatar,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => _buildFallbackAvatar(context),
-                            )
+                          ? AppNetworkImage(url: avatar, fit: BoxFit.cover)
                           : _buildFallbackAvatar(context),
                     ),
                   ),
-                  Positioned(
+                  PositionedDirectional(
                     bottom: 5,
-                    right: 5,
+                    end: 5,
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: const BoxDecoration(
@@ -112,6 +119,61 @@ class HelperProfileTabView extends GetView {
                 email,
                 style: AppStyles.bodyMedium.copyWith(color: context.textSecondaryColor),
               ),
+          ],
+        ),
+      );
+    });
+  }
+
+  /// Helper on/off duty switch. Saved on the server; the switch only moves once
+  /// the server confirmed, so the UI never shows a state the server doesn't have.
+  Widget _buildAvailabilityTile(BuildContext context) {
+    final saving = false.obs;
+    return Obx(() {
+      final available = Get.find<AuthService>().currentUser.value?.isAvailable ?? true;
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: context.cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: context.borderSubtle),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              available ? Icons.check_circle_outline : Icons.pause_circle_outline,
+              color: available ? AppColors.primary : context.textHintColor,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('helper_available_title'.tr, style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.w600)),
+                  Text(
+                    available ? 'helper_available_on'.tr : 'helper_available_off'.tr,
+                    style: TextStyle(color: context.textSecondaryColor, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            Switch(
+              value: available,
+              onChanged: saving.value
+                  ? null
+                  : (v) async {
+                      saving.value = true;
+                      try {
+                        await Get.find<AuthService>().setAvailability(v);
+                      } catch (e) {
+                        AppFeedback.error(AppSnackbar.extractErrorMessage(e));
+                      } finally {
+                        saving.value = false;
+                      }
+                    },
+              activeThumbColor: Colors.white,
+              activeTrackColor: AppColors.primary,
+            ),
           ],
         ),
       );
@@ -412,7 +474,7 @@ class HelperProfileTabView extends GetView {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.redAccent.withOpacity(0.1),
+                color: Colors.redAccent.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.power_settings_new, color: Colors.redAccent, size: 30),

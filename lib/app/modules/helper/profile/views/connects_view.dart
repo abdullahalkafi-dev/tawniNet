@@ -1,3 +1,5 @@
+import 'package:awnneaapp/app/core/widgets/error_retry.dart';
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
@@ -15,6 +17,7 @@ class ConnectsView extends StatefulWidget {
 class _ConnectsViewState extends State<ConnectsView> {
   double balance = 0.0;
   bool isLoading = true;
+  bool failed = false;
 
   @override
   void initState() {
@@ -23,6 +26,7 @@ class _ConnectsViewState extends State<ConnectsView> {
   }
 
   Future<void> _fetchBalance() async {
+    setState(() => failed = false);
     try {
       final walletService = Get.find<WalletService>();
       final res = await walletService.getWalletBalance();
@@ -33,7 +37,12 @@ class _ConnectsViewState extends State<ConnectsView> {
         });
       }
     } catch (_) {
-      if (mounted) setState(() => isLoading = false);
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+          failed = true;
+        });
+      }
     }
   }
 
@@ -52,8 +61,10 @@ class _ConnectsViewState extends State<ConnectsView> {
         centerTitle: true,
       ),
       body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
+          ? const SummaryListSkeleton()
+          : failed
+              ? ErrorRetry(onRetry: _fetchBalance)
+              : Padding(
               padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,7 +125,7 @@ class _ConnectsViewState extends State<ConnectsView> {
                   Center(
                     child: Column(
                       children: [
-                        Icon(Icons.account_balance_wallet, size: 80, color: AppColors.primary.withOpacity(0.3)),
+                        Icon(Icons.account_balance_wallet, size: 80, color: AppColors.primary.withValues(alpha: 0.3)),
                         const SizedBox(height: 16),
                       ],
                     ),

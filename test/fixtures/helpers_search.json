@@ -1,0 +1,46 @@
+{
+ "success": true,
+ "message": "Helpers fetched successfully",
+ "data": {
+  "helpers": [
+   {
+    "_id": "6ae5fb9981c513a58eb7978f",
+    "name": "Amina Mansouri",
+    "bio": "Certified smart home & device setup specialist. Wi-Fi network configuration, smart TV mounting, security camera installation, and troubleshooting.",
+    "address": "Rabat",
+    "isAvailable": true,
+    "city": "Rabat",
+    "language": "Arabic, French, English",
+    "serviceType": {
+     "names": {
+      "en": "Tech Support & Devices",
+      "fr": "Assistance technique & appareils",
+      "ar": "الدعم التقني والأجهزة",
+      "es": "Soporte técnico y dispositivos"
+     },
+     "_id": "6ae5fb9981c513a58eb79783",
+     "name": "Tech Support & Devices",
+     "icon": "tech_support_icon.svg",
+     "slug": "tech_support",
+     "minHourlyRate": 80
+    },
+    "pricePerHour": 110,
+    "experience": 5,
+    "serviceRadius": 40,
+    "rating": 5,
+    "reviewCount": 32,
+    "area": "Rabat",
+    "distanceKm": 1,
+    "avatar": null,
+    "isVerified": true,
+    "workPhotos": []
+   }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 20,
+  "totalPages": 1,
+  "expandRadiusSuggested": false,
+  "searchRadiusKm": 30
+ }
+}

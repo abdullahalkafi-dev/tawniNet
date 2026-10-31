@@ -1,6 +1,7 @@
 abstract class Routes {
   Routes._();
   static const splash = _Paths.splash;
+  static const updateRequired = _Paths.updateRequired;
   static const onboarding = _Paths.onboarding;
   static const roleSelection = _Paths.roleSelection;
   static const login = _Paths.login;
@@ -24,6 +25,9 @@ abstract class Routes {
   static const notifications = _Paths.notifications;
   static const notificationSettings = _Paths.notificationSettings;
   static const wallet = _Paths.wallet;
+  static const changePassword = _Paths.changePassword;
+  static const myReviews = _Paths.myReviews;
+  static const deleteAccount = _Paths.deleteAccount;
 
   // Helper routes
   static const locationAllow = _Paths.locationAllow;
@@ -59,7 +63,11 @@ abstract class Routes {
 
 abstract class _Paths {
   _Paths._();
+  static const changePassword = '/change-password';
+  static const myReviews = '/my-reviews';
+  static const deleteAccount = '/delete-account';
   static const splash = '/splash';
+  static const updateRequired = '/update-required';
   static const onboarding = '/onboarding';
   static const roleSelection = '/role-selection';
   static const login = '/login';

@@ -1,8 +1,11 @@
-import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/utils/job_display.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'package:awnneaapp/app/core/widgets/app_pull_to_refresh.dart';
+import 'package:awnneaapp/app/core/widgets/job_status_badge.dart';
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
+import 'package:awnneaapp/app/data/models/booking_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:awnneaapp/app/modules/helper/helper_jobs/controllers/helper_jobs_controller.dart';
@@ -45,8 +48,8 @@ class HelperJobsTabView extends GetView<HelperJobsController> {
   }
 
   /// Flatten API job map into safe display fields (never pass Maps to Text).
-  ({String name, String avatar, String address, String statusLabel, Color statusColor})
-      _jobDisplay(dynamic job) {
+  ({String name, String avatar, String address, BookingStatus status, bool waiting}) _jobDisplay(
+      dynamic job) {
     final map = job is Map ? Map<String, dynamic>.from(job) : <String, dynamic>{};
 
     final postedBy = map['postedBy'];
@@ -59,45 +62,15 @@ class HelperJobsTabView extends GetView<HelperJobsController> {
     name = name.isEmpty ? (map['clientName'] ?? '').toString() : name;
     avatar = avatar.isEmpty ? (map['clientImage'] ?? '').toString() : avatar;
 
-    // Never show raw GeoJSON coords — city/street only for privacy.
-    String address = JobDisplay.publicAddress(map);
-
-    final statusRaw = (map['status'] ?? '').toString().toLowerCase();
-    String statusLabel;
-    Color statusColor;
-    switch (statusRaw) {
-      case 'in_progress':
-      case 'inprogress':
-        statusLabel = 'status_in_progress'.tr;
-        statusColor = const Color(0xFF7CE0C3);
-        break;
-      case 'completed':
-        statusLabel = 'status_completed'.tr;
-        statusColor = AppColors.primary;
-        break;
-      case 'cancelled':
-        statusLabel = 'status_cancelled'.tr;
-        statusColor = Colors.orange;
-        break;
-      case 'open':
-        statusLabel = 'ui_open'.tr;
-        statusColor = Colors.blueGrey;
-        break;
-      case 'pending_payment':
-        statusLabel = 'ui_unpaid'.tr;
-        statusColor = Colors.orange.shade700;
-        break;
-      default:
-        statusLabel = statusRaw.isEmpty ? '—' : statusRaw;
-        statusColor = Colors.grey;
-    }
-
     return (
-      name: name.isEmpty ? 'Client' : name,
+      name: name.isEmpty ? 'ui_client'.tr : name,
       avatar: avatar,
-      address: address.isEmpty ? 'No location' : address,
-      statusLabel: statusLabel,
-      statusColor: statusColor,
+      // Never show raw GeoJSON coords — city/street only for privacy.
+      address: JobDisplay.publicAddress(map),
+      status: bookingStatusFromApi((map['status'] ?? '').toString()),
+      waiting: map['helperFinishedAt'] != null &&
+          map['helperFinishedAt'].toString().isNotEmpty &&
+          (map['status'] ?? '') != 'completed',
     );
   }
 
@@ -106,15 +79,38 @@ class HelperJobsTabView extends GetView<HelperJobsController> {
     return AppPullToRefresh(
       onRefresh: () => controller.fetchJobs(userInitiated: true),
       child: Obx(() {
-        final isLoading = controller.isLoading.value && jobs.isEmpty;
+        if (!controller.hasLoadedOnce.value && !controller.loadFailed.value && jobs.isEmpty) {
+          return SkeletonList(
+            count: 4,
+            spacing: 16,
+            padding: const EdgeInsets.all(20),
+            itemBuilder: (_, __) => const HelperCardSkeleton(),
+          );
+        }
 
-        if (isLoading) {
+        if (controller.loadFailed.value && jobs.isEmpty) {
           return ListView(
             primary: false,
             physics: AppAlwaysScrollPhysics,
-            children: const [
-              SizedBox(height: 160),
-              Center(child: CircularProgressIndicator()),
+            children: [
+              SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+              Icon(Icons.cloud_off_outlined, size: 56, color: context.textHintColor),
+              const SizedBox(height: 12),
+              Center(
+                child: Text(
+                  'ui_could_not_load_jobs_pull_down_to'.tr,
+                  textAlign: TextAlign.center,
+                  style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Center(
+                child: OutlinedButton.icon(
+                  onPressed: () => controller.fetchJobs(userInitiated: true),
+                  icon: const Icon(Icons.refresh),
+                  label: Text('booking_retry'.tr),
+                ),
+              ),
             ],
           );
         }
@@ -125,6 +121,8 @@ class HelperJobsTabView extends GetView<HelperJobsController> {
             physics: AppAlwaysScrollPhysics,
             children: [
               SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+              Icon(Icons.work_outline, size: 56, color: context.textHintColor),
+              const SizedBox(height: 12),
               Center(
                 child: Text(
                   'helper_no_jobs'.tr,
@@ -135,125 +133,118 @@ class HelperJobsTabView extends GetView<HelperJobsController> {
               Center(
                 child: Text(
                   'ui_pull_down_to_refresh'.tr,
-                  style: TextStyle(
-                    color: context.textHintColor,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: context.textHintColor, fontSize: 12),
                 ),
               ),
             ],
           );
         }
 
-        return ListView.separated(
-                    primary: false,
-                    physics: AppAlwaysScrollPhysics,
-                    padding: const EdgeInsets.all(20),
-                    itemCount: jobs.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 16),
-                    itemBuilder: (context, index) {
-                      final job = jobs[index];
-                      final d = _jobDisplay(job);
-                      return GestureDetector(
-                        onTap: () => controller.onJobTap(job, type),
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: context.cardColor,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: context.borderSubtle),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.02),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(40),
-                                child: Image.network(
-                                  ApiConstants.resolveImageUrl(d.avatar) ?? d.avatar,
-                                  width: 60,
-                                  height: 60,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      width: 60,
-                                      height: 60,
-                                      color: context.inputFillLight,
-                                      child: Icon(Icons.person, color: context.textHintColor),
-                                    );
-                                  },
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Stack(
-                                  children: [
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          d.name,
-                                          style: AppStyles.h2Of(context).copyWith(fontSize: 16),
-                                        ),
-                                        Row(
-                                          children: [
-                                            Icon(Icons.location_on, size: 14, color: Colors.orange[400]),
-                                            const SizedBox(width: 4),
-                                            Expanded(
-                                              child: Text(
-                                                d.address,
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: AppStyles.bodyMedium.copyWith(
-                                                  fontSize: 13,
-                                                  color: context.textSecondaryColor,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: d.statusColor,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Text(
-                                            d.statusLabel,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+        final hasMore = type == 'completed'
+            ? controller.completedHasMore.value
+            : type == 'cancelled'
+                ? controller.cancelledHasMore.value
+                : false;
+
+        return NotificationListener<ScrollNotification>(
+          onNotification: (n) {
+            if (hasMore && n.metrics.pixels > n.metrics.maxScrollExtent - 300) {
+              controller.loadMore(type);
+            }
+            return false;
+          },
+          child: ListView.separated(
+            primary: false,
+            physics: AppAlwaysScrollPhysics,
+            padding: const EdgeInsets.all(20),
+            itemCount: jobs.length + (hasMore ? 1 : 0),
+            separatorBuilder: (context, index) => const SizedBox(height: 16),
+            itemBuilder: (context, index) {
+              if (index >= jobs.length) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Center(
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                );
+              }
+              final job = jobs[index];
+              final d = _jobDisplay(job);
+              return GestureDetector(
+                onTap: () => controller.onJobTap(job, type),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: context.cardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: context.borderSubtle),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.02),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      AppAvatar(url: d.avatar, name: d.name, size: 60),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              d.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppStyles.h2Of(context).copyWith(fontSize: 16),
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                Icon(Icons.location_on, size: 14, color: Colors.orange[400]),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    d.address,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppStyles.bodyMedium.copyWith(
+                                      fontSize: 13,
+                                      color: context.textSecondaryColor,
                                     ),
-                                    Positioned(
-                                      bottom: 0,
-                                      right: 0,
-                                      child: Text(
-                                        'btn_view'.tr,
-                                        style: AppStyles.bodyLarge.copyWith(
-                                          color: AppColors.primary,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                JobStatusBadge(status: d.status, waitingConfirmation: d.waiting),
+                                const Spacer(),
+                                Text(
+                                  'btn_view'.tr,
+                                  style: AppStyles.bodyLarge.copyWith(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                      );
-                    },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
         );
       }),
     );

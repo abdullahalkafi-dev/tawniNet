@@ -27,7 +27,7 @@ class RoleSelectionView extends GetView<RoleSelectionController> {
                       children: [
                         const SizedBox(height: 12),
                         const Align(
-                          alignment: Alignment.topRight,
+                          alignment: AlignmentDirectional.topEnd,
                           child: ThemeToggleIconButton(),
                         ),
                         const SizedBox(height: 12),

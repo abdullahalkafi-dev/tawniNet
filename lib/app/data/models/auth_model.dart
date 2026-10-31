@@ -39,6 +39,12 @@ class AuthUser {
   final String? documentUrl;
   final String? selfieUrl;
 
+  // Account settings
+  final bool isAvailable;
+  final Map<String, bool> notificationPrefs;
+  final int? acceptedLegalVersion;
+  final String? locale;
+
   AuthUser({
     required this.id,
     required this.name,
@@ -73,7 +79,16 @@ class AuthUser {
     this.documentType,
     this.documentUrl,
     this.selfieUrl,
+    this.isAvailable = true,
+    this.notificationPrefs = const {},
+    this.acceptedLegalVersion,
+    this.locale,
   });
+
+  AuthUser copyWithAvailability(bool available) => AuthUser.fromJson({
+        ...toJson(),
+        'isAvailable': available,
+      });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) {
     double? lat;
@@ -121,6 +136,13 @@ class AuthUser {
       documentType: json['documentType'],
       documentUrl: ApiConstants.resolveImageUrl(json['documentUrl']),
       selfieUrl: ApiConstants.resolveImageUrl(json['selfieUrl']),
+      isAvailable: json['isAvailable'] != false,
+      notificationPrefs: json['notificationPrefs'] is Map
+          ? (json['notificationPrefs'] as Map)
+              .map((k, v) => MapEntry(k.toString(), v != false))
+          : const {},
+      acceptedLegalVersion: (json['acceptedLegalVersion'] as num?)?.toInt(),
+      locale: json['locale']?.toString(),
     );
   }
 
@@ -160,6 +182,10 @@ class AuthUser {
       'documentType': documentType,
       'documentUrl': documentUrl,
       'selfieUrl': selfieUrl,
+      'isAvailable': isAvailable,
+      'notificationPrefs': notificationPrefs,
+      'acceptedLegalVersion': acceptedLegalVersion,
+      'locale': locale,
     };
   }
 

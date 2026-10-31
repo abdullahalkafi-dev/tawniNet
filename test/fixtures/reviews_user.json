@@ -1,0 +1,36 @@
+{
+ "success": true,
+ "message": "User reviews fetched successfully",
+ "data": [
+  {
+   "_id": "6ae5fc848a0aef46cd1f4eeb",
+   "rating": 5,
+   "comment": "Great job, very careful",
+   "reply": {
+    "text": "Thank you!",
+    "at": "2026-10-31T14:34:44.837Z"
+   },
+   "createdAt": "2026-10-31T14:34:44.827Z",
+   "reviewer": {
+    "_id": "6ae5fb9981c513a58eb79792",
+    "name": "Omar T.",
+    "avatar": null
+   }
+  },
+  {
+   "_id": "6ae5fc42b4c68f351f2c8371",
+   "rating": 5,
+   "comment": "Great job, very careful",
+   "reply": {
+    "text": "Thank you!",
+    "at": "2026-10-31T14:33:38.318Z"
+   },
+   "createdAt": "2026-10-31T14:33:38.302Z",
+   "reviewer": {
+    "_id": "6ae5fb9981c513a58eb79792",
+    "name": "Omar T.",
+    "avatar": null
+   }
+  }
+ ]
+}

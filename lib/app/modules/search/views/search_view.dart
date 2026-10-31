@@ -1,3 +1,5 @@
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/utils/helper_chat.dart';
@@ -37,7 +39,7 @@ class SearchView extends GetView<AwnneaSearchController> {
       decoration: BoxDecoration(
         color: context.inputFillColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.primary.withOpacity(0.5)),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.5)),
       ),
       child: TextField(
         controller: controller.searchController,
@@ -69,10 +71,18 @@ class SearchView extends GetView<AwnneaSearchController> {
           const SizedBox(height: 16),
           Obx(() {
             if (controller.isLoadingSuggestions.value) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(20),
-                  child: CircularProgressIndicator(),
+              return const Shimmer(
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    SkeletonBox(width: 96, height: 38, radius: 19),
+                    SkeletonBox(width: 120, height: 38, radius: 19),
+                    SkeletonBox(width: 84, height: 38, radius: 19),
+                    SkeletonBox(width: 132, height: 38, radius: 19),
+                    SkeletonBox(width: 104, height: 38, radius: 19),
+                    SkeletonBox(width: 90, height: 38, radius: 19),
+                  ],
                 ),
               );
             }
@@ -96,26 +106,17 @@ class SearchView extends GetView<AwnneaSearchController> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                     decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(context.isDarkMode ? 0.15 : 0.08),
+                      color: AppColors.primary.withValues(alpha: context.isDarkMode ? 0.15 : 0.08),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: AppColors.primary.withOpacity(context.isDarkMode ? 0.3 : 0.2),
+                        color: AppColors.primary.withValues(alpha: context.isDarkMode ? 0.3 : 0.2),
                       ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (cat.iconUrl != null && cat.iconUrl!.isNotEmpty)
-                          Image.network(
-                            cat.iconUrl!,
-                            width: 20,
-                            height: 20,
-                            errorBuilder: (_, __, ___) => const Icon(
-                              Icons.build,
-                              size: 16,
-                              color: AppColors.primary,
-                            ),
-                          )
+                          AppNetworkImage(url: cat.iconUrl!, width: 20, height: 20)
                         else
                           const Icon(
                             Icons.build,
@@ -247,13 +248,7 @@ class SearchView extends GetView<AwnneaSearchController> {
             children: [
               ClipOval(
                 child: helper.helperImage.isNotEmpty
-                    ? Image.network(
-                        helper.helperImage,
-                        height: 50,
-                        width: 50,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildAvatarPlaceholder(context),
-                      )
+                    ? AppNetworkImage(url: helper.helperImage, width: 50, height: 50, fit: BoxFit.cover)
                     : _buildAvatarPlaceholder(context),
               ),
               const SizedBox(width: 12),

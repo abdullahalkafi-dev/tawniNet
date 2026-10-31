@@ -1,3 +1,5 @@
+import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
 import 'package:awnneaapp/app/core/utils/job_display.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
@@ -82,7 +84,7 @@ class _RateClientViewState extends State<RateClientView> {
             _buildStarRating(),
             const SizedBox(height: 30),
             Align(
-              alignment: Alignment.centerLeft,
+              alignment: AlignmentDirectional.centerStart,
               child: Text(
                 'rate_leave_review'.tr,
                 style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.w600),
@@ -176,7 +178,7 @@ class _RateClientViewState extends State<RateClientView> {
                         .catchError((_) {});
                   } catch (_) {}
                 } catch (e) {
-                  AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
+                  AppFeedback.error(AppSnackbar.extractErrorMessage(e));
                 } finally {
                   if (mounted) {
                     setState(() => _isSubmitting = false);
@@ -193,7 +195,7 @@ class _RateClientViewState extends State<RateClientView> {
   Widget _buildClientInfo(BuildContext context, Map job) {
     final name = JobDisplay.personName(
       job['postedBy'],
-      fallback: JobDisplay.safeText(job['clientName'], fallback: 'Client'),
+      fallback: JobDisplay.safeText(job['clientName'], fallback: 'ui_client'.tr),
     );
     final avatar = JobDisplay.personAvatar(job['postedBy'],
         fallback: JobDisplay.safeText(job['clientImage']));
@@ -212,20 +214,7 @@ class _RateClientViewState extends State<RateClientView> {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(40),
-            child: Image.network(
-              resolvedAvatar,
-              width: 60,
-              height: 60,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  width: 60,
-                  height: 60,
-                  color: context.inputFillLight,
-                  child: Icon(Icons.person, color: context.textHintColor),
-                );
-              },
-            ),
+            child: AppNetworkImage(url: resolvedAvatar, width: 60, height: 60, fit: BoxFit.cover),
           ),
           const SizedBox(width: 16),
           Expanded(

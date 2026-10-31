@@ -58,7 +58,8 @@ Reusable text field widget. Supports optional params:
 Centralized geocoding via backend. Use `Get.find<LocationService>()`.
 - `reverseGeocode(lat, lon)` → `{ address, city, country, lat, lon }` or null
 - `forwardGeocode(query, {limit})` → `List<{ displayName, lat, lon, city, country }>`
-- 1s debounce required on search inputs to stay within LocationIQ free tier
+- Both throw `GeocodeException` (with `isRateLimited`) when the service fails
+- Debounce search inputs (600 ms) to stay within the geocoding rate limit
 
 ## Key Rules
 1. Never modify existing user flow screens unless explicitly asked
@@ -68,7 +69,11 @@ Centralized geocoding via backend. Use `Get.find<LocationService>()`.
 5. Helper-specific screens go under `lib/app/modules/helper/`
 6. Category dropdowns must send `_id` (ObjectId), not name — use `Rxn<Category>` + `_buildCategoryDropdownField`
 7. Location geocoding goes through backend (`/geocoding/reverse`, `/geocoding/forward`) — never call LocationIQ directly from Flutter
-8. Address is best-effort: if geocoding fails, omit `address` field from request (don't send null)
+8. A job must have a real location and address (the server rejects jobs without them). For the user's own profile location the address is best-effort: if geocoding fails, omit `address` (don't send null).
+9. Geocoding functions throw `GeocodeException` (rate limit / network): always catch it and show the message with a retry, and offer the city picker (`kMoroccanCities`) as an always-working fallback. Never block a flow on geocoding.
+10. Texts: every user-facing string is a translation key in all 4 languages (`ui_translations.dart`); use `@param` placeholders with `trParams`; server errors arrive as `code` + `params` and are translated by `ApiException`.
+11. Layout must work in Arabic (RTL): use `EdgeInsetsDirectional`, `AlignmentDirectional`, `PositionedDirectional` for one-sided values.
+12. Loading: show a skeleton (`core/widgets/skeleton.dart`) only the first time a screen loads, keep data on screen while refreshing, and show `ErrorRetry` when a first load fails. Network images use `AppNetworkImage` (cached).
 
 ---
 

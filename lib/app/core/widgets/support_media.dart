@@ -1,5 +1,5 @@
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
-import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/modules/messages/views/widgets/media_downloader.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -63,7 +63,7 @@ class SupportMediaGrid extends StatelessWidget {
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: Theme.of(context).dividerColor.withOpacity(0.35),
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.35),
               ),
             ),
             clipBehavior: Clip.antiAlias,
@@ -76,59 +76,23 @@ class SupportMediaGrid extends StatelessWidget {
                         child: Center(
                           child: Icon(
                             Icons.play_circle_fill_rounded,
-                            color: Colors.white.withOpacity(0.92),
+                            color: Colors.white.withValues(alpha: 0.92),
                             size: 42,
                           ),
                         ),
                       ),
-                      Positioned(
-                        right: 6,
+                      PositionedDirectional(
+                        end: 6,
                         bottom: 6,
                         child: Icon(
                           Icons.videocam_outlined,
                           size: 16,
-                          color: Colors.white.withOpacity(0.85),
+                          color: Colors.white.withValues(alpha: 0.85),
                         ),
                       ),
                     ],
                   )
-                : Image.network(
-                    url,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.broken_image_outlined,
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            size: 28,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'ui_image'.tr,
-                            style: AppStyles.bodyMedium.copyWith(
-                              fontSize: 11,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    loadingBuilder: (context, child, progress) {
-                      if (progress == null) return child;
-                      return Center(
-                        child: SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
+                : AppNetworkImage(url: url, fit: BoxFit.cover),
           ),
         );
       }).toList(),
@@ -168,18 +132,7 @@ class SupportImagePreviewPage extends StatelessWidget {
       body: InteractiveViewer(
         maxScale: 4,
         child: Center(
-          child: Image.network(
-            url,
-            fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => Padding(
-              padding: EdgeInsets.all(24),
-              child: Text(
-                'ui_could_not_load_image_use_download_or'.tr,
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white70),
-              ),
-            ),
-          ),
+          child: AppNetworkImage(url: url, fit: BoxFit.contain),
         ),
       ),
     );

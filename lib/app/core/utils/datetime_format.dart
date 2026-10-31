@@ -13,6 +13,23 @@ class AppDateTime {
   /// `2026-09-12`
   static String toIsoDate(DateTime date) => _isoDate.format(date);
 
+  /// "Now", "5 min", "3 h", "2 d", "3 w": short, localized, for lists.
+  static String shortAgo(DateTime dateTime) {
+    final diff = DateTime.now().difference(dateTime);
+    if (diff.inMinutes < 1) return 'chat_time_now'.tr;
+    if (diff.inMinutes < 60) return 'chat_time_minutes'.trParams({'n': '${diff.inMinutes}'});
+    if (diff.inHours < 24) return 'chat_time_hours'.trParams({'n': '${diff.inHours}'});
+    if (diff.inDays < 7) return 'chat_time_days'.trParams({'n': '${diff.inDays}'});
+    return 'chat_time_weeks'.trParams({'n': '${(diff.inDays / 7).floor()}'});
+  }
+
+  /// Local "HH:mm" of an ISO timestamp from the server (they are UTC).
+  static String clockTime(dynamic raw) {
+    final d = DateTime.tryParse(raw?.toString() ?? '')?.toLocal();
+    if (d == null) return '';
+    return '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+  }
+
   /// Parse ISO or common display forms. Null if unparseable.
   static DateTime? tryParseDate(String? raw) {
     if (raw == null || raw.trim().isEmpty) return null;
@@ -67,13 +84,26 @@ class AppDateTime {
   /// Shortest bookable slot, in minutes. Mirrors the backend rule.
   static const int minBookingMinutes = 30;
 
+  /// Longest shift that may cross midnight (mirrors the backend).
+  static const int maxOvernightMinutes = 12 * 60;
+
   /// Minutes between two time strings, or null if either is unparseable.
-  /// No overnight wrap: an end time at or before the start is negative/zero.
+  /// An end at or before the start is read as "the next day" (night shift),
+  /// exactly like the server does; equal times give 24 h which is rejected
+  /// by [validateTimeRange].
   static int? minutesBetween(String? startRaw, String? endRaw) {
     final start = tryParseTimeOfDay(startRaw);
     final end = tryParseTimeOfDay(endRaw);
     if (start == null || end == null) return null;
-    return (end.hour * 60 + end.minute) - (start.hour * 60 + start.minute);
+    var mins = (end.hour * 60 + end.minute) - (start.hour * 60 + start.minute);
+    if (mins <= 0) mins += 24 * 60;
+    return mins;
+  }
+
+  /// Hours between two times (null when unusable). Same rule as the server.
+  static double? hoursBetween(String? startRaw, String? endRaw) {
+    final mins = minutesBetween(startRaw, endRaw);
+    return mins == null ? null : mins / 60.0;
   }
 
   /// Returns a translated error, or null when the range is valid.
@@ -89,7 +119,12 @@ class AppDateTime {
     if (!hasStart || !hasEnd) return 'time_both_required'.tr;
     final mins = minutesBetween(startRaw, endRaw);
     if (mins == null) return 'time_invalid'.tr;
-    if (mins <= 0) return 'time_end_after_start'.tr;
+    final a = tryParseTimeOfDay(startRaw)!;
+    final b = tryParseTimeOfDay(endRaw)!;
+    final crossesMidnight = (b.hour * 60 + b.minute) <= (a.hour * 60 + a.minute);
+    if (crossesMidnight && (mins == 24 * 60 || mins > maxOvernightMinutes)) {
+      return 'time_end_after_start'.tr;
+    }
     if (mins < minBookingMinutes) {
       return 'time_min_duration'.trParams({'min': '$minBookingMinutes'});
     }

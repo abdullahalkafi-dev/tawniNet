@@ -45,11 +45,11 @@ class HelperKycView extends GetView<ApplyHelperController> {
                 width: 100,
                 height: 100,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.12),
+                  color: AppColors.primary.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.15),
+                      color: AppColors.primary.withValues(alpha: 0.15),
                       blurRadius: 24,
                       spreadRadius: 4,
                     ),
@@ -122,7 +122,7 @@ class HelperKycView extends GetView<ApplyHelperController> {
               // Status Card
               Obx(() {
                 final user = authService.currentUser.value;
-                final status = user?.diditStatus ?? 'Not Started';
+                final status = user?.diditStatus ?? 'tracking_status_not_started'.tr;
                 final isApproved = user?.helperApplicationStatus == 'approved';
 
                 Color statusColor = Colors.grey;
@@ -145,7 +145,7 @@ class HelperKycView extends GetView<ApplyHelperController> {
                   decoration: BoxDecoration(
                     color: context.cardColor,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: statusColor.withOpacity(0.3)),
+                    border: Border.all(color: statusColor.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     children: [
@@ -256,7 +256,7 @@ class HelperKycView extends GetView<ApplyHelperController> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: AppColors.primary, size: 22),

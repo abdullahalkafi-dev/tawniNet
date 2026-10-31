@@ -9,6 +9,8 @@ import 'package:awnneaapp/app/data/models/message_model.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/core/widgets/location_map_picker.dart';
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
+import 'package:awnneaapp/app/services/app_config_service.dart';
 import 'package:awnneaapp/app/services/location_service.dart';
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
@@ -20,7 +22,10 @@ import 'package:awnneaapp/app/core/utils/image_picker_errors.dart';
 class OfferFormBottomSheet extends StatefulWidget {
   final String conversationId;
   final OfferData? editOffer;
-  final Function(Map<String, dynamic>) onOfferSent;
+
+  /// Sends/updates the offer; returns true on success. The form only closes
+  /// when it did, so a refusal (e.g. not enough wallet balance) loses nothing.
+  final Future<bool> Function(Map<String, dynamic>) onOfferSent;
 
   const OfferFormBottomSheet({
     super.key,
@@ -47,6 +52,10 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
   final List<String> _selectedImages = [];
   String? _isoDate;
   bool _isUploadingImages = false;
+  bool _isSubmitting = false;
+
+  /// The address text that matches the selected point; typing anything else drops the point.
+  String _pickedAddress = '';
   double? _selectedLatitude;
   double? _selectedLongitude;
   List<Map<String, dynamic>> _addressSuggestions = [];
@@ -64,6 +73,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
     _addressController = TextEditingController(text: widget.editOffer?.address ?? '');
     _selectedLatitude = widget.editOffer?.latitude;
     _selectedLongitude = widget.editOffer?.longitude;
+    _pickedAddress = (widget.editOffer?.address ?? '').trim();
 
     final rawDate = widget.editOffer?.date ?? '';
     final parsedDate = AppDateTime.tryParseDate(rawDate);
@@ -105,6 +115,11 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
 
   void _onAddressChanged(String value) {
     _addressDebounce?.cancel();
+    // Editing the text makes the old point wrong: it must be picked again.
+    if (value.trim() != _pickedAddress) {
+      _selectedLatitude = null;
+      _selectedLongitude = null;
+    }
     _addressDebounce = Timer(const Duration(milliseconds: 350), () async {
       final q = value.trim();
       if (q.length < 3) {
@@ -133,6 +148,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
     final lng = ((suggestion['lon'] ?? suggestion['longitude']) as num?)?.toDouble();
     setState(() {
       _addressController.text = address;
+      _pickedAddress = address.trim();
       _selectedLatitude = lat;
       _selectedLongitude = lng;
       _addressSuggestions = [];
@@ -144,11 +160,14 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
       if (Get.isRegistered<LocationService>()) {
         final loc = Get.find<LocationService>();
         final address = await loc.getCurrentAddress();
-        if (address != null && address.isNotEmpty) {
+        final lat = loc.currentLatitude.value;
+        final lng = loc.currentLongitude.value;
+        if (address != null && address.isNotEmpty && lat != null && lng != null) {
           setState(() {
             _addressController.text = address;
-            _selectedLatitude = loc.currentLatitude.value;
-            _selectedLongitude = loc.currentLongitude.value;
+            _pickedAddress = address.trim();
+            _selectedLatitude = lat;
+            _selectedLongitude = lng;
             _addressSuggestions = [];
           });
           return;
@@ -185,7 +204,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
             child: Row(
               children: [
                 Text(
-                  widget.editOffer != null ? 'Edit Offer' : 'Create Offer',
+                  widget.editOffer != null ? 'offer_form_edit'.tr : 'offer_form_create'.tr,
                   style: AppStyles.h2Of(context).copyWith(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -214,7 +233,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                   TextField(
                     controller: _titleController,
                     style: TextStyle(color: context.textPrimaryColor),
-                    decoration: _buildInputDecoration(context, 'e.g., House Cleaning'),
+                    decoration: _buildInputDecoration(context, 'offer_title_hint'.tr),
                     maxLength: 200,
                   ),
                   const SizedBox(height: 16),
@@ -301,9 +320,9 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.amber.withOpacity(0.08),
+                        color: Colors.amber.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.amber.withOpacity(0.35)),
+                        border: Border.all(color: Colors.amber.withValues(alpha: 0.35)),
                       ),
                       child: Row(
                         children: [
@@ -311,7 +330,9 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'ui_platform_commission_20_is_held_from_your'.tr,
+                              'offer_commission_note'.trParams({
+                                'pct': _pct(),
+                              }),
                               style: TextStyle(
                                 fontSize: 11,
                                 color: context.textPrimaryColor,
@@ -332,30 +353,20 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                       scrollDirection: Axis.horizontal,
                       children: [
                         ..._selectedImages.map((img) => Padding(
-                              padding: const EdgeInsets.only(right: 8),
+                              padding: const EdgeInsetsDirectional.only(end: 8),
                               child: Stack(
                                 children: [
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
-                                    child: Image.network(
-                                      ApiConstants.resolveImageUrl(img) ?? img,
+                                    child: AppNetworkImage(
+                                      url: img,
                                       width: 80,
                                       height: 80,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) => Container(
-                                        width: 80,
-                                        height: 80,
-                                        color: context.inputFillColor,
-                                        child: Icon(
-                                          Icons.broken_image,
-                                          color: context.textHintColor,
-                                        ),
-                                      ),
                                     ),
                                   ),
-                                  Positioned(
+                                  PositionedDirectional(
                                     top: 4,
-                                    right: 4,
+                                    end: 4,
                                     child: GestureDetector(
                                       onTap: () {
                                         setState(() {
@@ -416,7 +427,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
               color: context.cardColor,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, -2),
                 ),
@@ -426,7 +437,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: _isUploadingImages ? null : _submitOffer,
+                onPressed: (_isUploadingImages || _isSubmitting) ? null : _submitOffer,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -434,13 +445,19 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: Text(
-                  widget.editOffer != null ? 'Update Offer' : 'Send Offer',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : Text(
+                        widget.editOffer != null ? 'offer_form_update'.tr : 'offer_form_send'.tr,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
             ),
           ),
@@ -457,18 +474,13 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
     );
     String? estimate;
     if (rate > 0 && mins != null) {
-      if (mins <= 0) {
-        estimate = 'time_end_after_start'.tr;
-      } else {
-        final hours = mins / 60.0;
-        final total = (rate * hours).round();
-        estimate =
-            'ui_hourly_estimate_detail'.trParams({
-              'hours': hours.toStringAsFixed(2),
-              'rate': rate.toStringAsFixed(0),
-              'total': '$total',
-            });
-      }
+      final hours = mins / 60.0;
+      final total = (rate * hours).round();
+      estimate = 'ui_hourly_estimate_detail'.trParams({
+        'hours': hours.toStringAsFixed(2),
+        'rate': rate.toStringAsFixed(0),
+        'total': '$total',
+      });
     }
 
     return Padding(
@@ -477,9 +489,9 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
         width: double.infinity,
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.primary.withOpacity(0.08),
+          color: AppColors.primary.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.primary.withOpacity(0.25)),
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -579,6 +591,7 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
                 if (picked != null) {
                   setState(() {
                     _addressController.text = picked.address;
+                    _pickedAddress = picked.address.trim();
                     _selectedLatitude = picked.latitude;
                     _selectedLongitude = picked.longitude;
                     _addressSuggestions = [];
@@ -856,21 +869,23 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
     }
   }
 
-  void _submitOffer() {
+  String _pct() {
+    final fee = Get.isRegistered<AppConfigService>() ? Get.find<AppConfigService>().feePercentage.value : 20.0;
+    return fee == fee.roundToDouble() ? fee.toInt().toString() : fee.toStringAsFixed(1);
+  }
+
+  Future<void> _submitOffer() async {
+    if (_isSubmitting) return;
     final title = _titleController.text.trim();
     final price = double.tryParse(_priceController.text.trim()) ?? 0;
 
     if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('ui_please_enter_a_service_title'.tr)),
-      );
+      AppFeedback.error('ui_please_enter_a_service_title'.tr);
       return;
     }
 
     if (price <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('ui_please_enter_a_valid_price'.tr)),
-      );
+      AppFeedback.error('ui_please_enter_a_valid_price'.tr);
       return;
     }
 
@@ -880,40 +895,38 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
       if (parsed != null) isoDate = AppDateTime.toIsoDate(parsed);
     }
     if (isoDate == null || isoDate.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('ui_please_select_a_date_for_this_job'.tr)),
-      );
+      AppFeedback.error('ui_please_select_a_date_for_this_job'.tr);
       return;
     }
 
+    // An hourly price is rate × hours, so both times are needed.
     final timeError = AppDateTime.validateTimeRange(
       _startTimeController.text,
       _endTimeController.text,
+      required: _priceType == 'hourly',
     );
     if (timeError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(timeError)),
-      );
+      AppFeedback.error(timeError);
       return;
     }
 
     final address = _addressController.text.trim();
     if (address.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('ui_please_select_a_work_location'.tr)),
-      );
+      AppFeedback.error('ui_please_select_a_work_location'.tr);
       return;
     }
 
-    double? lat = _selectedLatitude;
-    double? lon = _selectedLongitude;
-    if ((lat == null || lon == null) && Get.isRegistered<LocationService>()) {
-      final loc = Get.find<LocationService>();
-      lat = loc.currentLatitude.value;
-      lon = loc.currentLongitude.value;
+    // The job site must be a point the helper actually chose (suggestion, map or
+    // "my location") — never silently the helper's own position.
+    final lat = _selectedLatitude;
+    final lon = _selectedLongitude;
+    if (lat == null || lon == null) {
+      AppFeedback.error('post_pick_suggestion'.tr);
+      return;
     }
 
-    widget.onOfferSent({
+    setState(() => _isSubmitting = true);
+    final ok = await widget.onOfferSent({
       'title': title,
       'description': _descController.text.trim(),
       'price': price,
@@ -922,12 +935,17 @@ class _OfferFormBottomSheetState extends State<OfferFormBottomSheet> {
       'startTime': AppDateTime.formatTime12h(_startTimeController.text),
       'endTime': AppDateTime.formatTime12h(_endTimeController.text),
       'address': address,
-      if (lat != null) 'latitude': lat,
-      if (lon != null) 'longitude': lon,
+      'latitude': lat,
+      'longitude': lon,
       'paymentMethod': _paymentMethod,
       'images': _selectedImages,
     });
 
-    Navigator.pop(context);
+    if (!mounted) return;
+    if (ok) {
+      Navigator.pop(context);
+    } else {
+      setState(() => _isSubmitting = false);
+    }
   }
 }

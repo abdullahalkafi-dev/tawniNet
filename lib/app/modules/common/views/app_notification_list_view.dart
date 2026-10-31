@@ -1,3 +1,4 @@
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/services/notification_api.dart';
@@ -230,7 +231,7 @@ class _AppNotificationListViewState extends State<AppNotificationListView> {
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? SkeletonList(count: 8, itemBuilder: (_, _) => const ChatTileSkeleton())
           : _items.isEmpty
               ? Center(
                   child: Padding(
@@ -264,7 +265,7 @@ class _AppNotificationListViewState extends State<AppNotificationListView> {
                       final unread = item['read'] != true;
                       return Material(
                         color: unread
-                            ? AppColors.primary.withOpacity(0.06)
+                            ? AppColors.primary.withValues(alpha: 0.06)
                             : context.cardColor,
                         borderRadius: BorderRadius.circular(16),
                         child: InkWell(
@@ -282,7 +283,7 @@ class _AppNotificationListViewState extends State<AppNotificationListView> {
                                 Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primary.withOpacity(0.12),
+                                    color: AppColors.primary.withValues(alpha: 0.12),
                                     shape: BoxShape.circle,
                                   ),
                                   child: Icon(

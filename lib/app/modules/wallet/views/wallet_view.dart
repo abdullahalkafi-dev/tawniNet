@@ -3,6 +3,10 @@ import 'package:get/get.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
+import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
+import 'package:awnneaapp/app/core/utils/datetime_format.dart';
+import 'package:awnneaapp/app/core/widgets/error_retry.dart';
+import 'package:awnneaapp/app/core/widgets/skeleton.dart';
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
@@ -20,10 +24,14 @@ class _WalletViewState extends State<WalletView> {
   final ApiClient _api = Get.find<ApiClient>();
   final ScrollController _scroll = ScrollController();
 
+  static const _minTopUp = 20;
+  static const _maxTopUp = 10000;
+
   double _balance = 0;
   String _currency = 'MAD';
   final List<dynamic> _txs = [];
   bool _loading = true;
+  bool _failed = false;
   bool _loadingMore = false;
   int _page = 1;
   bool _hasMore = true;
@@ -46,7 +54,11 @@ class _WalletViewState extends State<WalletView> {
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
+    // Skeleton only the first time; later refreshes keep the numbers on screen.
+    setState(() {
+      _loading = _txs.isEmpty && _balance == 0;
+      _failed = false;
+    });
     try {
       final bal = await _api.get<dynamic>(
         ApiConstants.walletBalance,
@@ -74,7 +86,8 @@ class _WalletViewState extends State<WalletView> {
         _hasMore = _txs.length < total;
       }
     } catch (e) {
-      AppFeedback.error('ui_failed_to_load_wallet'.tr);
+      _failed = true;
+      if (_txs.isNotEmpty || _balance != 0) AppFeedback.error('ui_failed_to_load_wallet'.tr);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -112,9 +125,10 @@ class _WalletViewState extends State<WalletView> {
         title: Text('ui_top_up_wallet'.tr),
         content: TextField(
           controller: controller,
-          keyboardType: TextInputType.number,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
             labelText: 'ui_amount_mad'.tr,
+            helperText: 'wallet_topup_range'.trParams({'min': '$_minTopUp', 'max': '$_maxTopUp'}),
             prefixIcon: Icon(Icons.payments_outlined),
           ),
         ),
@@ -122,7 +136,11 @@ class _WalletViewState extends State<WalletView> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text('btn_cancel'.tr)),
           FilledButton(
             onPressed: () {
-              final v = double.tryParse(controller.text.trim());
+              final v = double.tryParse(controller.text.trim().replaceAll(',', '.'));
+              if (v == null || v < _minTopUp || v > _maxTopUp) {
+                AppFeedback.error('wallet_topup_range'.trParams({'min': '$_minTopUp', 'max': '$_maxTopUp'}));
+                return;
+              }
               Navigator.pop(ctx, v);
             },
             child: Text('ui_continue'.tr),
@@ -130,7 +148,7 @@ class _WalletViewState extends State<WalletView> {
         ],
       ),
     );
-    if (amount == null || amount <= 0) return;
+    if (amount == null) return;
 
     try {
       final res = await _api.post<dynamic>(
@@ -151,7 +169,7 @@ class _WalletViewState extends State<WalletView> {
             'orderType': 'wallet_topup',
             'amount': amount,
             'currency': 'MAD',
-            'title': 'Wallet Top-up',
+            'title': 'ui_top_up_wallet'.tr,
             'sessionId': sessionId,
             'metadata': {
               'userId': Get.find<AuthService>().currentUser.value?.id,
@@ -169,7 +187,7 @@ class _WalletViewState extends State<WalletView> {
         AppFeedback.error(res.message ?? 'ui_top_up_failed'.tr);
       }
     } catch (e) {
-      AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
+      AppFeedback.error(AppSnackbar.extractErrorMessage(e));
     }
   }
 
@@ -191,8 +209,10 @@ class _WalletViewState extends State<WalletView> {
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
+          ? const _WalletSkeleton()
+          : (_failed && _txs.isEmpty && _balance == 0)
+              ? ErrorRetry(onRetry: _load)
+              : RefreshIndicator(
               onRefresh: _load,
               displacement: 20,
               edgeOffset: 24,
@@ -259,7 +279,10 @@ class _WalletViewState extends State<WalletView> {
                       final amount = (map['amount'] ?? 0).toDouble();
                       final isCredit = amount >= 0;
                       final desc = (map['description'] ?? map['type'] ?? '').toString();
-                      final when = (map['createdAt'] ?? '').toString();
+                      final whenDate = DateTime.tryParse((map['createdAt'] ?? '').toString())?.toLocal();
+                      final when = whenDate == null
+                          ? ''
+                          : '${AppDateTime.toIsoDate(whenDate)} ${AppDateTime.clockTime(whenDate.toIso8601String())}';
                       return Card(
                         margin: const EdgeInsets.only(bottom: 8),
                         child: ListTile(
@@ -275,7 +298,7 @@ class _WalletViewState extends State<WalletView> {
                           ),
                           title: Text(desc, maxLines: 2, overflow: TextOverflow.ellipsis),
                           subtitle: Text(
-                            when.length >= 16 ? when.substring(0, 16).replaceFirst('T', ' ') : when,
+                            when,
                             style: AppStyles.bodyMedium.copyWith(
                               fontSize: 12,
                               color: context.textHintColor,
@@ -299,6 +322,46 @@ class _WalletViewState extends State<WalletView> {
                 ],
               ),
             ),
+    );
+  }
+}
+
+class _WalletSkeleton extends StatelessWidget {
+  const _WalletSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Shimmer(
+      child: ListView(
+        physics: const NeverScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        children: [
+          const SkeletonBox(width: double.infinity, height: 130, radius: 16),
+          const SizedBox(height: 24),
+          const SkeletonLine(height: 16, widthFactor: 0.35),
+          const SizedBox(height: 12),
+          for (var i = 0; i < 5; i++) ...[
+            const Row(
+              children: [
+                SkeletonCircle(size: 40),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SkeletonLine(height: 12, widthFactor: 0.6),
+                      SizedBox(height: 8),
+                      SkeletonLine(height: 10, widthFactor: 0.3),
+                    ],
+                  ),
+                ),
+                SkeletonBox(width: 50, height: 14, radius: 6),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+        ],
+      ),
     );
   }
 }

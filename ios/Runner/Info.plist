@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Awnneaapp</string>
+	<string>3awniNet</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -66,10 +66,14 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>This app needs access to your location to find helpers near you.</string>
+	<string>3awniNet uses your location to find helpers and jobs near you, and, while you are travelling to a job, to show your arrival to the client.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>This app needs access to your location to find helpers near you.</string>
+	<string>3awniNet uses your location to find helpers and jobs near you, and, while you are travelling to a job, to keep showing your arrival to the client even if the app is in the background.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>This app needs access to your photos so you can attach pictures to job posts, chats and your helper portfolio.</string>
 	<key>NSCameraUsageDescription</key>

@@ -1,5 +1,7 @@
 import 'package:awnneaapp/app/routes/app_routes.dart';
+import 'package:awnneaapp/app/services/app_config_service.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
+import 'package:awnneaapp/app/services/storage_service.dart';
 import 'package:awnneaapp/app/core/utils/morocco_phone_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -14,6 +16,9 @@ class SignupController extends GetxController {
   final isPasswordVisible = false.obs;
   final isConfirmPasswordVisible = false.obs;
   final isLoading = false.obs;
+
+  /// The user ticked "I accept the Terms and the Privacy Policy" (required).
+  final acceptedTerms = false.obs;
 
   String get _role => Get.arguments?['role'] ?? 'user';
 
@@ -43,12 +48,16 @@ class SignupController extends GetxController {
       _showError('ui_please_enter_a_password'.tr);
       return;
     }
-    if (password.length < 6) {
-      _showError('ui_password_must_be_at_least_6_characters'.tr);
+    if (password.length < kMinPasswordLength) {
+      _showError('err_password_too_short'.trParams({'min': '$kMinPasswordLength'}));
       return;
     }
     if (password != confirmPassword) {
       _showError('ui_passwords_do_not_match'.tr);
+      return;
+    }
+    if (!acceptedTerms.value) {
+      _showError('auth_accept_terms_required'.tr);
       return;
     }
 
@@ -62,6 +71,15 @@ class SignupController extends GetxController {
         password: password,
         name: name,
       );
+
+      // Remember which version of the Terms was accepted; it is recorded on the
+      // account at the first login (the account does not exist before).
+      try {
+        final version = Get.isRegistered<AppConfigService>()
+            ? Get.find<AppConfigService>().legalVersion.value
+            : 1;
+        await Get.find<StorageService>().write(kPendingLegalKey, '$version');
+      } catch (_) {}
 
       if (isClosed) return;
       Get.toNamed(

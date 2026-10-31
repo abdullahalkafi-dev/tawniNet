@@ -1,8 +1,10 @@
+import '../modules/helper/profile/views/my_reviews_view.dart';
 import 'package:get/get.dart';
 import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
 import '../modules/splash/bindings/splash_binding.dart';
 import '../modules/splash/views/splash_view.dart';
+import '../modules/splash/views/force_update_view.dart';
 import '../modules/onboarding/bindings/onboarding_binding.dart';
 import '../modules/onboarding/views/onboarding_view.dart';
 import '../modules/auth/role_selection/bindings/role_selection_binding.dart';
@@ -35,7 +37,9 @@ import '../modules/booking/views/cancel_details_view.dart';
 import '../modules/messages/views/chat_detail_view.dart';
 import '../modules/profile/views/edit_profile_view.dart';
 import '../modules/home/views/notifications_view.dart';
-import '../modules/profile/views/notification_settings_view.dart';
+import '../modules/profile/views/notification_prefs_view.dart';
+import '../modules/profile/views/change_password_view.dart';
+import '../modules/profile/views/delete_account_view.dart';
 import '../modules/wallet/views/wallet_view.dart';
 
 // Helper module imports
@@ -66,7 +70,6 @@ import '../modules/helper/profile/views/buy_connects_view.dart';
 import '../modules/helper/profile/views/connects_history_view.dart';
 import '../modules/helper/settings/bindings/helper_settings_binding.dart';
 import '../modules/helper/settings/views/helper_notification_view.dart';
-import '../modules/helper/settings/views/helper_notification_settings_view.dart';
 import '../modules/helper/settings/views/help_center_view.dart';
 import '../modules/helper/settings/views/privacy_policy_view.dart';
 import '../modules/helper/settings/views/about_us_view.dart';
@@ -74,7 +77,7 @@ import '../modules/helper/settings/views/customer_service_view.dart';
 import '../modules/helper/settings/views/support_ticket_list_view.dart';
 import '../modules/home/views/user_customer_service_view.dart';
 import '../modules/helper/helper_messages/bindings/helper_messages_binding.dart';
-import '../modules/helper/helper_messages/views/helper_chat_detail_view.dart';
+
 
 import 'app_routes.dart';
 import '../middlewares/auth_middleware.dart';
@@ -89,6 +92,10 @@ class AppPages {
       name: Routes.splash,
       page: () => const SplashView(),
       binding: SplashBinding(),
+    ),
+    GetPage(
+      name: Routes.updateRequired,
+      page: () => const ForceUpdateView(),
     ),
     GetPage(
       name: Routes.onboarding,
@@ -223,8 +230,24 @@ class AppPages {
     ),
     GetPage(
       name: Routes.notificationSettings,
-      page: () => const NotificationSettingsView(),
+      page: () => const NotificationPrefsView(),
       binding: HomeBinding(),
+      transition: Transition.rightToLeft,
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: Routes.myReviews,
+      page: () => const MyReviewsView(),
+    ),
+    GetPage(
+      name: Routes.changePassword,
+      page: () => const ChangePasswordView(),
+      transition: Transition.rightToLeft,
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: Routes.deleteAccount,
+      page: () => const DeleteAccountView(),
       transition: Transition.rightToLeft,
       middlewares: [AuthMiddleware()],
     ),
@@ -380,7 +403,7 @@ class AppPages {
     ),
     GetPage(
       name: Routes.helperNotificationSettings,
-      page: () => const HelperNotificationSettingsView(),
+      page: () => const NotificationPrefsView(),
       binding: HelperSettingsBinding(),
       transition: Transition.rightToLeft,
       middlewares: [AuthMiddleware()],
@@ -429,7 +452,7 @@ class AppPages {
     ),
     GetPage(
       name: Routes.helperChatDetail,
-      page: () => const HelperChatDetailView(),
+      page: () => const ChatDetailView(),
       binding: HelperMessagesBinding(),
       transition: Transition.rightToLeft,
       middlewares: [AuthMiddleware()],

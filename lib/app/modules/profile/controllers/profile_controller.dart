@@ -30,15 +30,6 @@ class ProfileController extends GetxController {
   final _picker = ImagePicker();
   String? pickedAvatarPath;
 
-  // Notification toggles
-  final notificationEnabled = true.obs;
-  final soundEnabled = true.obs;
-  final vibrateEnabled = false.obs;
-  final paymentsEnabled = true.obs;
-  final cashbackEnabled = false.obs;
-  final appUpdatesEnabled = false.obs;
-  final newServiceEnabled = true.obs;
-
   @override
   void onInit() {
     super.onInit();
@@ -127,10 +118,7 @@ class ProfileController extends GetxController {
         await Get.find<RefetchService>().invalidate(RefetchKeys.userProfile);
 
         Get.back();
-        final msg = 'helper_profile_updated'.tr;
-        AppSnackbar.showSuccess(
-          msg == 'helper_profile_updated' ? 'Profile updated successfully' : msg,
-        );
+        AppSnackbar.showSuccess('helper_profile_updated'.tr);
       } else {
         throw Exception(response.message ?? 'Update failed');
       }

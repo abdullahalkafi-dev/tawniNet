@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:awnneaapp/app/core/constants/refetch_keys.dart';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
+import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:awnneaapp/app/modules/messages/controllers/messages_controller.dart';
 import 'package:awnneaapp/app/services/job_service.dart';
@@ -17,10 +19,24 @@ class BookingController extends GetxController {
   final completedBookings = <Booking>[].obs;
   final cancelledBookings = <Booking>[].obs;
   final unpaidBookings = <Booking>[].obs;
+
+  /// True while the very first load is running (drives the skeleton).
   final isLoading = false.obs;
+  final hasLoadedOnce = false.obs;
+
+  /// The last load failed and there is nothing to show yet (drives the retry state).
+  final loadFailed = false.obs;
+
+  /// "Load more" state of the two finished tabs.
+  final completedHasMore = false.obs;
+  final cancelledHasMore = false.obs;
+  final isLoadingMore = false.obs;
+  int _completedPage = 1;
+  int _cancelledPage = 1;
 
   String? _pendingOpenJobId;
-  StreamSubscription? _jobAcceptedSub;
+  final _subs = <StreamSubscription>[];
+  Timer? _refreshDebounce;
 
   @override
   void onInit() {
@@ -38,7 +54,7 @@ class BookingController extends GetxController {
       );
     } catch (_) {}
     fetchBookings();
-    _listenForJobAccepted();
+    _listenForJobEvents();
   }
 
   @override
@@ -46,7 +62,10 @@ class BookingController extends GetxController {
     try {
       Get.find<RefetchService>().unregister(RefetchKeys.activeBookings);
     } catch (_) {}
-    _jobAcceptedSub?.cancel();
+    for (final s in _subs) {
+      s.cancel();
+    }
+    _refreshDebounce?.cancel();
     super.onClose();
   }
 
@@ -58,21 +77,25 @@ class BookingController extends GetxController {
     }
   }
 
-  void _listenForJobAccepted() {
+  /// Any change on one of my jobs (accepted, on the way, arrived, finished,
+  /// cancelled…) refreshes the lists. Bursts of events become one request.
+  void _scheduleRefresh() {
+    _refreshDebounce?.cancel();
+    _refreshDebounce = Timer(const Duration(milliseconds: 400), () {
+      if (!isClosed) fetchBookings();
+    });
+  }
+
+  void _listenForJobEvents() {
     try {
       final socket = Get.find<SocketService>();
-      _jobAcceptedSub = socket.onJobAccepted.listen((_) {
-        if (!isClosed) fetchBookings();
-      });
-    } catch (_) {}
-    try {
-      final socket = Get.find<SocketService>();
-      socket.onJobCancelled.listen((_) {
-        if (!isClosed) fetchBookings();
-      });
-      socket.onJobCompleted.listen((_) {
-        if (!isClosed) fetchBookings();
-      });
+      _subs.addAll([
+        socket.onJobAccepted.listen((_) => _scheduleRefresh()),
+        socket.onJobUpdated.listen((_) => _scheduleRefresh()),
+        socket.onJobCancelled.listen((_) => _scheduleRefresh()),
+        socket.onJobCompleted.listen((_) => _scheduleRefresh()),
+        socket.onPaymentVerified.listen((_) => _scheduleRefresh()),
+      ]);
     } catch (_) {}
   }
 
@@ -84,8 +107,9 @@ class BookingController extends GetxController {
         if (item is Map) {
           out.add(Booking.fromJson(Map<String, dynamic>.from(item)));
         }
-      } catch (_) {
+      } catch (e) {
         // Skip malformed row — don't wipe the whole list.
+        if (kDebugMode) debugPrint('[Bookings] skipped a row: $e');
       }
     }
     return out;
@@ -107,37 +131,16 @@ class BookingController extends GetxController {
   }
 
   Future<void> _fetchBookingsImpl({bool userInitiated = false}) async {
-    isLoading.value = true;
+    // Only the very first load shows skeletons; later refreshes update in place.
+    if (!hasLoadedOnce.value) isLoading.value = true;
     try {
-      final jobService = Get.find<JobService>();
-      final res = await jobService.getMyBookings();
+      final res = await Get.find<JobService>().getMyBookings();
 
       final active = _mapBookings(res['active']);
       final awaiting = _mapBookings(res['awaiting']);
       final completed = _mapBookings(res['completed']);
       final cancelled = _mapBookings(res['cancelled']);
       final unpaid = _mapBookings(res['unpaid']);
-
-      // Older backends may still lump pending_payment into active
-      if (unpaid.isEmpty) {
-        final stillUnpaid = active
-            .where((b) => b.status == BookingStatus.pendingPayment)
-            .toList();
-        if (stillUnpaid.isNotEmpty) {
-          active.removeWhere((b) => b.status == BookingStatus.pendingPayment);
-          unpaid.addAll(stillUnpaid);
-        }
-      }
-
-      // Older backends may still lump open (looking for helper) into active
-      if (awaiting.isEmpty) {
-        final stillAwaiting =
-            active.where((b) => b.status == BookingStatus.open).toList();
-        if (stillAwaiting.isNotEmpty) {
-          active.removeWhere((b) => b.status == BookingStatus.open);
-          awaiting.addAll(stillAwaiting);
-        }
-      }
 
       activeBookings.assignAll(active);
       // Awaiting = still looking for a helper + payment not finished.
@@ -146,24 +149,60 @@ class BookingController extends GetxController {
       cancelledBookings.assignAll(cancelled);
       unpaidBookings.assignAll(unpaid);
 
+      final counts = res['counts'] is Map ? res['counts'] as Map : const {};
+      completedHasMore.value = completed.length < ((counts['completed'] as num?)?.toInt() ?? 0);
+      cancelledHasMore.value = cancelled.length < ((counts['cancelled'] as num?)?.toInt() ?? 0);
+      _completedPage = 1;
+      _cancelledPage = 1;
+
+      hasLoadedOnce.value = true;
+      loadFailed.value = false;
       _openPendingJobDetails();
     } catch (e) {
-      if (!isClosed &&
-          (userInitiated ||
-              (activeBookings.isEmpty &&
-                  awaitingBookings.isEmpty &&
-                  unpaidBookings.isEmpty))) {
-        AppFeedback.error(
-          e.toString().replaceAll('Exception: ', '').isEmpty
-              ? 'ui_could_not_load_bookings_pull_down_to'.tr
-              : e.toString().replaceAll('Exception: ', ''),
-          title: 'ui_bookings'.tr,
-        );
+      final nothingToShow = activeBookings.isEmpty &&
+          awaitingBookings.isEmpty &&
+          completedBookings.isEmpty &&
+          cancelledBookings.isEmpty;
+      if (!isClosed) {
+        if (nothingToShow && !hasLoadedOnce.value) loadFailed.value = true;
+        // A failed silent refresh keeps what is on screen; only an explicit pull explains why.
+        if (userInitiated) {
+          AppFeedback.error(AppSnackbar.extractErrorMessage(e), title: 'ui_bookings'.tr);
+        }
       }
     } finally {
       if (!isClosed) {
         isLoading.value = false;
       }
+    }
+  }
+
+  /// Next page of the Completed / Cancelled tab.
+  Future<void> loadMore(BookingStatus tab) async {
+    if (isLoadingMore.value) return;
+    final isCompleted = tab == BookingStatus.completed;
+    if (!(isCompleted ? completedHasMore.value : cancelledHasMore.value)) return;
+    isLoadingMore.value = true;
+    try {
+      final page = (isCompleted ? _completedPage : _cancelledPage) + 1;
+      final res = await Get.find<JobService>()
+          .getMyBookingsPage(isCompleted ? 'completed' : 'cancelled', page);
+      final docs = _mapBookings(res['docs']);
+      final target = isCompleted ? completedBookings : cancelledBookings;
+      final known = target.map((b) => b.id).toSet();
+      target.addAll(docs.where((b) => !known.contains(b.id)));
+      final more = (res['totalPages'] as num? ?? 0) > page;
+      if (isCompleted) {
+        _completedPage = page;
+        completedHasMore.value = more;
+      } else {
+        _cancelledPage = page;
+        cancelledHasMore.value = more;
+      }
+    } catch (e) {
+      AppFeedback.error(AppSnackbar.extractErrorMessage(e));
+    } finally {
+      isLoadingMore.value = false;
     }
   }
 
@@ -192,28 +231,12 @@ class BookingController extends GetxController {
         break;
       }
     }
-    if (match != null) {
-      // Defer so the list screen is mounted first
-      Future.delayed(const Duration(milliseconds: 200), () {
-        if (Get.currentRoute == Routes.booking || Get.currentRoute == '/') {
-          Get.toNamed(Routes.bookingDetails, arguments: match);
-        }
-      });
-    } else {
-      // Fallback: fetch from API directly if not yet in lists
-      try {
-        final jobService = Get.find<JobService>();
-        final single = await jobService.getJobById(id);
-        if (single.isNotEmpty) {
-          final b = Booking.fromJson(single);
-          Future.delayed(const Duration(milliseconds: 200), () {
-            if (Get.currentRoute == Routes.booking || Get.currentRoute == '/') {
-              Get.toNamed(Routes.bookingDetails, arguments: b);
-            }
-          });
-        }
-      } catch (_) {}
-    }
+    // Pass the id: the details screen loads the fresh job itself.
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (Get.currentRoute == Routes.booking || Get.currentRoute == '/' || Get.currentRoute == Routes.home) {
+        Get.toNamed(Routes.bookingDetails, arguments: match ?? id);
+      }
+    });
   }
 
   Future<void> onChatWithWorker(Booking booking) async {
@@ -225,53 +248,56 @@ class BookingController extends GetxController {
       return;
     }
 
-    try {
-      final messagesController = Get.find<MessagesController>();
-      final conversation =
-          await messagesController.startConversation(booking.workerUserId);
-      if (conversation != null && !Get.isSnackbarOpen) {
-        final other = conversation.otherParticipant;
-        Get.toNamed(
-          Routes.chatDetail,
-          arguments: ChatSummary(
-            id: conversation.id,
-            name: other?.name ?? booking.workerName,
-            image: other?.avatar ?? booking.workerImage,
-            otherUserId: booking.workerUserId,
-          ),
-        );
-      } else if (conversation == null && !Get.isSnackbarOpen) {
-        AppFeedback.error('ui_could_not_open_chat_try_again'.tr, title: 'btn_chat'.tr);
-      }
-    } catch (_) {
-      AppFeedback.error('ui_could_not_open_chat_try_again'.tr, title: 'btn_chat'.tr);
+    final messagesController = Get.find<MessagesController>();
+    final conversation = await messagesController.startConversation(booking.workerUserId);
+    if (conversation != null) {
+      final other = conversation.otherParticipant;
+      Get.toNamed(
+        Routes.chatDetail,
+        arguments: ChatSummary(
+          id: conversation.id,
+          name: other?.name ?? booking.workerName,
+          image: other?.avatar ?? booking.workerImage,
+          otherUserId: booking.workerUserId,
+        ),
+      );
     }
   }
 
-  Future<bool> cancelBooking(String id, {String reason = 'Client cancelled'}) async {
+  Future<bool> cancelBooking(String id, {required String reason, String? code}) async {
     try {
-      if (reason.trim().length < 3) {
-        reason = 'Client requested cancellation';
-      }
-      final jobService = Get.find<JobService>();
-      await jobService.cancelJob(id, reason.trim());
+      await Get.find<JobService>().cancelJob(id, reason.trim(), code: code);
       AppFeedback.success('ui_your_booking_has_been_cancelled'.tr, title: 'ui_booking_cancelled'.tr);
       await _invalidatePipeline();
       return true;
     } catch (e) {
-      AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
+      AppFeedback.error(AppSnackbar.extractErrorMessage(e));
       return false;
     }
   }
 
-  Future<void> completeBooking(String id) async {
+  /// The client confirms the work was done (this releases the payment).
+  Future<bool> completeBooking(String id) async {
     try {
-      final jobService = Get.find<JobService>();
-      await jobService.completeJob(id);
+      await Get.find<JobService>().completeJob(id);
       AppFeedback.success('ui_booking_marked_as_completed'.tr, title: 'status_completed'.tr);
       await _invalidatePipeline();
+      return true;
     } catch (e) {
-      AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
+      AppFeedback.error(AppSnackbar.extractErrorMessage(e));
+      return false;
+    }
+  }
+
+  Future<bool> reportProblem(String id, String message) async {
+    try {
+      await Get.find<JobService>().reportProblem(id, message);
+      AppFeedback.success('job_problem_reported'.tr);
+      await _invalidatePipeline();
+      return true;
+    } catch (e) {
+      AppFeedback.error(AppSnackbar.extractErrorMessage(e));
+      return false;
     }
   }
 
@@ -291,7 +317,7 @@ class BookingController extends GetxController {
         arguments: {
           'orderId': booking.id,
           'orderType': 'job',
-          'amount': booking.budget,
+          'amount': (res['amount'] as num?)?.toDouble() ?? booking.budget,
           'currency': 'MAD',
           'title': booking.jobType,
           'sessionId': sessId,
@@ -305,7 +331,7 @@ class BookingController extends GetxController {
         await _invalidatePipeline();
       }
     } catch (e) {
-      AppFeedback.error(e.toString().replaceAll('Exception: ', ''));
+      AppFeedback.error(AppSnackbar.extractErrorMessage(e));
     }
   }
 
@@ -325,7 +351,7 @@ class BookingController extends GetxController {
       );
     } catch (e) {
       AppFeedback.error(
-        e.toString().replaceAll('Exception: ', ''),
+        AppSnackbar.extractErrorMessage(e),
         title: 'ui_could_not_submit_review'.tr,
       );
       return false;
@@ -344,4 +370,3 @@ class BookingController extends GetxController {
     return true;
   }
 }
-

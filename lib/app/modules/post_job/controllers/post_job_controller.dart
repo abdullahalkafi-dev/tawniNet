@@ -49,7 +49,14 @@ class PostJobController extends GetxController {
   Timer? _debounce;
 
   final isLoadingCategories = false.obs;
+  final categoriesFailed = false.obs;
   final isSubmitting = false.obs;
+
+  /// "5 h × 100 MAD = 500 MAD" shown under the price field (null when not computable).
+  final totalPreview = RxnString();
+
+  /// Address text that matches the selected coordinates; typing anything else drops them.
+  String _pickedAddress = '';
 
   final _imagePicker = ImagePicker();
 
@@ -58,15 +65,51 @@ class PostJobController extends GetxController {
     super.onInit();
     fetchCategories();
     _initUserAddress();
+    budgetController.addListener(_recomputeTotal);
+    startTimeController.addListener(_recomputeTotal);
+    endTimeController.addListener(_recomputeTotal);
   }
+
+  /// Server rule: hourly total = rate × hours (rounded to whole MAD).
+  int? get _hourlyTotal {
+    final rate = double.tryParse(budgetController.text.trim());
+    final hours = AppDateTime.hoursBetween(startTimeController.text, endTimeController.text);
+    if (rate == null || rate <= 0 || hours == null) return null;
+    return (rate * hours).round();
+  }
+
+  void _recomputeTotal() {
+    if (!isHourly.value) {
+      totalPreview.value = null;
+      return;
+    }
+    final total = _hourlyTotal;
+    if (total == null) {
+      totalPreview.value = null;
+      return;
+    }
+    final hours = AppDateTime.hoursBetween(startTimeController.text, endTimeController.text)!;
+    final rate = double.parse(budgetController.text.trim());
+    totalPreview.value = 'post_total_preview'.trParams({
+      'hours': _fmt(hours),
+      'rate': _fmt(rate),
+      'total': '$total',
+    });
+  }
+
+  static String _fmt(double v) =>
+      v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(1);
 
   void _initUserAddress() {
     try {
       final user = Get.find<AuthService>().currentUser.value;
       if (user != null && user.address != null && user.address!.isNotEmpty) {
         addressController.text = user.address!;
-        selectedLatitude.value = user.latitude;
-        selectedLongitude.value = user.longitude;
+        if (user.latitude != null && user.longitude != null) {
+          selectedLatitude.value = user.latitude;
+          selectedLongitude.value = user.longitude;
+          _pickedAddress = user.address!;
+        }
       }
     } catch (_) {}
   }
@@ -75,24 +118,14 @@ class PostJobController extends GetxController {
 
   Future<void> fetchCategories() async {
     isLoadingCategories.value = true;
+    categoriesFailed.value = false;
     try {
       final categoryService = Get.find<CategoryService>();
       final result = await categoryService.getActiveCategories();
       categories.assignAll(result);
     } catch (e) {
-      // Fallback to mock categories if API fails
-      categories.assignAll([
-        Category(id: 'mock_1', name: 'Cleaning Service', icon: Icons.home_repair_service_outlined, color: Colors.yellow),
-        Category(id: 'mock_2', name: 'Shifting Service', icon: Icons.local_shipping_outlined, color: Colors.amber),
-        Category(id: 'mock_3', name: 'Electrician Service', icon: Icons.bolt, color: Colors.purple),
-        Category(id: 'mock_4', name: 'Plumber Service', icon: Icons.plumbing, color: Colors.blue),
-        Category(id: 'mock_5', name: 'Painting Service', icon: Icons.format_paint, color: Colors.deepOrange),
-        Category(id: 'mock_6', name: 'Moving', icon: Icons.directions_bus_outlined, color: Colors.blue),
-        Category(id: 'mock_7', name: 'Garden', icon: Icons.opacity_outlined, color: Colors.orangeAccent),
-        Category(id: 'mock_8', name: 'Mechanic Service', icon: Icons.build, color: Colors.brown),
-        Category(id: 'mock_9', name: 'Laundry', icon: Icons.local_laundry_service, color: Colors.cyan),
-        Category(id: 'mock_10', name: 'Others', icon: Icons.help_outline, color: Colors.grey),
-      ]);
+      // No fake categories: a job posted with an invented id would be rejected anyway.
+      categoriesFailed.value = true;
     } finally {
       if (!isClosed) {
         isLoadingCategories.value = false;
@@ -106,6 +139,7 @@ class PostJobController extends GetxController {
 
   void toggleBudgetType(bool hourly) {
     isHourly.value = hourly;
+    _recomputeTotal();
   }
 
   void toggleBudget(bool hourly) => toggleBudgetType(hourly);
@@ -123,6 +157,12 @@ class PostJobController extends GetxController {
 
   void onAddressChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
+
+    // Editing the text invalidates the previously picked point.
+    if (query.trim() != _pickedAddress) {
+      selectedLatitude.value = null;
+      selectedLongitude.value = null;
+    }
 
     if (query.trim().length < 3) {
       addressSuggestions.clear();
@@ -159,6 +199,16 @@ class PostJobController extends GetxController {
     final lng = ((suggestion['lon'] ?? suggestion['longitude']) as num?)?.toDouble();
 
     addressController.text = address;
+    _pickedAddress = address.trim();
+    selectedLatitude.value = lat;
+    selectedLongitude.value = lng;
+    addressSuggestions.clear();
+  }
+
+  /// Called by the map picker.
+  void setPickedLocation(String address, double lat, double lng) {
+    addressController.text = address;
+    _pickedAddress = address.trim();
     selectedLatitude.value = lat;
     selectedLongitude.value = lng;
     addressSuggestions.clear();
@@ -168,20 +218,16 @@ class PostJobController extends GetxController {
     try {
       final locService = Get.find<LocationService>();
       final address = await locService.getCurrentAddress();
-      if (address != null && address.isNotEmpty) {
-        addressController.text = address;
-        selectedLatitude.value = locService.currentLatitude.value;
-        selectedLongitude.value = locService.currentLongitude.value;
-        addressSuggestions.clear();
+      final lat = locService.currentLatitude.value;
+      final lng = locService.currentLongitude.value;
+      if (address != null && address.isNotEmpty && lat != null && lng != null && lat != 0 && lng != 0) {
+        setPickedLocation(address, lat, lng);
       } else {
-        Get.snackbar(
-          'label_location'.tr,
-          'ui_could_not_determine_current_address'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-          margin: const EdgeInsets.all(16),
-        );
+        _showError('ui_could_not_determine_current_address'.tr);
       }
-    } catch (_) {}
+    } catch (e) {
+      _showError(e);
+    }
   }
 
   // ─── Date & Time Pickers ────────────────────────────────
@@ -375,6 +421,15 @@ class PostJobController extends GetxController {
       return;
     }
 
+    if (addressController.text.trim().isEmpty) {
+      _showError('post_address_required'.tr);
+      return;
+    }
+    if (selectedLatitude.value == null || selectedLongitude.value == null) {
+      _showError('post_pick_suggestion'.tr);
+      return;
+    }
+
     // Show payment dialog
     _showPaymentDialog();
   }
@@ -398,6 +453,29 @@ class PostJobController extends GetxController {
                   color: isDark ? AppColors.darkTextPrimary : Colors.black87,
                 ),
               ),
+              if (isHourly.value && totalPreview.value != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  totalPreview.value!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ] else if (!isHourly.value) ...[
+                const SizedBox(height: 12),
+                Text(
+                  'post_total_fixed'.trParams({'total': budgetController.text.trim()}),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primary,
+                  ),
+                ),
+              ],
               const SizedBox(height: 20),
               Row(
                 children: [
@@ -513,15 +591,9 @@ class PostJobController extends GetxController {
       if (endTimeController.text.trim().isNotEmpty) {
         data['endTime'] = AppDateTime.formatTime12h(endTimeController.text);
       }
-      if (addressController.text.trim().isNotEmpty) {
-        data['address'] = addressController.text.trim();
-      }
-      if (selectedLatitude.value != null) {
-        data['latitude'] = selectedLatitude.value;
-      }
-      if (selectedLongitude.value != null) {
-        data['longitude'] = selectedLongitude.value;
-      }
+      data['address'] = addressController.text.trim();
+      data['latitude'] = selectedLatitude.value;
+      data['longitude'] = selectedLongitude.value;
       if (uploadedImageUrls.isNotEmpty) {
         data['images'] = uploadedImageUrls.toList();
       }
@@ -538,7 +610,9 @@ class PostJobController extends GetxController {
 
         if (checkoutUrl != null && checkoutUrl.isNotEmpty) {
           final jobId = (resData?['_id'] ?? resData?['id'])?.toString() ?? '';
-          final jobBudget = double.tryParse(budgetController.text.trim()) ?? 0.0;
+          // The server computed the total (rate × hours for hourly jobs): charge exactly that.
+          final jobBudget = (resData?['budget'] as num?)?.toDouble() ??
+              (_hourlyTotal?.toDouble() ?? double.tryParse(budgetController.text.trim()) ?? 0.0);
           final sessId = resData?['sessionId'] as String? ?? '';
 
           Get.toNamed(
@@ -561,33 +635,20 @@ class PostJobController extends GetxController {
               Get.offAllNamed(Routes.home, arguments: {'tab': 1});
             } else {
               // Stay so the client can retry payment or edit the job
-              Get.snackbar(
-                'profile_payment'.tr,
-                'ui_job_saved_as_unpaid_complete_payment_from'.tr,
-                snackPosition: SnackPosition.BOTTOM,
-                backgroundColor: Colors.orange.shade100,
-                colorText: Colors.orange.shade900,
-                margin: const EdgeInsets.all(16),
-              );
+              AppFeedback.info('ui_job_saved_as_unpaid_complete_payment_from'.tr,
+                  title: 'profile_payment'.tr);
             }
           });
           return;
         }
 
-        Get.snackbar(
-          'booking_success'.tr,
-          'ui_job_posted_successfully'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green.shade100,
-          colorText: Colors.green.shade900,
-          margin: const EdgeInsets.all(16),
-        );
-        Get.offAllNamed(Routes.home);
+        AppFeedback.success('ui_job_posted_successfully'.tr, title: 'booking_success'.tr);
+        Get.offAllNamed(Routes.home, arguments: {'tab': 1});
       } else {
         throw Exception(response.message ?? 'Failed to post job');
       }
     } catch (e) {
-      _showError(e.toString().replaceAll('Exception: ', ''));
+      _showError(e);
     } finally {
       if (!isClosed) {
         isSubmitting.value = false;
@@ -645,8 +706,8 @@ class PostJobController extends GetxController {
               ],
             ),
             if (isSelected)
-              const Positioned(
-                right: 0,
+              const PositionedDirectional(
+                end: 0,
                 top: 0,
                 child: Icon(
                   Icons.check_circle,
@@ -655,8 +716,8 @@ class PostJobController extends GetxController {
                 ),
               )
             else
-              Positioned(
-                right: 0,
+              PositionedDirectional(
+                end: 0,
                 top: 0,
                 child: Container(
                   width: 18,
@@ -676,6 +737,9 @@ class PostJobController extends GetxController {
   @override
   void onClose() {
     _debounce?.cancel();
+    budgetController.removeListener(_recomputeTotal);
+    startTimeController.removeListener(_recomputeTotal);
+    endTimeController.removeListener(_recomputeTotal);
     titleController.dispose();
     dateController.dispose();
     startTimeController.dispose();

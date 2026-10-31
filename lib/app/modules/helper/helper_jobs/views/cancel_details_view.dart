@@ -1,3 +1,4 @@
+import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'package:awnneaapp/app/core/utils/datetime_format.dart';
 import 'package:awnneaapp/app/core/utils/job_display.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
@@ -17,7 +18,7 @@ class HelperCancelDetailsView extends StatelessWidget {
         : <String, dynamic>{};
     final cancelledDate = job['cancelledAt'] != null
         ? AppDateTime.formatDateDisplay(job['cancelledAt'].toString())
-        : JobDisplay.safeText(job['cancelledDate'], fallback: 'Recently');
+        : JobDisplay.safeText(job['cancelledDate'], fallback: 'job_recently'.tr);
     final clientName = JobDisplay.personName(job['postedBy'],
         fallback: JobDisplay.safeText(job['clientName']));
     final clientAvatar = JobDisplay.personAvatar(job['postedBy'],
@@ -25,11 +26,11 @@ class HelperCancelDetailsView extends StatelessWidget {
             fallback: ''));
     final location = JobDisplay.publicAddress(job);
     final reason = JobDisplay.safeText(job['cancellationReason'],
-        fallback: JobDisplay.safeText(job['reason'], fallback: 'No reason provided'));
+        fallback: JobDisplay.safeText(job['reason'], fallback: 'job_no_reason'.tr));
     final cancelledByRaw = job['cancelledBy'];
     String cancelledBy = '—';
     if (cancelledByRaw is Map) {
-      cancelledBy = JobDisplay.safeText(cancelledByRaw['name'], fallback: 'User');
+      cancelledBy = JobDisplay.safeText(cancelledByRaw['name'], fallback: 'ui_user'.tr);
     } else if (cancelledByRaw != null) {
       final id = cancelledByRaw.toString();
       final helperId = JobDisplay.safeText(
@@ -84,10 +85,10 @@ class HelperCancelDetailsView extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 color: context.isDarkMode
-                    ? AppColors.error.withOpacity(0.15)
-                    : AppColors.error.withOpacity(0.05),
+                    ? AppColors.error.withValues(alpha: 0.15)
+                    : AppColors.error.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.error.withOpacity(0.2)),
+                border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -97,7 +98,7 @@ class HelperCancelDetailsView extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: AppColors.error.withOpacity(0.1),
+                          color: AppColors.error.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.close, color: AppColors.error, size: 16),
@@ -125,20 +126,7 @@ class HelperCancelDetailsView extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(30),
-                  child: Image.network(
-                    clientAvatar,
-                    width: 50,
-                    height: 50,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 50,
-                        height: 50,
-                        color: context.inputFillLight,
-                        child: Icon(Icons.person, color: context.textHintColor),
-                      );
-                    },
-                  ),
+                  child: AppNetworkImage(url: clientAvatar, width: 50, height: 50, fit: BoxFit.cover),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -210,7 +198,7 @@ class HelperCancelDetailsView extends StatelessWidget {
             const SizedBox(height: 16),
             _buildInfoCard(context, 'cancel_service_description'.tr, [
               Text(
-                job['description']?.toString() ?? 'No description provided.',
+                job['description']?.toString() ?? 'job_no_description'.tr,
                 style: AppStyles.bodyMediumOf(context).copyWith(height: 1.5, color: context.textSecondaryColor),
               ),
             ]),

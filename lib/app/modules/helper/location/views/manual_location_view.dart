@@ -1,5 +1,6 @@
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
+import 'package:awnneaapp/app/core/widgets/helper_form_fields.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/location_controller.dart';
@@ -86,21 +87,45 @@ class ManualLocationView extends GetView<LocationController> {
                     child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
                   );
                 }
-                if (controller.searchResults.isEmpty) {
-                  return Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Text(
-                        'ui_type_to_search_for_any_address'.tr,
-                        style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+                final error = controller.searchError.value;
+                if (error != null) {
+                  return Column(
+                    children: [
+                      Text(
+                        error,
                         textAlign: TextAlign.center,
+                        style: AppStyles.bodyMedium.copyWith(color: Colors.redAccent),
                       ),
-                    ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: controller.retrySearch,
+                        icon: const Icon(Icons.refresh),
+                        label: Text('booking_retry'.tr),
+                      ),
+                      const SizedBox(height: 12),
+                      Expanded(child: _cityList(context)),
+                    ],
+                  );
+                }
+                if (controller.searchResults.isEmpty) {
+                  return Column(
+                    children: [
+                      if (controller.searchedEmpty.value)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Text(
+                            'location_no_results'.tr,
+                            textAlign: TextAlign.center,
+                            style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
+                          ),
+                        ),
+                      Expanded(child: _cityList(context)),
+                    ],
                   );
                 }
                 return ListView.separated(
                   itemCount: controller.searchResults.length,
-                  separatorBuilder: (_, __) => Divider(height: 1, color: context.borderSubtle),
+                  separatorBuilder: (_, _) => Divider(height: 1, color: context.borderSubtle),
                   itemBuilder: (context, index) {
                     final result = controller.searchResults[index];
                     final displayName = result['displayName'] as String? ?? '';
@@ -137,6 +162,40 @@ class ManualLocationView extends GetView<LocationController> {
           ],
         ),
       ),
+    );
+  }
+
+  /// Always-available fallback: pick a city, no address search needed.
+  Widget _cityList(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'location_pick_city'.tr,
+          style: AppStyles.bodyLargeOf(context).copyWith(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: Obx(() => AbsorbPointer(
+                absorbing: controller.isSavingCity.value,
+                child: Opacity(
+                  opacity: controller.isSavingCity.value ? 0.5 : 1,
+                  child: ListView(
+                    children: [
+                      for (final city in kMoroccanCities)
+                        ListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.location_city_outlined, color: AppColors.primary, size: 20),
+                          title: Text(city),
+                          onTap: () => controller.selectCity(city),
+                        ),
+                    ],
+                  ),
+                ),
+              )),
+        ),
+      ],
     );
   }
 }

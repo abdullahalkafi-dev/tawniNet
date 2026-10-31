@@ -1,0 +1,133 @@
+{
+ "success": true,
+ "message": "Notifications fetched successfully",
+ "data": {
+  "docs": [
+   {
+    "_id": "6ae5fc848a0aef46cd1f4ec7",
+    "user": "6ae5fb9981c513a58eb79792",
+    "audience": "user",
+    "title": "Travail terminé — merci de confirmer",
+    "body": "Karim Bennani a terminé « Smoke test cleaning ». Confirmez dans les 48 heures.",
+    "data": {
+     "type": "job_finished",
+     "jobId": "6ae5fc848a0aef46cd1f4e8d"
+    },
+    "read": false,
+    "createdAt": "2026-10-31T14:34:44.787Z",
+    "updatedAt": "2026-10-31T14:34:44.787Z",
+    "__v": 0
+   },
+   {
+    "_id": "6ae5fc848a0aef46cd1f4eb8",
+    "user": "6ae5fb9981c513a58eb79792",
+    "audience": "user",
+    "title": "Votre prestataire est arrivé",
+    "body": "Karim Bennani est arrivé pour « Smoke test cleaning ».",
+    "data": {
+     "type": "job_arrived",
+     "jobId": "6ae5fc848a0aef46cd1f4e8d"
+    },
+    "read": false,
+    "createdAt": "2026-10-31T14:34:44.774Z",
+    "updatedAt": "2026-10-31T14:34:44.774Z",
+    "__v": 0
+   },
+   {
+    "_id": "6ae5fc848a0aef46cd1f4eac",
+    "user": "6ae5fb9981c513a58eb79792",
+    "audience": "user",
+    "title": "Votre prestataire est en route",
+    "body": "Karim Bennani se rend chez vous pour « Smoke test cleaning ».",
+    "data": {
+     "type": "job_on_the_way",
+     "jobId": "6ae5fc848a0aef46cd1f4e8d"
+    },
+    "read": false,
+    "createdAt": "2026-10-31T14:34:44.759Z",
+    "updatedAt": "2026-10-31T14:34:44.759Z",
+    "__v": 0
+   },
+   {
+    "_id": "6ae5fc848a0aef46cd1f4ea3",
+    "user": "6ae5fb9981c513a58eb79792",
+    "audience": "user",
+    "title": "Mission acceptée",
+    "body": "Un prestataire a accepté « Smoke test cleaning ».",
+    "data": {
+     "type": "job_accepted",
+     "jobId": "6ae5fc848a0aef46cd1f4e8d"
+    },
+    "read": false,
+    "createdAt": "2026-10-31T14:34:44.746Z",
+    "updatedAt": "2026-10-31T14:34:44.746Z",
+    "__v": 0
+   },
+   {
+    "_id": "6ae5fc42b4c68f351f2c834d",
+    "user": "6ae5fb9981c513a58eb79792",
+    "audience": "user",
+    "title": "Travail terminé — merci de confirmer",
+    "body": "Karim Bennani a terminé « Smoke test cleaning ». Confirmez dans les 48 heures.",
+    "data": {
+     "type": "job_finished",
+     "jobId": "6ae5fc42b4c68f351f2c8315"
+    },
+    "read": false,
+    "createdAt": "2026-10-31T14:33:38.269Z",
+    "updatedAt": "2026-10-31T14:33:38.269Z",
+    "__v": 0
+   },
+   {
+    "_id": "6ae5fc42b4c68f351f2c833e",
+    "user": "6ae5fb9981c513a58eb79792",
+    "audience": "user",
+    "title": "Votre prestataire est arrivé",
+    "body": "Karim Bennani est arrivé pour « Smoke test cleaning ».",
+    "data": {
+     "type": "job_arrived",
+     "jobId": "6ae5fc42b4c68f351f2c8315"
+    },
+    "read": false,
+    "createdAt": "2026-10-31T14:33:38.256Z",
+    "updatedAt": "2026-10-31T14:33:38.256Z",
+    "__v": 0
+   },
+   {
+    "_id": "6ae5fc42b4c68f351f2c8332",
+    "user": "6ae5fb9981c513a58eb79792",
+    "audience": "user",
+    "title": "Votre prestataire est en route",
+    "body": "Karim Bennani se rend chez vous pour « Smoke test cleaning ».",
+    "data": {
+     "type": "job_on_the_way",
+     "jobId": "6ae5fc42b4c68f351f2c8315"
+    },
+    "read": false,
+    "createdAt": "2026-10-31T14:33:38.245Z",
+    "updatedAt": "2026-10-31T14:33:38.245Z",
+    "__v": 0
+   },
+   {
+    "_id": "6ae5fc42b4c68f351f2c8329",
+    "user": "6ae5fb9981c513a58eb79792",
+    "audience": "user",
+    "title": "Mission acceptée",
+    "body": "Un prestataire a accepté « Smoke test cleaning ».",
+    "data": {
+     "type": "job_accepted",
+     "jobId": "6ae5fc42b4c68f351f2c8315"
+    },
+    "read": false,
+    "createdAt": "2026-10-31T14:33:38.234Z",
+    "updatedAt": "2026-10-31T14:33:38.234Z",
+    "__v": 0
+   }
+  ],
+  "total": 8,
+  "unread": 8,
+  "page": 1,
+  "limit": 20,
+  "totalPages": 1
+ }
+}

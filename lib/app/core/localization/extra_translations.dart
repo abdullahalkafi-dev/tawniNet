@@ -1,0 +1,592 @@
+/// Strings added after the first release (server error codes, new screens).
+/// One entry = one key with its four texts, in this order:
+/// `[English, French, Moroccan Arabic, Spanish]` — a missing language is
+/// therefore impossible. Merged into every locale by [AppTranslations].
+///
+/// `@name` placeholders (@name) are replaced from the server's `params` for error
+/// codes (see `ApiException.displayMessage`) and by `trParams` elsewhere.
+const Map<String, List<String>> kExtraTranslations = {
+  // ─── Generic HTTP fallbacks ─────────────────────────────
+  'err_http_401': [
+    'Your session has ended. Please log in again.',
+    'Votre session a expiré. Veuillez vous reconnecter.',
+    'سالات الجلسة ديالك. عاود دخل مرة أخرى.',
+    'Tu sesión ha terminado. Inicia sesión de nuevo.',
+  ],
+  'err_http_403': [
+    'You are not allowed to do this.',
+    'Vous n\'avez pas l\'autorisation de faire cela.',
+    'ماعندكش الصلاحية باش دير هادشي.',
+    'No tienes permiso para hacer esto.',
+  ],
+  'err_http_404': [
+    'We could not find what you asked for.',
+    'Nous n\'avons pas trouvé ce que vous demandez.',
+    'ما لقينا والو من اللي طلبتي.',
+    'No encontramos lo que pediste.',
+  ],
+  'err_http_409': [
+    'This was changed or already exists. Please refresh and try again.',
+    'Ceci a été modifié ou existe déjà. Actualisez et réessayez.',
+    'هادشي تبدل ولا كاين من قبل. حدّث وعاود حاول.',
+    'Esto cambió o ya existe. Actualiza e inténtalo de nuevo.',
+  ],
+  'err_http_429': [
+    'Too many attempts. Please wait a moment.',
+    'Trop de tentatives. Patientez un instant.',
+    'بزاف د المحاولات. تسنى شوية.',
+    'Demasiados intentos. Espera un momento.',
+  ],
+  'err_http_500': [
+    'Server error. Please try again later.',
+    'Erreur du serveur. Réessayez plus tard.',
+    'مشكل فالسيرفر. عاود حاول من بعد.',
+    'Error del servidor. Inténtalo más tarde.',
+  ],
+  'err_http_unknown': [
+    'Something went wrong. Please try again.',
+    'Un problème est survenu. Veuillez réessayer.',
+    'وقع شي مشكل. عاود حاول.',
+    'Algo salió mal. Inténtalo de nuevo.',
+  ],
+
+  // ─── Server error codes (code → err_<code in lower case>) ─
+  'err_invalid_credentials': [
+    'Wrong phone number or password.',
+    'Numéro de téléphone ou mot de passe incorrect.',
+    'رقم الهاتف ولا كلمة السر غالطين.',
+    'Teléfono o contraseña incorrectos.',
+  ],
+  'err_login_locked': [
+    'Too many failed attempts. Try again later.',
+    'Trop de tentatives échouées. Réessayez plus tard.',
+    'بزاف د المحاولات الفاشلة. عاود حاول من بعد.',
+    'Demasiados intentos fallidos. Inténtalo más tarde.',
+  ],
+  'err_invalid_otp': [
+    'The code is wrong or has expired.',
+    'Le code est incorrect ou a expiré.',
+    'الكود غالط ولا سالات صلاحيتو.',
+    'El código es incorrecto o ha caducado.',
+  ],
+  'err_reset_token_used': [
+    'This reset link was already used or has expired.',
+    'Ce lien de réinitialisation a déjà été utilisé ou a expiré.',
+    'هاد الرابط تستعمل ولا سالات صلاحيتو.',
+    'Este enlace ya se usó o ha caducado.',
+  ],
+  'err_phone_already_registered': [
+    'This phone number is already registered. Please log in.',
+    'Ce numéro est déjà enregistré. Connectez-vous.',
+    'هاد النمرة مسجلة من قبل. دخل لحسابك.',
+    'Este teléfono ya está registrado. Inicia sesión.',
+  ],
+  'err_phone_immutable': [
+    'The phone number cannot be changed.',
+    'Le numéro de téléphone ne peut pas être modifié.',
+    'ما يمكنش تبدل رقم الهاتف.',
+    'El teléfono no se puede cambiar.',
+  ],
+  'err_password_too_short': [
+    'The password must be at least @min characters.',
+    'Le mot de passe doit contenir au moins @min caractères.',
+    'كلمة السر خاصها تكون على الأقل @min حروف.',
+    'La contraseña debe tener al menos @min caracteres.',
+  ],
+  'err_wrong_current_password': [
+    'Your current password is incorrect.',
+    'Votre mot de passe actuel est incorrect.',
+    'كلمة السر الحالية غالطة.',
+    'Tu contraseña actual es incorrecta.',
+  ],
+  'err_wrong_password': [
+    'The password is incorrect.',
+    'Le mot de passe est incorrect.',
+    'كلمة السر غالطة.',
+    'La contraseña es incorrecta.',
+  ],
+  'err_same_password': [
+    'The new password must be different from the old one.',
+    'Le nouveau mot de passe doit être différent de l\'ancien.',
+    'كلمة السر الجديدة خاصها تكون مختلفة على القديمة.',
+    'La nueva contraseña debe ser distinta de la anterior.',
+  ],
+  'err_session_revoked': [
+    'Your session was closed. Please log in again.',
+    'Votre session a été fermée. Reconnectez-vous.',
+    'تسدات الجلسة ديالك. عاود دخل.',
+    'Tu sesión se cerró. Inicia sesión de nuevo.',
+  ],
+  'err_account_suspended': [
+    'Your account is suspended. Please contact support.',
+    'Votre compte est suspendu. Contactez le support.',
+    'الحساب ديالك موقوف. تواصل مع الدعم.',
+    'Tu cuenta está suspendida. Contacta con soporte.',
+  ],
+  'err_missing_permission': [
+    'You do not have access to this.',
+    'Vous n\'avez pas accès à ceci.',
+    'ماعندكش الصلاحية لهادشي.',
+    'No tienes acceso a esto.',
+  ],
+  'err_forbidden': [
+    'You are not allowed to do this.',
+    'Vous n\'avez pas l\'autorisation de faire cela.',
+    'ماعندكش الصلاحية باش دير هادشي.',
+    'No tienes permiso para hacer esto.',
+  ],
+  'err_not_found': [
+    'We could not find it.',
+    'Introuvable.',
+    'ما تلقاش.',
+    'No se encontró.',
+  ],
+  'err_invalid_payload': [
+    'Invalid request. Please try again.',
+    'Requête invalide. Réessayez.',
+    'الطلب ماشي صحيح. عاود حاول.',
+    'Solicitud no válida. Inténtalo de nuevo.',
+  ],
+
+  // Money / jobs
+  'err_insufficient_balance': [
+    'Your wallet balance is too low. Please top up and try again.',
+    'Le solde de votre portefeuille est insuffisant. Rechargez et réessayez.',
+    'الرصيد ديالك ما كافيش. عمّر المحفظة وعاود حاول.',
+    'Saldo insuficiente. Recarga tu monedero e inténtalo de nuevo.',
+  ],
+  'err_min_budget': [
+    'The minimum job amount is @min MAD.',
+    'Le montant minimum d\'une mission est de @min MAD.',
+    'أقل مبلغ للخدمة هو @min درهم.',
+    'El importe mínimo del trabajo es @min MAD.',
+  ],
+  'err_min_hourly_rate': [
+    'The minimum hourly rate for @category is @min MAD.',
+    'Le tarif horaire minimum pour @category est de @min MAD.',
+    'أقل ثمن فالساعة ل @category هو @min درهم.',
+    'La tarifa mínima por hora para @category es @min MAD.',
+  ],
+  'err_invalid_price': [
+    'The price must be greater than 0.',
+    'Le prix doit être supérieur à 0.',
+    'الثمن خاصو يكون كبر من 0.',
+    'El precio debe ser mayor que 0.',
+  ],
+  'err_hours_required': [
+    'Please choose a start and end time for an hourly price.',
+    'Choisissez une heure de début et de fin pour un tarif horaire.',
+    'اختار وقت البداية والنهاية للثمن بالساعة.',
+    'Elige hora de inicio y fin para una tarifa por hora.',
+  ],
+  'err_category_not_found': [
+    'This category is no longer available.',
+    'Cette catégorie n\'est plus disponible.',
+    'هاد الفئة ما بقاتش متوفرة.',
+    'Esta categoría ya no está disponible.',
+  ],
+  'err_category_mismatch': [
+    'This job is outside your service category.',
+    'Cette mission est hors de votre catégorie de service.',
+    'هاد الخدمة خارج الفئة ديالك.',
+    'Este trabajo está fuera de tu categoría.',
+  ],
+  'err_out_of_radius': [
+    'This job is outside your service radius.',
+    'Cette mission est hors de votre rayon d\'action.',
+    'هاد الخدمة خارج النطاق ديالك.',
+    'Este trabajo está fuera de tu radio de servicio.',
+  ],
+  'err_location_required': [
+    'Please set your location first.',
+    'Veuillez d\'abord définir votre position.',
+    'حدد الموقع ديالك أولا.',
+    'Primero indica tu ubicación.',
+  ],
+  'err_outside_service_area': [
+    'This location is outside the supported service area (Morocco).',
+    'Cet emplacement est hors de la zone de service (Maroc).',
+    'هاد المكان خارج منطقة الخدمة (المغرب).',
+    'Esta ubicación está fuera del área de servicio (Marruecos).',
+  ],
+  'err_geocoder_unavailable': [
+    'Address search is temporarily unavailable. Please try again.',
+    'La recherche d\'adresse est momentanément indisponible. Réessayez.',
+    'البحث على العنوان ما خدامش دابا. عاود حاول.',
+    'La búsqueda de direcciones no está disponible. Inténtalo de nuevo.',
+  ],
+  'err_start_in_past': [
+    'The start time is in the past.',
+    'L\'heure de début est déjà passée.',
+    'وقت البداية دازو.',
+    'La hora de inicio ya pasó.',
+  ],
+  'err_date_in_past': [
+    'The date is in the past.',
+    'La date est dans le passé.',
+    'التاريخ دازو.',
+    'La fecha ya pasó.',
+  ],
+  'err_invalid_date': [
+    'Invalid date.',
+    'Date invalide.',
+    'التاريخ ماشي صحيح.',
+    'Fecha no válida.',
+  ],
+  'err_job_not_open': [
+    'This job is no longer available.',
+    'Cette mission n\'est plus disponible.',
+    'هاد الخدمة ما بقاتش متوفرة.',
+    'Este trabajo ya no está disponible.',
+  ],
+  'err_job_expired': [
+    'This job\'s time has already passed.',
+    'L\'heure de cette mission est déjà passée.',
+    'وقت هاد الخدمة دازو.',
+    'La hora de este trabajo ya pasó.',
+  ],
+  'err_job_not_editable': [
+    'This job can no longer be edited.',
+    'Cette mission ne peut plus être modifiée.',
+    'ما بقاش يمكن تعدل هاد الخدمة.',
+    'Este trabajo ya no se puede editar.',
+  ],
+  'err_paid_job_locked': [
+    'A paid job cannot change its price.',
+    'Le prix d\'une mission payée ne peut pas être modifié.',
+    'ما يمكنش تبدل ثمن خدمة مخلصة.',
+    'El precio de un trabajo pagado no se puede cambiar.',
+  ],
+  'err_invalid_transition': [
+    'This step is not possible right now. Please refresh.',
+    'Cette étape n\'est pas possible maintenant. Actualisez.',
+    'هاد الخطوة ماشي ممكنة دابا. حدّث الصفحة.',
+    'Este paso no es posible ahora. Actualiza.',
+  ],
+  'err_dispute_open': [
+    'A problem is open on this job. Support will decide.',
+    'Un problème est en cours sur cette mission. Le support décidera.',
+    'كاين مشكل مفتوح فهاد الخدمة. الدعم غادي يقرر.',
+    'Hay un problema abierto en este trabajo. Soporte decidirá.',
+  ],
+  'err_needs_support': [
+    'Please contact support to cancel this job.',
+    'Contactez le support pour annuler cette mission.',
+    'تواصل مع الدعم باش تلغي هاد الخدمة.',
+    'Contacta con soporte para cancelar este trabajo.',
+  ],
+  'err_use_cancel': [
+    'Please cancel this job instead of deleting it.',
+    'Annulez cette mission plutôt que de la supprimer.',
+    'لغي هاد الخدمة بلا ما تمسحها.',
+    'Cancela este trabajo en lugar de borrarlo.',
+  ],
+  'err_not_reportable': [
+    'A problem can only be reported for an active or recently completed job.',
+    'Un problème ne peut être signalé que pour une mission active ou récente.',
+    'يمكن التبليغ على مشكل غير فخدمة جارية ولا سالات قريب.',
+    'Solo se puede informar de un problema en un trabajo activo o reciente.',
+  ],
+  'err_too_many_active_jobs': [
+    'You already have the maximum number of active jobs.',
+    'Vous avez déjà le nombre maximum de missions actives.',
+    'عندك أقصى عدد د الخدمات الجارية.',
+    'Ya tienes el máximo de trabajos activos.',
+  ],
+  'err_schedule_conflict': [
+    'This job overlaps with another job of yours.',
+    'Cette mission chevauche une autre de vos missions.',
+    'هاد الخدمة كتزامن مع وحدة أخرى عندك.',
+    'Este trabajo coincide con otro tuyo.',
+  ],
+  'err_off_duty': [
+    'Switch to "Available" to accept jobs.',
+    'Passez en « Disponible » pour accepter des missions.',
+    'بدّل لـ "متاح" باش تقبل الخدمات.',
+    'Cambia a "Disponible" para aceptar trabajos.',
+  ],
+  'err_strike_block': [
+    'You cannot accept new jobs for a while because of recent cancellations.',
+    'Vous ne pouvez pas accepter de missions pour le moment à cause d\'annulations récentes.',
+    'ما يمكنش تقبل خدمات جديدة دابا بسبب الإلغاءات الأخيرة.',
+    'No puedes aceptar trabajos por un tiempo debido a cancelaciones recientes.',
+  ],
+  'err_not_approved': [
+    'Only approved helpers can do this.',
+    'Seuls les prestataires approuvés peuvent faire cela.',
+    'غير المساعدين المقبولين يقدرو يديرو هادشي.',
+    'Solo los ayudantes aprobados pueden hacer esto.',
+  ],
+  'err_not_a_helper': [
+    'Only approved helpers can change availability.',
+    'Seuls les prestataires approuvés peuvent changer leur disponibilité.',
+    'غير المساعدين المقبولين يقدرو يبدلو التوفر.',
+    'Solo los ayudantes aprobados pueden cambiar su disponibilidad.',
+  ],
+  'err_no_service_type': [
+    'Choose your service category in your profile first.',
+    'Choisissez d\'abord votre catégorie de service dans votre profil.',
+    'اختار فئة الخدمة ديالك فالبروفايل أولا.',
+    'Primero elige tu categoría de servicio en tu perfil.',
+  ],
+  'err_user_unavailable': [
+    'This user is no longer available.',
+    'Cet utilisateur n\'est plus disponible.',
+    'هاد المستخدم ما بقاش متوفر.',
+    'Este usuario ya no está disponible.',
+  ],
+  'err_active_jobs': [
+    'You have active jobs. Finish or cancel them first.',
+    'Vous avez des missions en cours. Terminez-les ou annulez-les d\'abord.',
+    'عندك خدمات جارية. سالّيهم ولا لغيهم أولا.',
+    'Tienes trabajos activos. Termínalos o cancélalos primero.',
+  ],
+  'err_has_active_jobs': [
+    'This user has active jobs.',
+    'Cet utilisateur a des missions en cours.',
+    'هاد المستخدم عندو خدمات جارية.',
+    'Este usuario tiene trabajos activos.',
+  ],
+  'err_wallet_not_empty': [
+    'Your wallet still has money. Contact support to withdraw it before deleting your account.',
+    'Votre portefeuille contient encore de l\'argent. Contactez le support avant de supprimer votre compte.',
+    'المحفظة ديالك فيها فلوس. تواصل مع الدعم قبل ما تمسح الحساب.',
+    'Tu monedero aún tiene dinero. Contacta con soporte antes de borrar tu cuenta.',
+  ],
+  'err_payment_in_progress': [
+    'A payment for this offer is in progress.',
+    'Un paiement pour cette offre est en cours.',
+    'كاين أداء ديال هاد العرض جاري.',
+    'Hay un pago de esta oferta en curso.',
+  ],
+  'err_payment_timeout': [
+    'The payment was not completed in time.',
+    'Le paiement n\'a pas été effectué à temps.',
+    'ما تكملش الأداء فالوقت.',
+    'El pago no se completó a tiempo.',
+  ],
+  'err_no_helper_found': [
+    'No helper was found for this job.',
+    'Aucun prestataire trouvé pour cette mission.',
+    'ما لقينا حتى مساعد لهاد الخدمة.',
+    'No se encontró ningún ayudante para este trabajo.',
+  ],
+
+  // Offers & chat
+  'err_offer_not_pending': [
+    'This offer is no longer pending.',
+    'Cette offre n\'est plus en attente.',
+    'هاد العرض ما بقاش معلق.',
+    'Esta oferta ya no está pendiente.',
+  ],
+  'err_offer_changed': [
+    'The offer changed. Please review it again.',
+    'L\'offre a changé. Vérifiez-la à nouveau.',
+    'العرض تبدل. شوفو عاود.',
+    'La oferta cambió. Revísala de nuevo.',
+  ],
+  'err_offer_expired': [
+    'This offer has expired.',
+    'Cette offre a expiré.',
+    'هاد العرض سالات صلاحيتو.',
+    'Esta oferta ha caducado.',
+  ],
+  'err_too_many_open_offers': [
+    'You have too many open offers. Wait for answers or cancel some.',
+    'Vous avez trop d\'offres ouvertes. Attendez des réponses ou annulez-en.',
+    'عندك بزاف د العروض المفتوحة. تسنى الجواب ولا لغي شي وحدة.',
+    'Tienes demasiadas ofertas abiertas. Espera respuestas o cancela alguna.',
+  ],
+  'err_only_client': [
+    'Only the client can do this.',
+    'Seul le client peut faire cela.',
+    'غير الزبون يقدر يدير هادشي.',
+    'Solo el cliente puede hacer esto.',
+  ],
+  'err_receiver_not_client': [
+    'Offers can only be sent to clients.',
+    'Les offres ne peuvent être envoyées qu\'aux clients.',
+    'العروض كتبعت غير للزبناء.',
+    'Las ofertas solo se envían a clientes.',
+  ],
+  'err_conversation_blocked': [
+    'This conversation is blocked.',
+    'Cette conversation est bloquée.',
+    'هاد المحادثة محظورة.',
+    'Esta conversación está bloqueada.',
+  ],
+  'err_chat_not_allowed': [
+    'You cannot start a conversation with this user.',
+    'Vous ne pouvez pas démarrer une conversation avec cet utilisateur.',
+    'ما يمكنش تبدا محادثة مع هاد المستخدم.',
+    'No puedes iniciar una conversación con este usuario.',
+  ],
+  'err_already_blocked': [
+    'This user is already blocked.',
+    'Cet utilisateur est déjà bloqué.',
+    'هاد المستخدم محظور من قبل.',
+    'Este usuario ya está bloqueado.',
+  ],
+  'err_not_blocked': [
+    'This user is not blocked.',
+    'Cet utilisateur n\'est pas bloqué.',
+    'هاد المستخدم ماشي محظور.',
+    'Este usuario no está bloqueado.',
+  ],
+
+  // Reviews
+  'err_comment_required': [
+    'Please explain a low rating in a few words.',
+    'Expliquez une note basse en quelques mots.',
+    'شرح النقطة الضعيفة فكلمات قليلة.',
+    'Explica una valoración baja en pocas palabras.',
+  ],
+  'err_job_too_small': [
+    'This job is below the minimum amount and cannot be rated.',
+    'Cette mission est sous le montant minimum et ne peut pas être notée.',
+    'هاد الخدمة تحت الحد الأدنى وما يمكنش تتقيم.',
+    'Este trabajo está por debajo del mínimo y no se puede valorar.',
+  ],
+  'err_review_pair_limit': [
+    'You have already rated this person several times recently.',
+    'Vous avez déjà noté cette personne plusieurs fois récemment.',
+    'قيّمتي هاد الشخص بزاف د المرات مؤخرا.',
+    'Ya valoraste a esta persona varias veces recientemente.',
+  ],
+  'err_edit_window_passed': [
+    'Reviews can only be edited within 24 hours.',
+    'Les avis ne peuvent être modifiés que dans les 24 heures.',
+    'التقييم كيتعدل غير فـ 24 ساعة.',
+    'Las reseñas solo se pueden editar en 24 horas.',
+  ],
+  'err_already_replied': [
+    'You already replied to this review.',
+    'Vous avez déjà répondu à cet avis.',
+    'جاوبتي على هاد التقييم من قبل.',
+    'Ya respondiste a esta reseña.',
+  ],
+
+  // Support
+  'err_ticket_resolved': [
+    'This ticket is closed.',
+    'Ce ticket est fermé.',
+    'هاد التذكرة مسدودة.',
+    'Este ticket está cerrado.',
+  ],
+  'err_reopen_window_passed': [
+    'This ticket is too old to reopen. Please create a new one.',
+    'Ce ticket est trop ancien pour être rouvert. Créez-en un nouveau.',
+    'هاد التذكرة قديمة بزاف. دير وحدة جديدة.',
+    'Este ticket es muy antiguo. Crea uno nuevo.',
+  ],
+
+  // Helper application / KYC / uploads
+  'err_application_incomplete': [
+    'Please complete all the application steps first.',
+    'Veuillez d\'abord compléter toutes les étapes de la demande.',
+    'كمّل جميع مراحل الطلب أولا.',
+    'Completa primero todos los pasos de la solicitud.',
+  ],
+  'err_application_locked': [
+    'Your application is under review and cannot be edited now.',
+    'Votre demande est en cours d\'examen et ne peut pas être modifiée.',
+    'الطلب ديالك قيد المراجعة وما يمكنش يتعدل دابا.',
+    'Tu solicitud está en revisión y no se puede editar ahora.',
+  ],
+  'err_profile_field_locked': [
+    'This field cannot be changed after approval.',
+    'Ce champ ne peut plus être modifié après l\'approbation.',
+    'هاد الخانة ما يمكنش تتبدل من بعد القبول.',
+    'Este campo no se puede cambiar tras la aprobación.',
+  ],
+  'err_already_approved': [
+    'Your identity is already verified.',
+    'Votre identité est déjà vérifiée.',
+    'الهوية ديالك متحقق منها من قبل.',
+    'Tu identidad ya está verificada.',
+  ],
+  'err_appeal_not_allowed': [
+    'You cannot appeal right now.',
+    'Vous ne pouvez pas faire appel pour le moment.',
+    'ما يمكنش دير استئناف دابا.',
+    'No puedes apelar ahora.',
+  ],
+  'err_appeal_limit': [
+    'You have reached the maximum number of appeals.',
+    'Vous avez atteint le nombre maximum d\'appels.',
+    'وصلتي للحد الأقصى د الاستئنافات.',
+    'Has alcanzado el máximo de apelaciones.',
+  ],
+  'err_kyc_attempts_exhausted': [
+    'No verification attempts left. Contact support.',
+    'Plus de tentatives de vérification. Contactez le support.',
+    'سالاو المحاولات د التحقق. تواصل مع الدعم.',
+    'No quedan intentos de verificación. Contacta con soporte.',
+  ],
+  'err_kyc_daily_limit': [
+    'Daily verification limit reached. Try again tomorrow.',
+    'Limite quotidienne de vérification atteinte. Réessayez demain.',
+    'وصلتي للحد اليومي د التحقق. عاود غدا.',
+    'Límite diario de verificación alcanzado. Inténtalo mañana.',
+  ],
+  'err_kyc_provider_error': [
+    'The verification service is unavailable. Please try again.',
+    'Le service de vérification est indisponible. Réessayez.',
+    'خدمة التحقق ما خدامش. عاود حاول.',
+    'El servicio de verificación no está disponible. Inténtalo de nuevo.',
+  ],
+  'err_session_not_owned': [
+    'This verification session does not belong to you.',
+    'Cette session de vérification ne vous appartient pas.',
+    'هاد جلسة التحقق ماشي ديالك.',
+    'Esta sesión de verificación no es tuya.',
+  ],
+  'err_svg_not_allowed': [
+    'This image type is not allowed.',
+    'Ce type d\'image n\'est pas autorisé.',
+    'هاد نوع الصورة ماشي مسموح.',
+    'Este tipo de imagen no está permitido.',
+  ],
+  'err_invalid_image': [
+    'This is not a valid image. Choose a photo.',
+    'Ce n\'est pas une image valide. Choisissez une photo.',
+    'هادي ماشي صورة صحيحة. اختار صورة.',
+    'No es una imagen válida. Elige una foto.',
+  ],
+  'err_invalid_document': [
+    'This is not a valid document photo.',
+    'Ce n\'est pas une photo de document valide.',
+    'هادي ماشي صورة وثيقة صحيحة.',
+    'No es una foto de documento válida.',
+  ],
+  'err_invalid_video': [
+    'This is not a valid video.',
+    'Ce n\'est pas une vidéo valide.',
+    'هادا ماشي فيديو صحيح.',
+    'No es un vídeo válido.',
+  ],
+  'err_file_in_use': [
+    'This file is still in use.',
+    'Ce fichier est encore utilisé.',
+    'هاد الملف مازال مستعمل.',
+    'Este archivo todavía está en uso.',
+  ],
+  'err_invalid_file_key': [
+    'Invalid file reference.',
+    'Référence de fichier invalide.',
+    'مرجع الملف ماشي صحيح.',
+    'Referencia de archivo no válida.',
+  ],
+  'err_invalid_file_kind': [
+    'This file type is not allowed here.',
+    'Ce type de fichier n\'est pas autorisé ici.',
+    'هاد نوع الملف ماشي مسموح هنا.',
+    'Este tipo de archivo no está permitido aquí.',
+  ],
+  'err_file_not_owned': [
+    'You can only use files you uploaded.',
+    'Vous ne pouvez utiliser que vos propres fichiers.',
+    'تقدر تستعمل غير الملفات اللي رفعتي.',
+    'Solo puedes usar archivos que subiste.',
+  ],
+};

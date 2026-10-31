@@ -1,4 +1,5 @@
 import 'package:awnneaapp/app/core/utils/datetime_format.dart';
+import 'package:awnneaapp/app/data/models/home_models.dart' show localizedCategoryName;
 import 'package:get/get.dart';
 
 /// Helpers for flattening job API maps into display-safe strings.
@@ -50,9 +51,9 @@ class JobDisplay {
     return fallback;
   }
 
-  static String categoryName(dynamic category, {String fallback = 'Service'}) {
+  static String categoryName(dynamic category, {String fallback = ''}) {
     if (category is Map) {
-      return safeText(category['name'], fallback: fallback);
+      return safeText(localizedCategoryName(category), fallback: fallback);
     }
     return safeText(category, fallback: fallback);
   }
@@ -83,14 +84,23 @@ class JobTimelineStep {
   final bool active;
 }
 
-/// Build status steps from real job/booking state (no fake dates).
+/// Build status steps from the real job state and timestamps (no invented dates):
+/// submitted → helper matched → on the way → arrived → work finished → completed → paid.
 class JobTimeline {
   JobTimeline._();
+
+  static String _stamp(String? raw, String fallback) =>
+      JobDisplay.formatStamp(raw, fallback: fallback);
 
   static List<JobTimelineStep> fromStatus({
     required String status,
     String? submittedAt,
+    String? acceptedAt,
+    String? onTheWayAt,
+    String? arrivedAt,
+    String? helperFinishedAt,
     String? completedAt,
+    String? cancelledAt,
     bool isAssigned = false,
     bool escrowCredited = false,
     String paymentMethod = '',
@@ -98,72 +108,77 @@ class JobTimeline {
     final s = status.toLowerCase();
     final submitted = JobTimelineStep(
       label: 'status_submitted'.tr,
-      detail: JobDisplay.formatStamp(submittedAt, fallback: '—'),
+      detail: _stamp(submittedAt, '—'),
       done: true,
     );
 
     if (s == 'cancelled') {
-      final matched = JobTimelineStep(
-        label: 'status_worker_matched'.tr,
-        detail: isAssigned ? 'Assigned' : 'No helper',
-        done: isAssigned,
-      );
       return [
         submitted,
-        matched,
+        JobTimelineStep(
+          label: 'status_worker_matched'.tr,
+          detail: isAssigned ? _stamp(acceptedAt, 'job_step_assigned'.tr) : 'job_step_no_helper'.tr,
+          done: isAssigned,
+        ),
         JobTimelineStep(
           label: 'status_cancelled'.tr,
-          detail: 'ui_job_was_cancelled'.tr,
+          detail: _stamp(cancelledAt, 'ui_job_was_cancelled'.tr),
           done: true,
         ),
       ];
     }
 
-    final matchedDone = isAssigned ||
+    final matched = isAssigned ||
         s == 'in_progress' ||
+        s == 'on_the_way' ||
+        s == 'arrived' ||
         s == 'completed';
-    final inProgressDone = s == 'in_progress' || s == 'completed';
-    final inProgressActive = s == 'in_progress';
-    final completedDone = s == 'completed';
-
-    // Escrow is credited on complete for online jobs in this app.
-    final paymentDone = completedDone;
-    final paymentDetail = s == 'pending_payment'
-        ? 'ui_awaiting_payment'.tr
-        : (completedDone ? 'Processed' : 'Pending');
+    final onTheWay = s == 'on_the_way' || s == 'arrived' || s == 'completed';
+    final arrived = s == 'arrived' || s == 'completed';
+    final finished = (helperFinishedAt != null && helperFinishedAt.isNotEmpty) || s == 'completed';
+    final completed = s == 'completed';
+    final isCash = paymentMethod.toLowerCase() == 'cash';
+    final paid = completed && (isCash || escrowCredited);
 
     return [
       submitted,
       JobTimelineStep(
         label: 'status_worker_matched'.tr,
-        detail: matchedDone
-            ? (s == 'in_progress' || s == 'completed' ? 'Accepted' : 'Assigned')
-            : (s == 'open' ? 'Looking for helper' : 'Pending'),
-        done: matchedDone,
+        detail: matched
+            ? _stamp(acceptedAt, 'job_step_accepted'.tr)
+            : (s == 'open' ? 'job_step_looking'.tr : 'status_pending'.tr),
+        done: matched,
+        active: s == 'in_progress',
       ),
       JobTimelineStep(
-        label: 'status_in_progress'.tr,
-        detail: inProgressActive
-            ? 'ui_started'.tr
-            : (inProgressDone
-                ? JobDisplay.formatStamp(completedAt, fallback: 'ui_started'.tr)
-                : (s == 'pending_payment'
-                    ? 'ui_after_payment'.tr
-                    : (s == 'open' ? 'After a helper accepts' : 'Pending'))),
-        done: inProgressDone,
-        active: inProgressActive,
+        label: 'job_step_on_the_way'.tr,
+        detail: onTheWay ? _stamp(onTheWayAt, 'job_step_done'.tr) : 'job_step_after_accept'.tr,
+        done: onTheWay,
+        active: s == 'on_the_way',
+      ),
+      JobTimelineStep(
+        label: 'job_step_arrived'.tr,
+        detail: arrived ? _stamp(arrivedAt, 'job_step_done'.tr) : 'status_pending'.tr,
+        done: arrived,
+        active: s == 'arrived' && !finished,
+      ),
+      JobTimelineStep(
+        label: 'job_step_work_finished'.tr,
+        detail: finished ? _stamp(helperFinishedAt, 'job_step_done'.tr) : 'status_pending'.tr,
+        done: finished,
+        active: finished && !completed,
       ),
       JobTimelineStep(
         label: 'status_completed'.tr,
-        detail: completedDone
-            ? JobDisplay.formatStamp(completedAt, fallback: 'status_completed'.tr)
-            : 'status_pending'.tr,
-        done: completedDone,
+        detail: completed ? _stamp(completedAt, 'status_completed'.tr) : 'status_pending'.tr,
+        done: completed,
       ),
       JobTimelineStep(
         label: 'status_payment_processed'.tr,
-        detail: paymentDetail,
-        done: paymentDone && completedDone,
+        detail: s == 'pending_payment'
+            ? 'ui_awaiting_payment'.tr
+            : (paid ? 'job_step_processed'.tr : 'status_pending'.tr),
+        done: paid,
       ),
     ];
   }
@@ -178,7 +193,12 @@ class JobTimeline {
     return fromStatus(
       status: status,
       submittedAt: JobDisplay.safeText(job['createdAt']),
+      acceptedAt: JobDisplay.safeText(job['acceptedAt']),
+      onTheWayAt: JobDisplay.safeText(job['onTheWayAt']),
+      arrivedAt: JobDisplay.safeText(job['arrivedAt']),
+      helperFinishedAt: JobDisplay.safeText(job['helperFinishedAt']),
       completedAt: JobDisplay.safeText(job['completedAt']),
+      cancelledAt: JobDisplay.safeText(job['cancelledAt']),
       isAssigned: hasAssignee,
       escrowCredited: job['escrowCredited'] == true,
       paymentMethod: JobDisplay.safeText(job['paymentMethod']),

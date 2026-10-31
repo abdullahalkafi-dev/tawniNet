@@ -62,7 +62,7 @@ class AddCardView extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1A5276).withOpacity(0.3),
+            color: const Color(0xFF1A5276).withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -83,7 +83,7 @@ class AddCardView extends StatelessWidget {
                   letterSpacing: 2,
                 ),
               ),
-              Icon(Icons.sync, color: Colors.white.withOpacity(0.7), size: 24),
+              Icon(Icons.sync, color: Colors.white.withValues(alpha: 0.7), size: 24),
             ],
           ),
           const SizedBox(height: 30),
@@ -105,7 +105,7 @@ class AddCardView extends StatelessWidget {
                 children: [
                   Text(
                     'card_holder_name'.tr,
-                    style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 10),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 10),
                   ),
                   const Text(
                     'HILLERY NEVELIN',
@@ -118,7 +118,7 @@ class AddCardView extends StatelessWidget {
                 children: [
                   Text(
                     'card_expired_date'.tr,
-                    style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 10),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 10),
                   ),
                   const Text(
                     '10/28',

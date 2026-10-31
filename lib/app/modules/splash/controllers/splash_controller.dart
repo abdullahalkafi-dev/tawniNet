@@ -1,8 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
+import 'package:awnneaapp/app/services/app_config_service.dart';
 import 'package:awnneaapp/app/services/auth_service.dart';
 import 'package:awnneaapp/app/services/notification_service.dart';
+import 'package:awnneaapp/app/services/storage_service.dart';
 import 'package:get/get.dart';
+
+/// Storage key: the introduction slides were seen (shown once, not at every launch).
+const kOnboardingDoneKey = 'onboarding_done';
 
 class SplashController extends GetxController {
   @override
@@ -13,12 +18,29 @@ class SplashController extends GetxController {
 
   void _navigateToNext() async {
     final authService = Get.find<AuthService>();
-    // Returning users: short branding beat so resume feels instant.
-    // Cold first-open: keep a longer splash.
-    final delay = authService.isLoggedIn.value
-        ? const Duration(milliseconds: 400)
-        : const Duration(seconds: 3);
-    await Future.delayed(delay);
+    final started = DateTime.now();
+
+    // The saved session and the server settings load while the logo shows.
+    try {
+      await authService.ready.future.timeout(const Duration(seconds: 5));
+    } catch (_) {}
+    var config = Get.isRegistered<AppConfigService>() ? Get.find<AppConfigService>() : null;
+    if (config != null && !config.isLoaded) {
+      try {
+        await config.refresh().timeout(const Duration(seconds: 4));
+      } catch (_) {}
+    }
+
+    // Logged-in users: take the freshest profile BEFORE choosing a screen, so
+    // a user who was blocked / approved / rejected meanwhile lands in the right place.
+    if (authService.isLoggedIn.value) {
+      await authService.refreshSession();
+    }
+
+    // A short brand beat only (never a fixed multi-second wait).
+    final elapsed = DateTime.now().difference(started);
+    const minimum = Duration(milliseconds: 700);
+    if (elapsed < minimum) await Future.delayed(minimum - elapsed);
     if (isClosed) return;
 
     if (Get.currentRoute != Routes.splash) {
@@ -31,61 +53,24 @@ class SplashController extends GetxController {
       return;
     }
 
+    config = Get.isRegistered<AppConfigService>() ? Get.find<AppConfigService>() : null;
+    if (config != null && config.updateRequired) {
+      Get.offAllNamed(Routes.updateRequired);
+      return;
+    }
+
     if (authService.isLoggedIn.value) {
-      // Fetch fresh profile from backend
-      try {
-        await authService.getMe();
-      } catch (_) {}
-
-      if (isClosed) return;
-      if (Get.currentRoute != Routes.splash) {
-        debugPrint('[Splash] Route changed to ${Get.currentRoute} — yielding navigation');
-        return;
-      }
-
       final user = authService.currentUser.value;
       if (user == null) {
-        Get.offAllNamed(Routes.onboarding);
+        Get.offAllNamed(Routes.roleSelection);
         return;
       }
-
-      if (!user.hasLocation) {
-        Get.offAllNamed(Routes.locationAllow);
-        return;
-      }
-
-      if (user.role == 'helper') {
-        // Step 1: Check if basic form is submitted
-        if (!user.isHelperFormSubmitted) {
-          Get.offAllNamed(Routes.applyAsHelper);
-          return;
-        }
-
-        // Step 2: Form submitted, check KYC status
-        switch (user.helperApplicationStatus) {
-          case 'approved':
-            Get.offAllNamed(Routes.helperHome);
-            break;
-          case 'pending_appeal':
-            Get.offAllNamed(Routes.applicationPending);
-            break;
-          case 'rejected':
-            Get.offAllNamed(Routes.applicationRejected);
-            break;
-          case 'pending':
-          default:
-            if (user.diditStatus == 'In Review') {
-              Get.offAllNamed(Routes.applicationPending);
-            } else {
-              Get.offAllNamed(Routes.helperKycVerification);
-            }
-            break;
-        }
-      } else {
-        Get.offAllNamed(Routes.home);
-      }
+      authService.goToDestination();
     } else {
-      Get.offAllNamed(Routes.onboarding);
+      // The introduction is shown once; afterwards straight to the role choice.
+      final seen = await Get.find<StorageService>().read(kOnboardingDoneKey);
+      if (isClosed || Get.currentRoute != Routes.splash) return;
+      Get.offAllNamed(seen == '1' ? Routes.roleSelection : Routes.onboarding);
     }
   }
 }
