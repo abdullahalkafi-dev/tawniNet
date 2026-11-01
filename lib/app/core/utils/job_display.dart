@@ -60,13 +60,9 @@ class JobDisplay {
 
   static String formatStamp(String? raw, {String fallback = ''}) {
     if (raw == null || raw.trim().isEmpty || raw == 'null') return fallback;
-    final d = DateTime.tryParse(raw);
+    final d = DateTime.tryParse(raw)?.toLocal();
     if (d == null) return fallback;
-    return AppDateTime.formatDateDisplay(d.toIso8601String()) +
-        ' · ' +
-        AppDateTime.formatTime12h(
-          '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}',
-        );
+    return '${AppDateTime.localizedDate(d.toIso8601String())} · ${AppDateTime.localizedClock(d)}';
   }
 }
 

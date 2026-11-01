@@ -75,7 +75,7 @@ class CancelDetailsView extends GetView<BookingController> {
 
   Widget _buildCancelBanner(BuildContext context, Booking booking) {
     final date = booking.cancelledAt.isNotEmpty
-        ? AppDateTime.formatDateDisplay(booking.cancelledAt)
+        ? AppDateTime.localizedDate(booking.cancelledAt)
         : booking.date;
     return Container(
       padding: const EdgeInsets.all(16),

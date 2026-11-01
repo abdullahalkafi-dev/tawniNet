@@ -279,7 +279,7 @@ const Map<String, String> frFR = {
   "profile_default": "Par défaut",
   "profile_accept_close": "Accepter et fermer",
   "profile_about_title": "À propos de 3awniNet",
-  "profile_version": "Version 1.0.0 (Build 120)",
+  "profile_version": "Version @v",
   "profile_about_desc": "3awniNet est une plateforme marocaine de services à la demande. Nous mettons en relation des aides locaux vérifiés avec les personnes qui ont besoin de réparations, de ménage, de déménagement et de services du quotidien — avec confiance, fiabilité et des prix justes.",
   "profile_copyright": "© 2026 3awniNet. Tous droits réservés.",
   "profile_contact_chat": "Contacter par chat",

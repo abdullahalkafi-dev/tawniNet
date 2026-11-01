@@ -500,11 +500,11 @@ class _ActiveJobDetailsViewState extends State<ActiveJobDetailsView> {
   Widget _buildJobInfoTable(BuildContext context, Map job) {
     final categoryName = JobDisplay.categoryName(job['category'],
         fallback: JobDisplay.safeText(job['jobType'], fallback: 'ui_service'.tr));
-    final bookingDate = AppDateTime.formatDateDisplay(job['date']?.toString() ?? '');
+    final bookingDate = AppDateTime.localizedDate(job['date']?.toString() ?? '');
     final preferredTime = job['startTime'] != null
         ? [
-            AppDateTime.formatTime12h(job['startTime']?.toString()),
-            if (job['endTime'] != null) AppDateTime.formatTime12h(job['endTime']?.toString()),
+            AppDateTime.localizedTime(job['startTime']?.toString()),
+            if (job['endTime'] != null) AppDateTime.localizedTime(job['endTime']?.toString()),
           ].where((t) => t.isNotEmpty).join(' - ')
         : JobDisplay.safeText(job['preferredTime'], fallback: '');
     final location = JobDisplay.safeLocation(job);

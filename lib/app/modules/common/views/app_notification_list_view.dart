@@ -6,7 +6,7 @@ import 'package:awnneaapp/app/services/notification_badge_controller.dart';
 import 'package:awnneaapp/app/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
+import 'package:awnneaapp/app/core/utils/datetime_format.dart';
 
 /// Shared in-app notification feed (client + helper).
 /// Loads history from `/notifications`, supports unread badge + deep-link on tap.
@@ -163,12 +163,12 @@ class _AppNotificationListViewState extends State<AppNotificationListView> {
       final today = DateTime(now.year, now.month, now.day);
       final dateOnly = DateTime(date.year, date.month, date.day);
       if (dateOnly == today) {
-        return DateFormat('h:mm a').format(date);
+        return AppDateTime.localizedClock(date);
       }
       if (dateOnly == today.subtract(const Duration(days: 1))) {
         return 'label_yesterday'.tr;
       }
-      return DateFormat('MMM d').format(date);
+      return AppDateTime.localizedDayMonth(date);
     } catch (_) {
       return '';
     }

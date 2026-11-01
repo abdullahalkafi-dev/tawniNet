@@ -193,8 +193,8 @@ class Booking {
     final rawDate = json['date']?.toString() ?? '';
     final startRaw = json['startTime']?.toString() ?? '';
     final endRaw = json['endTime']?.toString() ?? '';
-    final start12 = AppDateTime.formatTime12h(startRaw);
-    final end12 = AppDateTime.formatTime12h(endRaw);
+    final start12 = AppDateTime.localizedTime(startRaw);
+    final end12 = AppDateTime.localizedTime(endRaw);
     final timeText = start12.isNotEmpty
         ? (end12.isNotEmpty ? '$start12 - $end12' : start12)
         : (json['preferredTime']?.toString() ?? 'ui_flexible'.tr);
@@ -246,7 +246,7 @@ class Booking {
           : ((json['title'] ?? 'ui_service'.tr).toString()),
       status: bookingStatusFromApi((json['status'] ?? '').toString()),
       jobType: (json['title'] ?? 'ui_service'.tr).toString(),
-      date: AppDateTime.formatDateDisplay(rawDate),
+      date: AppDateTime.localizedDate(rawDate),
       time: timeText,
       location: address,
       budget: budget,

@@ -480,7 +480,7 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
               deadline == null
                   ? 'job_helper_finished_msg'.tr
                   : 'job_helper_finished_deadline'.trParams({
-                      'when': AppDateTime.formatDateTimeRange(
+                      'when': AppDateTime.localizedDateTimeRange(
                         date: deadline.toIso8601String(),
                         startTime: '${deadline.hour}:${deadline.minute.toString().padLeft(2, '0')}',
                       ),
@@ -1048,7 +1048,7 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
           if (review.createdAt.isNotEmpty) ...[
             const SizedBox(height: 8),
             Text(
-              AppDateTime.formatDateDisplay(review.createdAt),
+              AppDateTime.localizedDate(review.createdAt),
               style: AppStyles.bodyMedium.copyWith(
                 fontSize: 12,
                 color: context.textHintColor,

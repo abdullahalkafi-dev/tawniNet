@@ -440,10 +440,9 @@ class AuthService extends GetxService {
   }
 
   Future<void> _performLogout({bool notifyServer = true}) async {
-    if (notifyServer) {
-      await _endServerSession();
-    }
-    // 0. Unregister FCM (best-effort, short timeout) — before clearing tokens
+    // 0. Unregister FCM (best-effort, short timeout). This must come BEFORE the
+    //    server session ends: afterwards the access token is rejected and the
+    //    phone would keep receiving this account's pushes.
     try {
       if (Get.isRegistered<NotificationService>()) {
         await Get.find<NotificationService>()
@@ -452,6 +451,10 @@ class AuthService extends GetxService {
         Get.find<NotificationService>().clearSessionState();
       }
     } catch (_) {}
+
+    if (notifyServer) {
+      await _endServerSession();
+    }
 
     // 0b. Reset unread badge so the next login does not show the old count
     try {

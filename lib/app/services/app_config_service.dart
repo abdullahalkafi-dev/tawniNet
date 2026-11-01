@@ -24,6 +24,9 @@ class AppConfigService extends GetxService {
   /// Version of this installation, e.g. "1.0.0".
   final appVersion = ''.obs;
 
+  /// Build number of this installation, e.g. "2002".
+  final appBuild = ''.obs;
+
   bool _loaded = false;
   bool get isLoaded => _loaded;
 
@@ -31,6 +34,7 @@ class AppConfigService extends GetxService {
     try {
       final info = await PackageInfo.fromPlatform();
       appVersion.value = info.version;
+      appBuild.value = info.buildNumber;
     } catch (_) {}
     await refresh();
     return this;

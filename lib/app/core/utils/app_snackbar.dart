@@ -127,6 +127,26 @@ class AppSnackbar {
     );
   }
 
+  /// A calm one-line notice (not an error, not a success).
+  static void showInfo(String message) {
+    if (Get.isSnackbarOpen) {
+      Get.closeCurrentSnackbar();
+    }
+    Get.rawSnackbar(
+      messageText: Text(
+        message,
+        style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.3),
+      ),
+      icon: const Icon(Icons.info_outline_rounded, color: Colors.white, size: 24),
+      backgroundColor: const Color(0xFF455A64),
+      snackPosition: SnackPosition.TOP,
+      margin: const EdgeInsets.all(16),
+      borderRadius: 14,
+      duration: const Duration(seconds: 4),
+      animationDuration: const Duration(milliseconds: 300),
+    );
+  }
+
   /// Show a beautifully styled Success Snackbar
   static void showSuccess(String message, {String? title}) {
     if (Get.isSnackbarOpen) {

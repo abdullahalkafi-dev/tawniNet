@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:awnneaapp/app/core/constants/api_constants.dart';
+import 'package:awnneaapp/app/core/utils/app_snackbar.dart';
 import 'package:awnneaapp/app/data/models/message_model.dart';
 import 'package:awnneaapp/app/services/api_client.dart';
 import 'package:awnneaapp/app/services/storage_service.dart';
@@ -29,6 +30,7 @@ class SocketService extends GetxService {
   final Set<String> _joinedConversations = {};
   final Set<String> _joinedSupportTickets = {};
   final Set<String> _joinedTrackingJobs = {};
+  final Map<String, DateTime> _locationNoticeAt = {};
 
   // Broadcast streams — multiple listeners can subscribe
   final _messageController = StreamController<ChatMessage>.broadcast();
@@ -230,6 +232,16 @@ class SocketService extends GetxService {
         'userId': m['userId']?.toString() ?? '',
         'isOnline': m['isOnline'] == true,
       });
+    });
+
+    // The server says why our position is not being shared; tell the helper once in a while.
+    _socket?.on('helper:location_rejected', (data) {
+      final reason = _asMap(data)['reason']?.toString() ?? '';
+      if (!const {'off_duty', 'out_of_area', 'not_approved'}.contains(reason)) return;
+      final last = _locationNoticeAt[reason];
+      if (last != null && DateTime.now().difference(last) < const Duration(minutes: 30)) return;
+      _locationNoticeAt[reason] = DateTime.now();
+      AppSnackbar.showInfo('loc_rejected_$reason'.tr);
     });
 
     _forward('chat:offer-update', _offerUpdateController);

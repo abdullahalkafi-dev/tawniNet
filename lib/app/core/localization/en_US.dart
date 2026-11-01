@@ -279,7 +279,7 @@ const Map<String, String> enUS = {
   "profile_default": "Default",
   "profile_accept_close": "Accept & Close",
   "profile_about_title": "About 3awniNet",
-  "profile_version": "Version 1.0.0 (Build 120)",
+  "profile_version": "Version @v",
   "profile_about_desc": "3awniNet is a Moroccan on-demand helper platform. We connect verified local helpers with people who need repairs, cleaning, moving and everyday services — built on trust, reliability and fair prices.",
   "profile_copyright": "© 2026 3awniNet. All rights reserved.",
   "profile_contact_chat": "Contact via Live Chat",

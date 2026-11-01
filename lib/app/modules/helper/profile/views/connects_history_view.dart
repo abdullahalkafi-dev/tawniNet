@@ -6,7 +6,7 @@ import 'package:awnneaapp/app/routes/app_routes.dart';
 import 'package:awnneaapp/app/services/wallet_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
+import 'package:awnneaapp/app/core/utils/datetime_format.dart';
 
 class ConnectsHistoryView extends StatefulWidget {
   const ConnectsHistoryView({super.key});
@@ -112,7 +112,7 @@ class _ConnectsHistoryViewState extends State<ConnectsHistoryView> {
       final dateOnly = DateTime(date.year, date.month, date.day);
       if (dateOnly == today) return 'label_today'.tr;
       if (dateOnly == today.subtract(const Duration(days: 1))) return 'label_yesterday'.tr;
-      return DateFormat('MMM d, yyyy').format(date);
+      return AppDateTime.localizedDate(date.toIso8601String());
     } catch (_) {
       return '';
     }

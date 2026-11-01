@@ -1,6 +1,25 @@
 /// New screen texts added with the fixes. Same format as
 /// [kExtraTranslations]: `[English, French, Moroccan Arabic, Spanish]`.
 const Map<String, List<String>> kUiTranslations = {
+  // Why a helper's position is not being shared (server event helper:location_rejected)
+  'loc_rejected_off_duty': [
+    'You are off duty, so clients cannot see your location. Turn on availability to share it.',
+    'Vous êtes hors service : les clients ne voient pas votre position. Activez votre disponibilité.',
+    'نتي موقف الخدمة، الزبناء ما كيشوفوش موقعك. فعّل التوفر باش يبان.',
+    'Estás fuera de servicio, así que los clientes no ven tu ubicación. Activa tu disponibilidad.',
+  ],
+  'loc_rejected_out_of_area': [
+    'Your location is outside the service area, so it is not shared.',
+    'Votre position est hors de la zone de service : elle n\'est pas partagée.',
+    'موقعك خارج منطقة الخدمة، وما غاديش يتشارك.',
+    'Tu ubicación está fuera de la zona de servicio y no se comparte.',
+  ],
+  'loc_rejected_not_approved': [
+    'Location sharing starts once your helper account is approved.',
+    'Le partage de position démarre une fois votre compte prestataire approuvé.',
+    'مشاركة الموقع كتبدا من بعد ما يتقبل حسابك كمساعد.',
+    'El uso compartido de ubicación empieza cuando tu cuenta de ayudante sea aprobada.',
+  ],
   'ui_nearby': ['Nearby', 'À proximité', 'قريب منك', 'Cerca'],
   'time_months_ago': ['@nmo ago', 'il y a @n mois', 'من @n شهر', 'hace @n meses'],
   'time_days_ago': ['@nd ago', 'il y a @n j', 'من @n يوم', 'hace @n d'],

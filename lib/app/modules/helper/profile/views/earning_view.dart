@@ -5,7 +5,7 @@ import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/services/wallet_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
+import 'package:awnneaapp/app/core/utils/datetime_format.dart';
 
 class EarningView extends StatefulWidget {
   const EarningView({super.key});
@@ -60,7 +60,7 @@ class _EarningViewState extends State<EarningView> {
       final dateOnly = DateTime(date.year, date.month, date.day);
       if (dateOnly == today) return 'label_today'.tr;
       if (dateOnly == today.subtract(const Duration(days: 1))) return 'label_yesterday'.tr;
-      return DateFormat('MMM d').format(date);
+      return AppDateTime.localizedDayMonth(date);
     } catch (_) {
       return '';
     }

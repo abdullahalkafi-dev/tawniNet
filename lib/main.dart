@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'app/core/theme/app_theme.dart';
 import 'app/core/widgets/app_pull_to_refresh.dart';
 import 'app/core/localization/app_translations.dart';
@@ -43,6 +44,9 @@ void main() async {
     AppErrorReporter.report(error, stack, source: 'platform');
     return true;
   };
+
+  // Month and weekday names for every language (dates are shown in the app language).
+  await initializeDateFormatting();
 
   // Storage (synchronous fast init)
   final storageService = await StorageService().init();

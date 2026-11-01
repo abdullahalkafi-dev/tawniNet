@@ -279,7 +279,7 @@ const Map<String, String> esES = {
   "profile_default": "Predeterminado",
   "profile_accept_close": "Aceptar y cerrar",
   "profile_about_title": "Sobre 3awniNet",
-  "profile_version": "Versión 1.0.0 (Build 120)",
+  "profile_version": "Versión @v",
   "profile_about_desc": "3awniNet es una plataforma marroquí de servicios a domicilio. Conectamos ayudantes locales verificados con personas que necesitan reparaciones, limpieza, mudanzas y servicios del día a día, con confianza, fiabilidad y precios justos.",
   "profile_copyright": "© 2026 3awniNet. Todos los derechos reservados.",
   "profile_contact_chat": "Contactar por chat",

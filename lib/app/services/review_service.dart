@@ -61,7 +61,7 @@ class ReviewService extends GetxService {
       'reviewerAvatar': avatar,
       'reply': reply is Map ? (reply['text'] ?? '').toString() : '',
       'edited': map['editedAt'] != null,
-      'date': AppDateTime.formatDateDisplay((map['createdAt'] ?? '').toString()),
+      'date': AppDateTime.localizedDate((map['createdAt'] ?? '').toString()),
     };
   }
 

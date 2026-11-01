@@ -168,4 +168,68 @@ class AppDateTime {
     }
     return parts.join(' · ');
   }
+
+  // ─── Display in the app language (read-only screens) ─────────────────────
+  // Forms keep the English forms above because they re-read their own text and
+  // the server stores them; anything the person only READS goes through these.
+
+  /// intl locale for the current app language. Arabic uses the Moroccan
+  /// variant so numbers stay in Latin digits like the rest of the app.
+  static String get _intlLocale {
+    final code = Get.locale?.languageCode ?? 'en';
+    return code == 'ar' ? 'ar_MA' : code;
+  }
+
+  static String _safe(String Function(String locale) build, String fallback) {
+    try {
+      return build(_intlLocale);
+    } catch (_) {
+      try {
+        return build('en');
+      } catch (_) {
+        return fallback;
+      }
+    }
+  }
+
+  /// `12 oct. 2026` / `Oct 12, 2026` / `12 أكتوبر 2026`. Falls back to the raw text.
+  static String localizedDate(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return '';
+    final parsed = tryParseDate(raw);
+    if (parsed == null) return raw.trim();
+    return _safe((l) => DateFormat.yMMMd(l).format(parsed), formatDateDisplay(raw));
+  }
+
+  /// `12 oct.` / `Oct 12`: day and month only (recent items in lists).
+  static String localizedDayMonth(DateTime date) =>
+      _safe((l) => DateFormat.MMMd(l).format(date), DateFormat('MMM d').format(date));
+
+  /// Time of day the way the language writes it: `5:00 PM`, `17:00`, `5:00 م`.
+  static String localizedClock(DateTime date) =>
+      _safe((l) => DateFormat.jm(l).format(date), DateFormat('h:mm a').format(date));
+
+  /// Same as [formatTime12h] but shown in the app language. Falls back to the raw text.
+  static String localizedTime(String? raw) {
+    if (raw == null || raw.trim().isEmpty) return '';
+    final parsed = tryParseTimeOfDay(raw);
+    if (parsed == null) return raw.trim();
+    return localizedClock(DateTime(2000, 1, 1, parsed.hour, parsed.minute));
+  }
+
+  /// Same as [formatDateTimeRange] but shown in the app language.
+  static String localizedDateTimeRange({String? date, String? startTime, String? endTime}) {
+    final parts = <String>[];
+    final dateText = localizedDate(date);
+    if (dateText.isNotEmpty) parts.add(dateText);
+    final start = localizedTime(startTime);
+    final end = localizedTime(endTime);
+    if (start.isNotEmpty && end.isNotEmpty) {
+      parts.add('$start - $end');
+    } else if (start.isNotEmpty) {
+      parts.add(start);
+    } else if (end.isNotEmpty) {
+      parts.add(end);
+    }
+    return parts.join(' · ');
+  }
 }

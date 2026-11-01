@@ -17,7 +17,7 @@ class HelperCancelDetailsView extends StatelessWidget {
         ? Map<String, dynamic>.from(Get.arguments as Map)
         : <String, dynamic>{};
     final cancelledDate = job['cancelledAt'] != null
-        ? AppDateTime.formatDateDisplay(job['cancelledAt'].toString())
+        ? AppDateTime.localizedDate(job['cancelledAt'].toString())
         : JobDisplay.safeText(job['cancelledDate'], fallback: 'job_recently'.tr);
     final clientName = JobDisplay.personName(job['postedBy'],
         fallback: JobDisplay.safeText(job['clientName']));
@@ -49,13 +49,13 @@ class HelperCancelDetailsView extends StatelessWidget {
     }
     final bookingDateRaw = job['date'] ?? job['createdAt'];
     final bookingDate = bookingDateRaw != null
-        ? AppDateTime.formatDateDisplay(bookingDateRaw.toString())
+        ? AppDateTime.localizedDate(bookingDateRaw.toString())
         : 'N/A';
     final preferredTime = job['startTime'] != null
         ? [
-            AppDateTime.formatTime12h(job['startTime']?.toString()),
+            AppDateTime.localizedTime(job['startTime']?.toString()),
             if (job['endTime'] != null)
-              AppDateTime.formatTime12h(job['endTime']?.toString()),
+              AppDateTime.localizedTime(job['endTime']?.toString()),
           ].where((t) => t.isNotEmpty).join(' - ')
         : JobDisplay.safeText(job['preferredTime'], fallback: 'N/A');
     final budgetRaw = job['budget'] ?? job['serviceFee'] ?? 0;

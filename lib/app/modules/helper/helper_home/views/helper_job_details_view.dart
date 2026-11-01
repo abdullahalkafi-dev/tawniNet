@@ -59,12 +59,12 @@ class HelperJobDetailsView extends GetView<HelperHomeController> {
 
   Widget _buildJobInfoCard(BuildContext context, HelperJob job) {
     final dateStr = job.date != null
-        ? AppDateTime.formatDateDisplay(job.date!.toIso8601String())
+        ? AppDateTime.localizedDate(job.date!.toIso8601String())
         : 'ui_not_specified'.tr;
     final timeStr = (job.startTime != null && job.startTime!.isNotEmpty)
         ? (job.endTime != null && job.endTime!.isNotEmpty
-            ? '${AppDateTime.formatTime12h(job.startTime)} - ${AppDateTime.formatTime12h(job.endTime)}'
-            : AppDateTime.formatTime12h(job.startTime))
+            ? '${AppDateTime.localizedTime(job.startTime)} - ${AppDateTime.localizedTime(job.endTime)}'
+            : AppDateTime.localizedTime(job.startTime))
         : 'ui_not_specified'.tr;
 
     return Container(

@@ -293,13 +293,13 @@ class _CompletedJobDetailsViewState extends State<CompletedJobDetailsView> {
     final categoryName = JobDisplay.categoryName(job['category'],
         fallback: JobDisplay.safeText(job['jobType'], fallback: 'ui_service'.tr));
     final bookingDate = job['date'] != null
-        ? AppDateTime.formatDateDisplay(job['date'].toString())
-        : AppDateTime.formatDateDisplay(job['bookingDate']?.toString() ?? '');
+        ? AppDateTime.localizedDate(job['date'].toString())
+        : AppDateTime.localizedDate(job['bookingDate']?.toString() ?? '');
     final preferredTime = job['startTime'] != null
         ? [
-            AppDateTime.formatTime12h(job['startTime']?.toString()),
+            AppDateTime.localizedTime(job['startTime']?.toString()),
             if (job['endTime'] != null)
-              AppDateTime.formatTime12h(job['endTime']?.toString()),
+              AppDateTime.localizedTime(job['endTime']?.toString()),
           ].where((t) => t.isNotEmpty).join(' - ')
         : JobDisplay.safeText(job['preferredTime']);
     final location = JobDisplay.publicAddress(job);

@@ -15,7 +15,7 @@ const Map<String, String> arMA = {
   "onboarding_skills": "مهاراتك واربح",
   "onboarding_skills_desc": "إلا عندك مهارة، 3awniNet كيساعدك توصل للزبائن وتكبر دخلك",
   "onboarding_get_started": "ابدا دابا",
-  "onboarding_skip": " Skip",
+  "onboarding_skip": "تخطى",
   "onboarding_next": "التالي",
 
   // ─── Language ───────────────────────────────────────────
@@ -28,7 +28,7 @@ const Map<String, String> arMA = {
   "auth_login_subtitle": "سجّل الدخول لحسابك",
   "auth_signup": "سجّل",
   "auth_create_account": "إنشاء حسابك",
-  "auth_signup_subtitle": "join 3awniNet وابدأ فثانية.",
+  "auth_signup_subtitle": "انضم لـ 3awniNet وابدأ فثواني.",
   "auth_full_name": "الاسم الكامل",
   "auth_name": "الاسم",
   "auth_email": "البريد الإلكتروني",
@@ -63,7 +63,7 @@ const Map<String, String> arMA = {
 
   // ─── Home ──────────────────────────────────────────────
   "home_tab": "الرئيسية",
-  "home_hello": "مرحبا, ",
+  "home_hello": "مرحبا، ",
   "home_find_helper": "لقا أحسن مساعد حداك.",
   "home_search": "قلب على خدمة...",
   "home_popular_services": "الخدمات المشهورة",
@@ -257,7 +257,7 @@ const Map<String, String> arMA = {
   "cancel_cancellation_details": "تفاصيل الإلغاء",
   "cancel_cancelled_by": "ملغي من طرف",
   "cancel_reason": "سبب الإلغاء",
-  "cancel_reason_default": " طارئ، ما قدرتش نكمل الموعد",
+  "cancel_reason_default": "طارئ، ما قدرتش نكمل الموعد",
   "cancel_job_info": "معلومات الخدمة",
   "cancel_service_fee": "رسوم الخدمة MAD ",
   "cancel_service_description": "وصف الخدمة",
@@ -279,7 +279,7 @@ const Map<String, String> arMA = {
   "profile_default": "افتراضي",
   "profile_accept_close": "قبول وإغلاق",
   "profile_about_title": "عن 3awniNet",
-  "profile_version": "الإصدار 1.0.0 (بنا 120)",
+  "profile_version": "الإصدار @v",
   "profile_about_desc": "3awniNet هي المنصة رقم 1 للمساعدين المنزليين. كنوصلو محترفين موثوقين مع مستخدمين كيقلبو على إصلاح، تنظيف، ونقل بجودة عالية. تأسسنا على الثقة والموثوقية والكفاءة الحديثة.",
   "profile_copyright": "© 2026 3awniNet. جميع الحقوق محفوظة.",
   "profile_contact_chat": "تواصل عبر الشات المباشر",

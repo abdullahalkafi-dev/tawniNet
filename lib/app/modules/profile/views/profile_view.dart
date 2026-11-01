@@ -1,3 +1,4 @@
+import 'package:awnneaapp/app/services/app_config_service.dart';
 import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'package:awnneaapp/app/modules/common/views/legal_view.dart';
 import 'package:awnneaapp/app/core/constants/app_info.dart';
@@ -699,7 +700,11 @@ class ProfileView extends GetView<ProfileController> {
             ),
             const SizedBox(height: 8),
             Text(
-              'profile_version'.tr,
+              'profile_version'.trParams({
+                'v': Get.find<AppConfigService>().appBuild.value.isEmpty
+                    ? Get.find<AppConfigService>().appVersion.value
+                    : '${Get.find<AppConfigService>().appVersion.value} (${Get.find<AppConfigService>().appBuild.value})',
+              }),
               style: AppStyles.bodyMedium.copyWith(color: context.textHintColor),
             ),
             const SizedBox(height: 16),

@@ -150,7 +150,7 @@ class OfferCardWidget extends StatelessWidget {
                   _detailRow(
                     context,
                     Icons.access_time,
-                    AppDateTime.formatDateTimeRange(
+                    AppDateTime.localizedDateTimeRange(
                       date: offer.date,
                       startTime: offer.startTime,
                       endTime: offer.endTime,
