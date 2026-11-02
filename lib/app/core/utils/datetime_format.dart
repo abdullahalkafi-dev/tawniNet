@@ -23,11 +23,20 @@ class AppDateTime {
     return 'chat_time_weeks'.trParams({'n': '${(diff.inDays / 7).floor()}'});
   }
 
-  /// Local "HH:mm" of an ISO timestamp from the server (they are UTC).
+  /// The ONE way a time of day is written in the app: `5:00 PM`, in every language.
+  /// [seconds] adds them (`5:00:07 PM`) for the live-tracking "last update" line.
+  static String clock12h(DateTime date, {bool seconds = false}) {
+    final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
+    final minute = date.minute.toString().padLeft(2, '0');
+    final second = seconds ? ':${date.second.toString().padLeft(2, '0')}' : '';
+    return '$hour:$minute$second ${date.hour < 12 ? 'AM' : 'PM'}';
+  }
+
+  /// Local `5:00 PM` of an ISO timestamp from the server (they are UTC).
   static String clockTime(dynamic raw) {
     final d = DateTime.tryParse(raw?.toString() ?? '')?.toLocal();
     if (d == null) return '';
-    return '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+    return clock12h(d);
   }
 
   /// Parse ISO or common display forms. Null if unparseable.
@@ -204,11 +213,11 @@ class AppDateTime {
   static String localizedDayMonth(DateTime date) =>
       _safe((l) => DateFormat.MMMd(l).format(date), DateFormat('MMM d').format(date));
 
-  /// Time of day the way the language writes it: `5:00 PM`, `17:00`, `5:00 م`.
-  static String localizedClock(DateTime date) =>
-      _safe((l) => DateFormat.jm(l).format(date), DateFormat('h:mm a').format(date));
+  /// Time of day, always 12-hour with Latin AM/PM (`5:00 PM`) whatever the language:
+  /// intl's own pattern is 24-hour for French and Spanish, which confused people.
+  static String localizedClock(DateTime date) => clock12h(date);
 
-  /// Same as [formatTime12h] but shown in the app language. Falls back to the raw text.
+  /// Same as [formatTime12h] (kept as the name read-only screens call). Falls back to the raw text.
   static String localizedTime(String? raw) {
     if (raw == null || raw.trim().isEmpty) return '';
     final parsed = tryParseTimeOfDay(raw);

@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:awnneaapp/app/core/constants/map_config.dart';
 import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
+import 'package:awnneaapp/app/core/utils/datetime_format.dart';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/routes/app_routes.dart';
@@ -543,7 +544,7 @@ class _LiveTrackingViewState extends State<LiveTrackingView> {
                               Padding(
                                 padding: const EdgeInsets.only(top: 4),
                                 child: Text(
-                                  '${'tracking_last_ping'.tr} ${lastPingTime!.hour.toString().padLeft(2, '0')}:${lastPingTime!.minute.toString().padLeft(2, '0')}:${lastPingTime!.second.toString().padLeft(2, '0')}',
+                                  '${'tracking_last_ping'.tr} ${AppDateTime.clock12h(lastPingTime!, seconds: true)}',
                                   style: AppStyles.bodySmall.copyWith(
                                     fontSize: 11,
                                     color: context.textHintColor,

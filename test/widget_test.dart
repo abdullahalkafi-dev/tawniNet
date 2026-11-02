@@ -24,11 +24,23 @@ void main() {
       expect(ar, contains('2026'));
     });
 
-    test('French and Spanish show 24-hour time, English 12-hour', () {
-      Get.locale = const Locale('fr', 'FR');
-      expect(AppDateTime.localizedTime('5:00 PM'), '17:00');
-      Get.locale = const Locale('en', 'US');
-      expect(AppDateTime.localizedTime('17:00'), contains('PM'));
+    test('times are 12-hour with Latin AM/PM in every language', () {
+      for (final l in const [Locale('en', 'US'), Locale('fr', 'FR'), Locale('es', 'ES'), Locale('ar', 'MA')]) {
+        Get.locale = l;
+        expect(AppDateTime.localizedTime('17:00'), '5:00 PM', reason: '$l');
+        expect(AppDateTime.localizedTime('5:00 PM'), '5:00 PM', reason: '$l');
+        expect(AppDateTime.localizedTime('00:05'), '12:05 AM', reason: '$l');
+        expect(AppDateTime.localizedTime('12:30'), '12:30 PM', reason: '$l');
+        expect(AppDateTime.localizedClock(DateTime(2026, 1, 1, 9, 7)), '9:07 AM', reason: '$l');
+      }
+    });
+
+    test('clock12h: server timestamps, midnight/noon and the seconds variant', () {
+      expect(AppDateTime.clockTime(DateTime(2026, 1, 1, 14, 30).toIso8601String()), '2:30 PM');
+      expect(AppDateTime.clockTime('not a date'), '');
+      expect(AppDateTime.clock12h(DateTime(2026, 1, 1, 0, 0)), '12:00 AM');
+      expect(AppDateTime.clock12h(DateTime(2026, 1, 1, 12, 0)), '12:00 PM');
+      expect(AppDateTime.clock12h(DateTime(2026, 1, 1, 23, 59, 7), seconds: true), '11:59:07 PM');
     });
 
     test('the form format sent to the server never changes with the language', () {

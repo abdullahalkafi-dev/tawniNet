@@ -482,7 +482,7 @@ class _BookingDetailsViewState extends State<BookingDetailsView> {
                   : 'job_helper_finished_deadline'.trParams({
                       'when': AppDateTime.localizedDateTimeRange(
                         date: deadline.toIso8601String(),
-                        startTime: '${deadline.hour}:${deadline.minute.toString().padLeft(2, '0')}',
+                        startTime: AppDateTime.clock12h(deadline),
                       ),
                     }),
               style: AppStyles.bodyMedium.copyWith(fontSize: 13, height: 1.4),

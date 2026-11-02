@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:awnneaapp/app/core/values/app_colors.dart';
 import 'package:awnneaapp/app/core/values/app_styles.dart';
 import 'package:awnneaapp/app/core/utils/app_feedback.dart';
+import 'package:awnneaapp/app/core/utils/datetime_format.dart';
 import 'package:awnneaapp/app/core/widgets/app_network_image.dart';
 import 'package:awnneaapp/app/core/widgets/skeleton.dart';
 import 'package:awnneaapp/app/data/models/message_model.dart';
@@ -958,7 +959,7 @@ class _ChatDetailViewState extends State<ChatDetailView> {
   }
 
   String _formatTime(DateTime dateTime) {
-    return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    return AppDateTime.clock12h(dateTime);
   }
 
   bool _isSameDay(DateTime a, DateTime b) {
